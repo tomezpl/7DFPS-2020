@@ -5,7 +5,7 @@ using UnityEngine;
 public class FPPControl : MonoBehaviour
 {
     public Camera camera;
-    public float moveSpeed = 3f, strafeSpeed = 2f, jumpStrength = 3f;
+    public float moveSpeed = 3f, strafeSpeed = 2f, jumpStrength = 5f;
 
     public Rigidbody rigidbody;
 
@@ -43,8 +43,10 @@ public class FPPControl : MonoBehaviour
         transform.Translate(MoveVector * GetWalk() * moveSpeed * Time.deltaTime, Space.World);
         transform.Translate(StrafeVector * GetStrafe() * strafeSpeed * Time.deltaTime, Space.World);
 
+        // Allow jumping only if colliding with a floor.
         if (isColliding && GetJump())
         {
+            // Jump with the current momentum.
             rigidbody.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed) + (StrafeVector * GetStrafe() * strafeSpeed), ForceMode.Impulse);
         }
     }
@@ -82,17 +84,29 @@ public class FPPControl : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        isColliding = true;
+        if (collision.transform.CompareTag("Floor"))
+        {
+            isColliding = true;
+        }
     }
 
     private void OnCollisionStay(Collision collision)
     {
+        // Calculate walk & strafe vectors from floor surface tangents.
         moveVector = CalculateFloorMoveVector(collision);
         strafeVector = CalculateFloorStrafeVector(collision);
+
+        if (collision.transform.CompareTag("Floor"))
+        {
+            isColliding = true;
+        }
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        isColliding = false;
+        if (collision.transform.CompareTag("Floor"))
+        {
+            isColliding = false;
+        }
     }
 }
