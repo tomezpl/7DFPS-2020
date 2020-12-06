@@ -5,7 +5,9 @@ using UnityEngine;
 public class FPPControl : MonoBehaviour
 {
     public Camera camera;
-    public float moveSpeed = 3f, strafeSpeed = 2f;
+    public float moveSpeed = 3f, strafeSpeed = 2f, jumpStrength = 3f;
+
+    public Rigidbody rigidbody;
 
     // Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)
     Vector3 moveVector;
@@ -27,6 +29,8 @@ public class FPPControl : MonoBehaviour
 
     float GetStrafe() => Input.GetAxis("Horizontal");
 
+    bool GetJump() => Input.GetButtonDown("Jump");
+
     void CameraLook()
     {
         float lookX = GetLookX();
@@ -38,6 +42,11 @@ public class FPPControl : MonoBehaviour
     {
         transform.Translate(MoveVector * GetWalk() * moveSpeed * Time.deltaTime, Space.World);
         transform.Translate(StrafeVector * GetStrafe() * strafeSpeed * Time.deltaTime, Space.World);
+
+        if (isColliding && GetJump())
+        {
+            rigidbody.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed) + (StrafeVector * GetStrafe() * strafeSpeed), ForceMode.Impulse);
+        }
     }
 
     // Start is called before the first frame update
