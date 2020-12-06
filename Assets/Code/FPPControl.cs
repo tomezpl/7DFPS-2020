@@ -5,6 +5,7 @@ using UnityEngine;
 public class FPPControl : MonoBehaviour
 {
     public Camera camera;
+    public float moveSpeed = 3f, strafeSpeed = 2f;
 
     // Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)
     Vector3 moveVector;
@@ -35,8 +36,8 @@ public class FPPControl : MonoBehaviour
 
     void Movement()
     {
-        transform.Translate(MoveVector * GetWalk() * Time.deltaTime, Space.World);
-        transform.Translate(StrafeVector * GetStrafe() * Time.deltaTime, Space.World);
+        transform.Translate(MoveVector * GetWalk() * moveSpeed * Time.deltaTime, Space.World);
+        transform.Translate(StrafeVector * GetStrafe() * strafeSpeed * Time.deltaTime, Space.World);
     }
 
     // Start is called before the first frame update
