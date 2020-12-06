@@ -155,6 +155,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   camera: {fileID: 815171683}
+  moveSpeed: 3
+  strafeSpeed: 2
+  jumpStrength: 3
+  rigidbody: {fileID: 171394882}
 --- !u!136 &171394878
 CapsuleCollider:
   m_ObjectHideFlags: 0
