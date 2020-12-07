@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FPPControl : MonoBehaviour
+public class RoombaControl : MonoBehaviour
 {
     public Camera camera;
     public float moveSpeed = 3f, strafeSpeed = 2f, jumpStrength = 5f;
@@ -27,27 +27,49 @@ public class FPPControl : MonoBehaviour
 
     float GetWalk() => Input.GetAxis("Vertical");
 
-    float GetStrafe() => Input.GetAxis("Horizontal");
+    float GetTurn() => Input.GetAxis("Horizontal");
 
     bool GetJump() => Input.GetButtonDown("Jump");
 
     void CameraLook()
     {
+        // Turn the roomba left-right.
+        transform.Rotate(transform.up, GetTurn(), Space.World);
+
+        // Camera freelook
         float lookX = GetLookX();
-        transform.Rotate(transform.up, lookX, Space.World);
-        camera.transform.Rotate(transform.right, -GetLookY(), Space.World);
+        float lookY = GetLookY();
+        if (camera.transform.localRotation.y > 0.3f)
+        {
+            lookX = lookX > 0f ? 0f : lookX;
+        }
+        if (camera.transform.localRotation.y < -0.3f)
+        {
+            lookX = lookX < 0f ? 0f : lookX;
+        }
+
+        if (camera.transform.localRotation.x > 0.4f)
+        {
+            lookY = lookY < 0f ? 0f : lookY;
+        }
+        if (camera.transform.localRotation.x < -0.4f)
+        {
+            lookY = lookY > 0f ? 0f : lookY;
+        }
+
+        camera.transform.Rotate(transform.up, lookX, Space.World);
+        camera.transform.Rotate(camera.transform.right, -lookY, Space.World);
     }
 
     void Movement()
     {
         transform.Translate(MoveVector * GetWalk() * moveSpeed * Time.deltaTime, Space.World);
-        transform.Translate(StrafeVector * GetStrafe() * strafeSpeed * Time.deltaTime, Space.World);
 
         // Allow jumping only if colliding with a floor.
         if (isColliding && GetJump())
         {
             // Jump with the current momentum.
-            rigidbody.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed) + (StrafeVector * GetStrafe() * strafeSpeed), ForceMode.Impulse);
+            rigidbody.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed), ForceMode.Impulse);
         }
     }
 
