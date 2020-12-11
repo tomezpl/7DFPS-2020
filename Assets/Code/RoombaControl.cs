@@ -9,6 +9,8 @@ public class RoombaControl : MonoBehaviour
 
     public Rigidbody rb;
 
+    public bool playerControlled = true;
+
     // Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)
     Vector3 moveVector;
 

@@ -10,11 +10,13 @@ public class Cannon : MonoBehaviour
 
     public Light[] lights;
     public float flashTime = 1f;
+    public float fireTime = 1.5f;
 
     Quaternion _initRotation;
 
     bool _isFiring = false;
     float _muzzleTimer = 0f;
+    float _fireTimer = 0f;
 
     // Lights and their associated intensities.
     Dictionary<Light, float> _lights;
@@ -28,6 +30,11 @@ public class Cannon : MonoBehaviour
         if(!owner)
         {
             owner = transform.parent.GetComponent<RoombaControl>();
+        }
+
+        if(!cam)
+        {
+            cam = owner.GetComponentInChildren<Camera>();
         }
 
         _lights = new Dictionary<Light, float>();
@@ -49,7 +56,7 @@ public class Cannon : MonoBehaviour
         Debug.Log(camAngleY);
         transform.localRotation = _initRotation * Quaternion.AngleAxis(camAngleY, owner.transform.up);
 
-        if(Input.GetButtonDown("Fire1") && !_isFiring)
+        if(owner.playerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
         {
             Fire();
         }
@@ -61,6 +68,7 @@ public class Cannon : MonoBehaviour
     {
         _isFiring = true;
         _muzzleTimer = flashTime;
+        _fireTimer = fireTime;
     }
 
     void MuzzleFlash()
@@ -83,13 +91,22 @@ public class Cannon : MonoBehaviour
         }
         else
         {
-            _isFiring = false;
             _muzzleTimer = 0f;
 
             foreach(Light light in _lights.Keys)
             {
                 light.enabled = false;
             }
+        }
+
+        if (_fireTimer > 0f)
+        {
+            _fireTimer -= Time.deltaTime;
+        }
+        else
+        {
+            _isFiring = false;
+            _fireTimer = 0f;
         }
     }
 
