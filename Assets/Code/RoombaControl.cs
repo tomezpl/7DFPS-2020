@@ -82,13 +82,25 @@ public class RoombaControl : MonoBehaviour
         strafeVector = transform.right;
 
         isColliding = false;
+
+        if(!cam)
+        {
+            cam = GetComponentInChildren<Camera>();
+        }
+        if(!rb)
+        {
+            rb = GetComponent<Rigidbody>();
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        CameraLook();
-        Movement();
+        if (playerControlled)
+        {
+            CameraLook();
+            Movement();
+        }
     }
 
     Vector3 CalculateSurfaceTangent(Vector3 surfaceNormal, Transform obj)
