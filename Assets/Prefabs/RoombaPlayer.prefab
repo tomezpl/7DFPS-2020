@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7719136839689103046}
   - component: {fileID: 5789822896714728210}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Light (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -124,7 +124,7 @@ GameObject:
   - component: {fileID: 4951206815986635301}
   - component: {fileID: 4951206815986635299}
   - component: {fileID: 4951206815986635300}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -210,7 +210,7 @@ GameObject:
   - component: {fileID: 4951206816429219198}
   - component: {fileID: 4951206816429219197}
   - component: {fileID: 4951206816429219074}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RoombaPlayer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -399,7 +399,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2270245617584715903}
   - component: {fileID: 8071233395666210018}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -489,6 +489,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 4951206816429219073}
     m_Modifications:
+    - target: {fileID: -8546635197392431920, guid: df52de522867cc745ba4613db6109dad,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: -4216859302048453862, guid: df52de522867cc745ba4613db6109dad,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -559,10 +564,35 @@ PrefabInstance:
       propertyPath: m_LocalScale.z
       value: 1.3333334
       objectReference: {fileID: 0}
+    - target: {fileID: -3993466820737894698, guid: df52de522867cc745ba4613db6109dad,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: -1895271098084701933, guid: df52de522867cc745ba4613db6109dad,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: -927199367670048503, guid: df52de522867cc745ba4613db6109dad,
         type: 3}
       propertyPath: m_Name
       value: cannon
+      objectReference: {fileID: 0}
+    - target: {fileID: -927199367670048503, guid: df52de522867cc745ba4613db6109dad,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 1121063750183690423, guid: df52de522867cc745ba4613db6109dad,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2519055989536091835, guid: df52de522867cc745ba4613db6109dad,
+        type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 6995635378444396944, guid: df52de522867cc745ba4613db6109dad,
         type: 3}
