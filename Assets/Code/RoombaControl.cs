@@ -4,10 +4,10 @@ using UnityEngine;
 
 public class RoombaControl : MonoBehaviour
 {
-    public Camera camera;
+    public Camera cam;
     public float moveSpeed = 3f, strafeSpeed = 2f, jumpStrength = 5f;
 
-    public Rigidbody rigidbody;
+    public Rigidbody rb;
 
     // Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)
     Vector3 moveVector;
@@ -39,26 +39,26 @@ public class RoombaControl : MonoBehaviour
         // Camera freelook
         float lookX = GetLookX();
         float lookY = GetLookY();
-        if (camera.transform.localRotation.y > 0.3f)
+        if (cam.transform.localRotation.y > 0.3f)
         {
             lookX = lookX > 0f ? 0f : lookX;
         }
-        if (camera.transform.localRotation.y < -0.3f)
+        if (cam.transform.localRotation.y < -0.3f)
         {
             lookX = lookX < 0f ? 0f : lookX;
         }
 
-        if (camera.transform.localRotation.x > 0.4f)
+        if (cam.transform.localRotation.x > 0.4f)
         {
             lookY = lookY < 0f ? 0f : lookY;
         }
-        if (camera.transform.localRotation.x < -0.4f)
+        if (cam.transform.localRotation.x < -0.4f)
         {
             lookY = lookY > 0f ? 0f : lookY;
         }
 
-        camera.transform.Rotate(transform.up, lookX, Space.World);
-        camera.transform.Rotate(camera.transform.right, -lookY, Space.World);
+        cam.transform.Rotate(transform.up, lookX, Space.World);
+        cam.transform.Rotate(cam.transform.right, -lookY, Space.World);
     }
 
     void Movement()
@@ -69,7 +69,7 @@ public class RoombaControl : MonoBehaviour
         if (isColliding && GetJump())
         {
             // Jump with the current momentum.
-            rigidbody.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed), ForceMode.Impulse);
+            rb.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed), ForceMode.Impulse);
         }
     }
 
