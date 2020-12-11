@@ -34,7 +34,7 @@ public class RoombaControl : MonoBehaviour
     void CameraLook()
     {
         // Turn the roomba left-right.
-        transform.Rotate(transform.up, GetTurn(), Space.World);
+        transform.Rotate(transform.up, GetTurn() * Mathf.Sign(GetWalk()), Space.World);
 
         // Camera freelook
         float lookX = GetLookX();
