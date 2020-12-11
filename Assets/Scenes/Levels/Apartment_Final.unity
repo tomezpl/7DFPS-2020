@@ -383,6 +383,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b93822439a37b3e4789aa3e9d36b3378, type: 3}
+--- !u!20 &1062421054 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 4951206815986635299, guid: a88f194c93a2fc9419afd130363c06d3,
+    type: 3}
+  m_PrefabInstance: {fileID: 1979552510}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1160015319
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -980,11 +986,23 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 14
   m_LocalEulerAnglesHint: {x: 180, y: 0, z: 0}
+--- !u!54 &1482739050 stripped
+Rigidbody:
+  m_CorrespondingSourceObject: {fileID: 4951206816429219074, guid: a88f194c93a2fc9419afd130363c06d3,
+    type: 3}
+  m_PrefabInstance: {fileID: 1979552510}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1482739055 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4951206816429219073, guid: a88f194c93a2fc9419afd130363c06d3,
     type: 3}
   m_PrefabInstance: {fileID: 1979552510}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1558773780 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1110330795995818601, guid: df52de522867cc745ba4613db6109dad,
+    type: 3}
+  m_PrefabInstance: {fileID: 1960734833}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1591202022
 GameObject:
@@ -1196,7 +1214,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1820890782}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &1820890784
 Camera:
   m_ObjectHideFlags: 0
@@ -1405,8 +1423,39 @@ PrefabInstance:
       propertyPath: m_Name
       value: RoombaPlayer
       objectReference: {fileID: 0}
+    - target: {fileID: 4951206816429219197, guid: a88f194c93a2fc9419afd130363c06d3,
+        type: 3}
+      propertyPath: rb
+      value: 
+      objectReference: {fileID: 1482739050}
+    - target: {fileID: 4951206816429219197, guid: a88f194c93a2fc9419afd130363c06d3,
+        type: 3}
+      propertyPath: cam
+      value: 
+      objectReference: {fileID: 1062421054}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a88f194c93a2fc9419afd130363c06d3, type: 3}
+--- !u!1 &2070163368 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: df52de522867cc745ba4613db6109dad,
+    type: 3}
+  m_PrefabInstance: {fileID: 1960734833}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2070163370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2070163368}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dca72dcd920cb348941572aa773dced, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cam: {fileID: 1062421054}
+  barrel: {fileID: 1558773780}
+  owner: {fileID: 0}
 --- !u!1 &2129191073
 GameObject:
   m_ObjectHideFlags: 0
