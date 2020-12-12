@@ -125,6 +125,9 @@ public class Cannon : MonoBehaviour
                 if (roombaHit)
                 {
                     Debug.Log("Hit!");
+                    PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
+                    Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
+                    victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
                     Destroy(_firedShell.gameObject);
                     _firedShell = null;
                 }
