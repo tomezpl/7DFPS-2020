@@ -59,7 +59,7 @@ public class Cannon : MonoBehaviour
         float camAngleY = cam.transform.localEulerAngles.y;
         transform.localRotation = _initRotation * Quaternion.AngleAxis(camAngleY, owner.transform.up);
 
-        if(owner.playerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
+        if(owner.PlayerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
         {
             Fire();
         }
