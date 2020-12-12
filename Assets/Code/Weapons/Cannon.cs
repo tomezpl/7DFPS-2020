@@ -5,12 +5,14 @@ using UnityEngine;
 public class Cannon : MonoBehaviour
 {
     public Camera cam;
-    public Transform barrel;
+    public Transform barrelEnd;
     public RoombaControl owner;
 
     public Light[] lights;
     public float flashTime = 1f;
     public float fireTime = 1.5f;
+
+    public GameObject cannonShell;
 
     Quaternion _initRotation;
 
@@ -20,6 +22,8 @@ public class Cannon : MonoBehaviour
 
     // Lights and their associated intensities.
     Dictionary<Light, float> _lights;
+
+    CannonBullet _firedShell;
 
     // Start is called before the first frame update
     void Start()
@@ -53,7 +57,6 @@ public class Cannon : MonoBehaviour
     void Update()
     {
         float camAngleY = cam.transform.localEulerAngles.y;
-        Debug.Log(camAngleY);
         transform.localRotation = _initRotation * Quaternion.AngleAxis(camAngleY, owner.transform.up);
 
         if(owner.playerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
@@ -69,6 +72,10 @@ public class Cannon : MonoBehaviour
         _isFiring = true;
         _muzzleTimer = flashTime;
         _fireTimer = fireTime;
+
+        _firedShell = Instantiate(cannonShell, barrelEnd).GetComponent<CannonBullet>();
+        _firedShell.owner = gameObject;
+        _firedShell.GetComponent<Rigidbody>().AddForce(cam.transform.forward * 1000f);
     }
 
     void MuzzleFlash()
@@ -107,6 +114,21 @@ public class Cannon : MonoBehaviour
         {
             _isFiring = false;
             _fireTimer = 0f;
+        }
+
+        if (_firedShell)
+        {
+            if (_firedShell.hit)
+            {
+                Debug.Log(_firedShell.hit);
+                RoombaControl roombaHit = _firedShell.hit.GetComponent<RoombaControl>();
+                if (roombaHit)
+                {
+                    Debug.Log("Hit!");
+                    Destroy(_firedShell.gameObject);
+                    _firedShell = null;
+                }
+            }
         }
     }
 
