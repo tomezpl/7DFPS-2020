@@ -91,6 +91,11 @@ public class RoombaControl : MonoBehaviour
         {
             rb = GetComponent<Rigidbody>();
         }
+
+        if(!playerControlled)
+        {
+            cam.GetComponent<AudioListener>().enabled = false;
+        }
     }
 
     // Update is called once per frame
