@@ -17,6 +17,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Bungalow_Brickwall
+    second: {fileID: 2100000, guid: 911585fb50e22b046aacae1924c5f2ae, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: Bungalow_DiningRoomWall
     second: {fileID: 2100000, guid: 06f12fef3b4f75646b75f2db044e6a05, type: 2}
   - first:
