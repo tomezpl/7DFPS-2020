@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Photon.Pun;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ public class RoombaControl : MonoBehaviour
     public Rigidbody rb;
 
     public bool playerControlled = true;
+
+    public bool PlayerControlled { get { return playerControlled && GetComponent<PhotonView>().IsMine; } }
 
     // Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)
     Vector3 moveVector;
@@ -92,16 +95,20 @@ public class RoombaControl : MonoBehaviour
             rb = GetComponent<Rigidbody>();
         }
 
-        if(!playerControlled)
+        if(!PlayerControlled)
         {
+            // If this isn't our roomba, disable the camera audio listener so Unity doesn't complain.
             cam.GetComponent<AudioListener>().enabled = false;
+
+            // Prevent switching to the newly spawned roomba's camera by disabling it.
+            cam.enabled = false;
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (playerControlled)
+        if (PlayerControlled)
         {
             CameraLook();
             Movement();

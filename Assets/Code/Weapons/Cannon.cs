@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using ExitGames.Client.Photon;
+using Photon.Pun;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,12 +33,12 @@ public class Cannon : MonoBehaviour
         // Store the intial orientation of the cannon, as per the prefab.
         _initRotation = transform.localRotation;
 
-        if(!owner)
+        if (!owner)
         {
             owner = transform.parent.GetComponent<RoombaControl>();
         }
 
-        if(!cam)
+        if (!cam)
         {
             cam = owner.GetComponentInChildren<Camera>();
         }
@@ -44,7 +46,7 @@ public class Cannon : MonoBehaviour
         _lights = new Dictionary<Light, float>();
         if (lights?.Length > 0)
         {
-            foreach(Light light in lights)
+            foreach (Light light in lights)
             {
                 _lights.Add(light, light.intensity);
                 light.intensity = 0f;
@@ -59,12 +61,50 @@ public class Cannon : MonoBehaviour
         float camAngleY = cam.transform.localEulerAngles.y;
         transform.localRotation = _initRotation * Quaternion.AngleAxis(camAngleY, owner.transform.up);
 
-        if(owner.playerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
+        if (owner.PlayerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
         {
             Fire();
         }
 
         MuzzleFlash();
+
+        if (_firedShell)
+        {
+            // Check that the shell hit a target.
+            if (_firedShell.hit)
+            {
+                Debug.Log(_firedShell.hit);
+                RoombaControl roombaHit = _firedShell.hit.GetComponent<RoombaControl>();
+                // Check if we hit a player.
+                if (roombaHit)
+                {
+                    Debug.Log("Hit!");
+                    PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
+                    Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
+                    //victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
+
+                    Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
+
+                    // Send a DealDamage event on the player we hit.
+                    PhotonNetwork.RaiseEvent(EventCodes.DealDamage, new DamageData
+                    {
+                        AttackerViewId = PhotonView.Get(owner).ViewID,
+                        VictimViewId = PhotonView.Get(victimStats).ViewID,
+                        DamageDealt = Mathf.RoundToInt(_firedShell.DamageDealt)
+                    }.ToArray(),
+                    new Photon.Realtime.RaiseEventOptions
+                    {
+                        // Send the event to all players to keep damage in sync; the event handler filters for ownership using ViewIDs.
+                        Receivers = Photon.Realtime.ReceiverGroup.All
+                    },
+                    SendOptions.SendReliable);
+
+                    // Despawn the shell if hit someone.
+                    PhotonNetwork.Destroy(_firedShell.gameObject);
+                    _firedShell = null;
+                }
+            }
+        }
     }
 
     void Fire()
@@ -73,19 +113,25 @@ public class Cannon : MonoBehaviour
         _muzzleTimer = flashTime;
         _fireTimer = fireTime;
 
-        _firedShell = Instantiate(cannonShell, barrelEnd).GetComponent<CannonBullet>();
+        // Spawn the cannon shell over network.
+        _firedShell = PhotonNetwork.Instantiate(cannonShell.name, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
+
+        // TODO: This probably doesn't sync across clients, but might not need to as the damage event will be raised on the attacker's end anyway.
         _firedShell.owner = gameObject;
+
+        // Launch the cannon shell in the direction we're aiming.
         _firedShell.GetComponent<Rigidbody>().AddForce(cam.transform.forward * 1000f);
     }
 
+    // Animate the muzzle flash.
     void MuzzleFlash()
     {
-        if(_muzzleTimer > 0f)
+        if (_muzzleTimer > 0f)
         {
             float flashProgress = Mathf.InverseLerp(flashTime, flashTime * .5f, _muzzleTimer);
             float fadeProgress = Mathf.InverseLerp(flashTime * .5f, 0f, _muzzleTimer);
 
-            if(_muzzleTimer > flashTime * .5f)
+            if (_muzzleTimer > flashTime * .5f)
             {
                 SetMuzzleFlashLights(flashProgress);
             }
@@ -100,7 +146,7 @@ public class Cannon : MonoBehaviour
         {
             _muzzleTimer = 0f;
 
-            foreach(Light light in _lights.Keys)
+            foreach (Light light in _lights.Keys)
             {
                 light.enabled = false;
             }
@@ -115,29 +161,11 @@ public class Cannon : MonoBehaviour
             _isFiring = false;
             _fireTimer = 0f;
         }
-
-        if (_firedShell)
-        {
-            if (_firedShell.hit)
-            {
-                Debug.Log(_firedShell.hit);
-                RoombaControl roombaHit = _firedShell.hit.GetComponent<RoombaControl>();
-                if (roombaHit)
-                {
-                    Debug.Log("Hit!");
-                    PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
-                    Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
-                    victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
-                    Destroy(_firedShell.gameObject);
-                    _firedShell = null;
-                }
-            }
-        }
     }
 
     void SetMuzzleFlashLights(float scale)
     {
-        foreach(Light light in _lights.Keys)
+        foreach (Light light in _lights.Keys)
         {
             light.enabled = true;
             light.intensity = _lights[light] * scale;
