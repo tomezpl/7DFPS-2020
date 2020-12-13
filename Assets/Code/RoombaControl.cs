@@ -151,6 +151,11 @@ public class RoombaControl : MonoBehaviour
         {
             CameraLook();
             Movement();
+
+            if(Input.GetKeyDown(KeyCode.F4))
+            {
+                GetComponent<PlayerStats>().Die();
+            }
         }
     }
 

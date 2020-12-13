@@ -3,6 +3,8 @@ using Photon.Pun;
 using Photon.Realtime;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,7 +19,20 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     // Start is called before the first frame update
     void Start()
     {
+        if(!PhotonView.Get(this) || !PhotonView.Get(this).IsMine)
+        {
+            return;
+        }
+
         score = new PlayerScore();
+        foreach(Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
+        {
+            if(text.name == "Health")
+            {
+                healthText = text;
+                break;
+            }
+        }
     }
 
     // Update is called once per frame
@@ -35,18 +50,28 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         }
         else
         {
-            healthText.enabled = false;
+            if (healthText)
+            {
+                healthText.enabled = false;
+            }
         }
     }
 
-    void Die()
+    public void Die()
     {
         if (lastAttacker != null)
         {
-            lastAttacker.score.Kills++;
+            PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, 1);
         }
+        Camera.SetupCurrent(Camera.main);
         GameObject.Find("GameManager").GetComponent<LobbyManager>().needToSpawn = true;
         PhotonNetwork.Destroy(PhotonView.Get(this));
+    }
+
+    [PunRPC]
+    public void SetPlayerNameOverheadDisplay(string name)
+    {
+        GetComponentsInChildren<TextMeshPro>().First(tmp => tmp.name == "PlayerName").text = name;
     }
     private void OnEnable()
     {
