@@ -5,6 +5,17 @@ using UnityEngine;
 
 public class RoombaControl : MonoBehaviour
 {
+    public enum RoombaClass
+    {
+        Cannon = 0,
+        Stabbo,
+        Lithium
+    }
+
+    public RoombaClass selectedClass = RoombaClass.Cannon;
+
+    public MeshCollider roombaCollider;
+
     public Camera cam;
     public float moveSpeed = 3f, strafeSpeed = 2f, jumpStrength = 5f;
 
@@ -78,6 +89,33 @@ public class RoombaControl : MonoBehaviour
         }
     }
 
+    [PunRPC]
+    void SetWeapons(RoombaClass roombaClass)
+    {
+        selectedClass = roombaClass;
+        switch(selectedClass)
+        {
+            case RoombaClass.Cannon:
+                foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
+                {
+                    if(!weapon.GetComponent<Cannon>())
+                    {
+                        weapon.gameObject.SetActive(false);
+                    }
+                }
+                break;
+            case RoombaClass.Stabbo:
+                foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
+                {
+                    if(!weapon.GetComponent<Knife>())
+                    {
+                        weapon.gameObject.SetActive(false);
+                    }
+                }
+                break;
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -103,6 +141,7 @@ public class RoombaControl : MonoBehaviour
             // Prevent switching to the newly spawned roomba's camera by disabling it.
             cam.enabled = false;
         }
+
     }
 
     // Update is called once per frame

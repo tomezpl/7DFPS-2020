@@ -60,8 +60,9 @@ public class CannonBullet : Despawnable
             return;
         }
 
-        if (owner.GetComponent<BoxCollider>() as Collider != other && hit == null)
+        if (PhotonView.Get(other) && !PhotonView.Get(other).IsMine && hit == null)
         {
+            Debug.Log($"Attacking {other}");
             GetComponent<Rigidbody>().useGravity = true;
             _distanceTraveled += Vector3.Distance(other.transform.position, _spawnPos);
             hit = other.gameObject;

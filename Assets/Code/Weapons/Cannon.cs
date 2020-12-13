@@ -1,10 +1,9 @@
-﻿using ExitGames.Client.Photon;
-using Photon.Pun;
+﻿using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Cannon : MonoBehaviour
+public class Cannon : Weapon
 {
     public Camera cam;
     public Transform barrelEnd;
@@ -86,18 +85,12 @@ public class Cannon : MonoBehaviour
                     Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
 
                     // Send a DealDamage event on the player we hit.
-                    PhotonNetwork.RaiseEvent(EventCodes.DealDamage, new DamageData
+                    Events.DealDamage(new DamageData
                     {
                         AttackerViewId = PhotonView.Get(owner).ViewID,
                         VictimViewId = PhotonView.Get(victimStats).ViewID,
                         DamageDealt = Mathf.RoundToInt(_firedShell.DamageDealt)
-                    }.ToArray(),
-                    new Photon.Realtime.RaiseEventOptions
-                    {
-                        // Send the event to all players to keep damage in sync; the event handler filters for ownership using ViewIDs.
-                        Receivers = Photon.Realtime.ReceiverGroup.All
-                    },
-                    SendOptions.SendReliable);
+                    });
 
                     // Despawn the shell if hit someone.
                     PhotonNetwork.Destroy(_firedShell.gameObject);

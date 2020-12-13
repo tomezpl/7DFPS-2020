@@ -4,12 +4,15 @@ using Photon.Realtime;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerStats : MonoBehaviour, IOnEventCallback
 {
     public int health = 100;
     public PlayerScore score;
     public PlayerStats lastAttacker;
+
+    public Text healthText;
 
     // Start is called before the first frame update
     void Start()
@@ -20,9 +23,19 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     // Update is called once per frame
     void Update()
     {
-        if(health <= 0 && GetComponent<RoombaControl>().PlayerControlled)
+        if (GetComponent<RoombaControl>().PlayerControlled)
         {
-            Die();
+            if (health <= 0)
+            {
+                Die();
+            }
+
+            healthText.enabled = true;
+            healthText.text = $"Health: {health}";
+        }
+        else
+        {
+            healthText.enabled = false;
         }
     }
 
@@ -32,6 +45,7 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         {
             lastAttacker.score.Kills++;
         }
+        GameObject.Find("GameManager").GetComponent<LobbyManager>().needToSpawn = true;
         PhotonNetwork.Destroy(PhotonView.Get(this));
     }
     private void OnEnable()
@@ -46,10 +60,10 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
 
     public void OnEvent(EventData photonEvent)
     {
-        Debug.Log($"Received {photonEvent.Code}");
+        //Debug.Log($"Received {photonEvent.Code}");
 
         // Check if the received event is about dealing damage to a player.
-        if(photonEvent.Code == EventCodes.DealDamage)
+        if(photonEvent.Code == Events.DealDamageCode)
         {
             Debug.Log("This is DealDamage event");
             object[] data = (object[])photonEvent.CustomData;
