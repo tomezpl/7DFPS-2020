@@ -97,7 +97,10 @@ public class RoombaControl : MonoBehaviour
 
         if(!PlayerControlled)
         {
+            // If this isn't our roomba, disable the camera audio listener so Unity doesn't complain.
             cam.GetComponent<AudioListener>().enabled = false;
+
+            // Prevent switching to the newly spawned roomba's camera by disabling it.
             cam.enabled = false;
         }
     }

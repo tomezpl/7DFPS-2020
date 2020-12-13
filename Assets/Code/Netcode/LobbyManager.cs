@@ -7,6 +7,10 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 {
     public GameObject playerPrefab;
 
+    /// <summary>
+    /// Called when the client connects to the master server. Joins a test room.
+    /// TODO: Add custom rooms.
+    /// </summary>
     public override void OnConnectedToMaster()
     {
         Debug.Log("Connected to master server");
@@ -16,6 +20,9 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         PhotonNetwork.JoinOrCreateRoom("test", new Photon.Realtime.RoomOptions(), Photon.Realtime.TypedLobby.Default);
     }
 
+    /// <summary>
+    /// Called when a room is joined. Spawns the player.
+    /// </summary>
     public override void OnJoinedRoom()
     {
         PhotonNetwork.Instantiate(playerPrefab.name, Vector3.zero, Quaternion.identity);

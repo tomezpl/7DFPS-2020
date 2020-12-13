@@ -26,13 +26,6 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         }
     }
 
-    [PunRPC]
-    void DealDamage(int dmg)
-    {
-        Debug.Log("OUCH");
-        health -= dmg;
-    }
-
     void Die()
     {
         if (lastAttacker != null)
@@ -54,10 +47,14 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     public void OnEvent(EventData photonEvent)
     {
         Debug.Log($"Received {photonEvent.Code}");
+
+        // Check if the received event is about dealing damage to a player.
         if(photonEvent.Code == EventCodes.DealDamage)
         {
             Debug.Log("This is DealDamage event");
             object[] data = (object[])photonEvent.CustomData;
+
+            // Deserialize damage data.
             DamageData dmgData = new DamageData
             {
                 AttackerViewId = (int)data[0],

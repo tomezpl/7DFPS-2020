@@ -67,6 +67,44 @@ public class Cannon : MonoBehaviour
         }
 
         MuzzleFlash();
+
+        if (_firedShell)
+        {
+            // Check that the shell hit a target.
+            if (_firedShell.hit)
+            {
+                Debug.Log(_firedShell.hit);
+                RoombaControl roombaHit = _firedShell.hit.GetComponent<RoombaControl>();
+                // Check if we hit a player.
+                if (roombaHit)
+                {
+                    Debug.Log("Hit!");
+                    PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
+                    Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
+                    //victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
+
+                    Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
+
+                    // Send a DealDamage event on the player we hit.
+                    PhotonNetwork.RaiseEvent(EventCodes.DealDamage, new DamageData
+                    {
+                        AttackerViewId = PhotonView.Get(owner).ViewID,
+                        VictimViewId = PhotonView.Get(victimStats).ViewID,
+                        DamageDealt = Mathf.RoundToInt(_firedShell.DamageDealt)
+                    }.ToArray(),
+                    new Photon.Realtime.RaiseEventOptions
+                    {
+                        // Send the event to all players to keep damage in sync; the event handler filters for ownership using ViewIDs.
+                        Receivers = Photon.Realtime.ReceiverGroup.All
+                    },
+                    SendOptions.SendReliable);
+
+                    // Despawn the shell if hit someone.
+                    PhotonNetwork.Destroy(_firedShell.gameObject);
+                    _firedShell = null;
+                }
+            }
+        }
     }
 
     void Fire()
@@ -75,16 +113,17 @@ public class Cannon : MonoBehaviour
         _muzzleTimer = flashTime;
         _fireTimer = fireTime;
 
+        // Spawn the cannon shell over network.
         _firedShell = PhotonNetwork.Instantiate(cannonShell.name, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
+
+        // TODO: This probably doesn't sync across clients, but might not need to as the damage event will be raised on the attacker's end anyway.
         _firedShell.owner = gameObject;
+
+        // Launch the cannon shell in the direction we're aiming.
         _firedShell.GetComponent<Rigidbody>().AddForce(cam.transform.forward * 1000f);
     }
 
-    void LaunchShell()
-    {
-
-    }
-
+    // Animate the muzzle flash.
     void MuzzleFlash()
     {
         if (_muzzleTimer > 0f)
@@ -121,39 +160,6 @@ public class Cannon : MonoBehaviour
         {
             _isFiring = false;
             _fireTimer = 0f;
-        }
-
-        if (_firedShell)
-        {
-            if (_firedShell.hit)
-            {
-                Debug.Log(_firedShell.hit);
-                RoombaControl roombaHit = _firedShell.hit.GetComponent<RoombaControl>();
-                if (roombaHit)
-                {
-                    Debug.Log("Hit!");
-                    PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
-                    Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
-                    //victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
-
-                    Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
-                    PhotonNetwork.RaiseEvent(EventCodes.DealDamage, new DamageData
-                    {
-                        AttackerViewId = PhotonView.Get(owner).ViewID,
-                        VictimViewId = PhotonView.Get(victimStats).ViewID,
-                        DamageDealt = Mathf.RoundToInt(_firedShell.DamageDealt)
-                    }.ToArray(),
-                    new Photon.Realtime.RaiseEventOptions
-                    {
-                        Receivers = Photon.Realtime.ReceiverGroup.All
-                    },
-                    SendOptions.SendReliable);
-
-                    //owner.GetComponent<PhotonView>().RPC("DealDamage", PhotonView.Get(victimStats).Owner, Mathf.RoundToInt(_firedShell.DamageDealt));
-                    PhotonNetwork.Destroy(_firedShell.gameObject);
-                    _firedShell = null;
-                }
-            }
         }
     }
 
