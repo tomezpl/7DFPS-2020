@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using ExitGames.Client.Photon;
+using Photon.Pun;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,12 +33,12 @@ public class Cannon : MonoBehaviour
         // Store the intial orientation of the cannon, as per the prefab.
         _initRotation = transform.localRotation;
 
-        if(!owner)
+        if (!owner)
         {
             owner = transform.parent.GetComponent<RoombaControl>();
         }
 
-        if(!cam)
+        if (!cam)
         {
             cam = owner.GetComponentInChildren<Camera>();
         }
@@ -44,7 +46,7 @@ public class Cannon : MonoBehaviour
         _lights = new Dictionary<Light, float>();
         if (lights?.Length > 0)
         {
-            foreach(Light light in lights)
+            foreach (Light light in lights)
             {
                 _lights.Add(light, light.intensity);
                 light.intensity = 0f;
@@ -59,7 +61,7 @@ public class Cannon : MonoBehaviour
         float camAngleY = cam.transform.localEulerAngles.y;
         transform.localRotation = _initRotation * Quaternion.AngleAxis(camAngleY, owner.transform.up);
 
-        if(owner.PlayerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
+        if (owner.PlayerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
         {
             Fire();
         }
@@ -73,19 +75,24 @@ public class Cannon : MonoBehaviour
         _muzzleTimer = flashTime;
         _fireTimer = fireTime;
 
-        _firedShell = Instantiate(cannonShell, barrelEnd).GetComponent<CannonBullet>();
+        _firedShell = PhotonNetwork.Instantiate(cannonShell.name, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
         _firedShell.owner = gameObject;
         _firedShell.GetComponent<Rigidbody>().AddForce(cam.transform.forward * 1000f);
     }
 
+    void LaunchShell()
+    {
+
+    }
+
     void MuzzleFlash()
     {
-        if(_muzzleTimer > 0f)
+        if (_muzzleTimer > 0f)
         {
             float flashProgress = Mathf.InverseLerp(flashTime, flashTime * .5f, _muzzleTimer);
             float fadeProgress = Mathf.InverseLerp(flashTime * .5f, 0f, _muzzleTimer);
 
-            if(_muzzleTimer > flashTime * .5f)
+            if (_muzzleTimer > flashTime * .5f)
             {
                 SetMuzzleFlashLights(flashProgress);
             }
@@ -100,7 +107,7 @@ public class Cannon : MonoBehaviour
         {
             _muzzleTimer = 0f;
 
-            foreach(Light light in _lights.Keys)
+            foreach (Light light in _lights.Keys)
             {
                 light.enabled = false;
             }
@@ -127,8 +134,23 @@ public class Cannon : MonoBehaviour
                     Debug.Log("Hit!");
                     PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
                     Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
-                    victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
-                    Destroy(_firedShell.gameObject);
+                    //victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
+
+                    Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
+                    PhotonNetwork.RaiseEvent(EventCodes.DealDamage, new DamageData
+                    {
+                        AttackerViewId = PhotonView.Get(owner).ViewID,
+                        VictimViewId = PhotonView.Get(victimStats).ViewID,
+                        DamageDealt = Mathf.RoundToInt(_firedShell.DamageDealt)
+                    }.ToArray(),
+                    new Photon.Realtime.RaiseEventOptions
+                    {
+                        Receivers = Photon.Realtime.ReceiverGroup.All
+                    },
+                    SendOptions.SendReliable);
+
+                    //owner.GetComponent<PhotonView>().RPC("DealDamage", PhotonView.Get(victimStats).Owner, Mathf.RoundToInt(_firedShell.DamageDealt));
+                    PhotonNetwork.Destroy(_firedShell.gameObject);
                     _firedShell = null;
                 }
             }
@@ -137,7 +159,7 @@ public class Cannon : MonoBehaviour
 
     void SetMuzzleFlashLights(float scale)
     {
-        foreach(Light light in _lights.Keys)
+        foreach (Light light in _lights.Keys)
         {
             light.enabled = true;
             light.intensity = _lights[light] * scale;
