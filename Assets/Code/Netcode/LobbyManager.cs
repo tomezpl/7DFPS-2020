@@ -11,6 +11,11 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 {
     public GameObject playerPrefab;
     public bool needToSpawn = true;
+    public Renderer tvRenderer;
+    public GameObject localPlayerObj;
+
+    // Images of different classes to display on the TV to select from.
+    public Texture[] ClassTextures;
 
     // Is this a spawn (start of match) or respawn (after death)?
     bool _respawn = false;
@@ -21,6 +26,17 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     string _roomName = "Test";
 
     GameObject _lobbyMenu;
+    GameObject _classSelectMenu;
+    GameObject _respawnCvs;
+
+    public RoombaControl.RoombaClass selectedClass = RoombaControl.RoombaClass.Cannon;
+
+    bool _showLeftArrowClassBtn { get { return (int)selectedClass > 0; } }
+    bool _showRightArrowClassBtn { get { return (int)selectedClass < 2; } }
+
+    GameObject _leftArrowClassBtn, _rightArrowClassBtn;
+
+    Color _myColour;
 
     /// <summary>
     /// Called when the client connects to the master server. Joins a test room.
@@ -30,6 +46,16 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         Debug.Log("Connected to master server");
         _showLobbyUi = true;
+
+        UpdateClassImage(selectedClass);
+    }
+
+    public override void OnLeftRoom()
+    {
+        base.OnLeftRoom();
+
+        _showLobbyUi = true;
+        _respawn = false;
     }
 
     /// <summary>
@@ -52,6 +78,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             {
                 view.RPC("SetWeapons", newPlayer, view.GetComponent<RoombaControl>().selectedClass);
                 view.RPC("SetPlayerNameOverheadDisplay", newPlayer, _playerName);
+                view.RPC("SetPlayerRoombaColour", newPlayer, _myColour.r, _myColour.g, _myColour.b);
+                view.RPC("GiveScoreKills", newPlayer, view.GetComponent<PlayerStats>().score.Kills);
             }
         }
     }
@@ -59,9 +87,11 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     public void SpawnPlayer(Vector3 position, Quaternion orientation)
     {
         GameObject obj = PhotonNetwork.Instantiate(playerPrefab.name, position, orientation);
+        localPlayerObj = obj;
 
-        PhotonView.Get(obj).RPC("SetWeapons", RpcTarget.All, PhotonNetwork.CountOfPlayers - 1);
+        PhotonView.Get(obj).RPC("SetWeapons", RpcTarget.All, selectedClass);
         PhotonView.Get(obj).RPC("SetPlayerNameOverheadDisplay", RpcTarget.Others, _playerName);
+        PhotonView.Get(obj).RPC("SetPlayerRoombaColour", RpcTarget.All, _myColour.r, _myColour.g, _myColour.b);
 
         needToSpawn = false;
         _showLobbyUi = false;
@@ -74,6 +104,14 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
         _lobbyMenu = GameObject.Find("LobbyMenu");
+
+        _classSelectMenu = GameObject.Find("ClassSelectMenu");
+        _leftArrowClassBtn = _classSelectMenu.GetComponentsInChildren<Button>().First(btn => btn.name == "ClassLeftArrowBtn").gameObject;
+        _rightArrowClassBtn = _classSelectMenu.GetComponentsInChildren<Button>().First(btn => btn.name == "ClassRightArrowBtn").gameObject;
+
+        _respawnCvs = GameObject.Find("RespawnCanvas");
+
+        _myColour = new Color(Random.value, Random.value, Random.value);
     }
 
     // Update is called once per frame
@@ -81,7 +119,12 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         _lobbyMenu.SetActive(_showLobbyUi);
 
-        if(_respawn && needToSpawn)
+        _leftArrowClassBtn.SetActive(_showLeftArrowClassBtn && needToSpawn);
+        _rightArrowClassBtn.SetActive(_showRightArrowClassBtn && needToSpawn);
+
+        _respawnCvs.SetActive(_respawn && needToSpawn);
+
+        if (_respawn && needToSpawn)
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
@@ -116,5 +159,24 @@ public class LobbyManager : MonoBehaviourPunCallbacks
                 _playerName = field.text;
             }
         }
+    }
+
+    public void GoToRightClass()
+    {
+        UpdateClassImage(++selectedClass);
+    }
+    public void GoToLeftClass()
+    {
+        UpdateClassImage(--selectedClass);
+    }
+
+    void UpdateClassImage(RoombaControl.RoombaClass classNum)
+    {
+        if(!tvRenderer)
+        {
+            return;
+        }
+
+        tvRenderer.material.mainTexture = ClassTextures[(int)classNum];
     }
 }

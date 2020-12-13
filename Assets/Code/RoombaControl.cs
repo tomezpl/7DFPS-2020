@@ -7,8 +7,8 @@ public class RoombaControl : MonoBehaviour
 {
     public enum RoombaClass
     {
-        Cannon = 0,
-        Stabbo,
+        Stabbo = 0,
+        Cannon,
         Lithium
     }
 
@@ -114,6 +114,13 @@ public class RoombaControl : MonoBehaviour
                 }
                 break;
         }
+    }
+
+    [PunRPC]
+    void SetPlayerRoombaColour(float r, float g, float b)
+    {
+        Color colour = new Color(r, g, b);
+        roombaCollider.GetComponent<Renderer>().material.color = colour;
     }
 
     // Start is called before the first frame update

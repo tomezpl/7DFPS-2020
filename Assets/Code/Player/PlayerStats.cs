@@ -19,13 +19,13 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     // Start is called before the first frame update
     void Start()
     {
-        if(!PhotonView.Get(this) || !PhotonView.Get(this).IsMine)
+        if (!PhotonView.Get(this) || !PhotonView.Get(this).IsMine)
         {
             return;
         }
-
         score = new PlayerScore();
-        foreach(Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
+
+        foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
         {
             if(text.name == "Health")
             {
@@ -57,13 +57,24 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         }
     }
 
+    [PunRPC]
+    public void GiveScoreKills(int killsToGive = 1)
+    {
+        if(score == null)
+        {
+            score = new PlayerScore();
+        }
+
+        score.Kills += killsToGive;
+    }
+
     public void Die()
     {
         if (lastAttacker != null)
         {
             PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, 1);
         }
-        Camera.SetupCurrent(Camera.main);
+        Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
         GameObject.Find("GameManager").GetComponent<LobbyManager>().needToSpawn = true;
         PhotonNetwork.Destroy(PhotonView.Get(this));
     }

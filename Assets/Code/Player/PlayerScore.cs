@@ -17,10 +17,4 @@ public class PlayerScore
     public int KillPoints { get { return (int)Mathf.Round(Kills * KillMultiplier); } }
     public int CleanupPoints { get { return (int)Mathf.Round(Cleanups * CleanupMultiplier); } }
     public int TotalPoints { get { return KillPoints + CleanupPoints; } }
-
-    [PunRPC]
-    public void GiveScoreKills(int killsToGive = 1)
-    {
-        Kills += killsToGive;
-    }
 }
