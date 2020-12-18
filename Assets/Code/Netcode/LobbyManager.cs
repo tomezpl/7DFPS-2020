@@ -86,6 +86,9 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public void SpawnPlayer(Vector3 position, Quaternion orientation)
     {
+        // This ensures the prefab is loaded in.
+        Resources.Load(playerPrefab.name);
+
         GameObject obj = PhotonNetwork.Instantiate(playerPrefab.name, position, orientation);
         localPlayerObj = obj;
 
