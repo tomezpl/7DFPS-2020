@@ -46,7 +46,14 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
             }
 
             healthText.enabled = true;
-            healthText.text = $"Health: {health}";
+            if (health <= 0)
+            {
+                healthText.text = "";
+            }
+            else
+            {
+                healthText.text = $"Health: {health}";
+            }
         }
         else
         {
@@ -70,6 +77,7 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
 
     public void Die()
     {
+        health = -1;
         if (lastAttacker != null)
         {
             PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, 1);
@@ -84,6 +92,16 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     {
         GetComponentsInChildren<TextMeshPro>().First(tmp => tmp.name == "PlayerName").text = name;
     }
+
+    [PunRPC]
+    public void DetonateLithiumBomb()
+    {
+        Phone phone = GetComponentInChildren<Phone>();
+        GetComponent<RoombaControl>().lockInput = true;
+        phone._isExploding = true;
+        phone._explosionFxTimer = phone.explosionFxTime;
+    }
+
     private void OnEnable()
     {
         PhotonNetwork.AddCallbackTarget(this);

@@ -22,6 +22,7 @@ public class RoombaControl : MonoBehaviour
     public Rigidbody rb;
 
     public bool playerControlled = true;
+    public bool lockInput = false;
 
     public bool PlayerControlled { get { return playerControlled && GetComponent<PhotonView>().IsMine; } }
 
@@ -113,6 +114,15 @@ public class RoombaControl : MonoBehaviour
                     }
                 }
                 break;
+            case RoombaClass.Lithium:
+                foreach (Weapon weapon in GetComponentsInChildren<Weapon>())
+                {
+                    if (!weapon.GetComponent<Phone>())
+                    {
+                        weapon.gameObject.SetActive(false);
+                    }
+                }
+                break;
         }
     }
 
@@ -156,8 +166,11 @@ public class RoombaControl : MonoBehaviour
     {
         if (PlayerControlled)
         {
-            CameraLook();
-            Movement();
+            if (!lockInput)
+            {
+                CameraLook();
+                Movement();
+            }
 
             if(Input.GetKeyDown(KeyCode.F4))
             {

@@ -730,7 +730,7 @@ MonoBehaviour:
   ClassTextures:
   - {fileID: 2800000, guid: 1b27300d83594534e9d52b877902e9f9, type: 3}
   - {fileID: 2800000, guid: b95c93bab5dec8646a69c77804de08be, type: 3}
-  - {fileID: 0}
+  - {fileID: 2800000, guid: 3fbb66f493a56334da5d05ced269366e, type: 3}
   selectedClass: 1
 --- !u!1 &943178192
 GameObject:
