@@ -9,6 +9,7 @@ using UnityEngine;
 public class PlayerScore
 {
     public int Kills { get; set; }
+    public int Deaths { get; set; }
     public int Cleanups { get; set; }
 
     const float KillMultiplier = 1.5f;

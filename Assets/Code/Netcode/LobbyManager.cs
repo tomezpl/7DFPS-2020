@@ -38,6 +38,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     Color _myColour;
 
+    public Dictionary<string, PlayerScore> PlayerScores;
+
     /// <summary>
     /// Called when the client connects to the master server. Joins a test room.
     /// TODO: Add custom rooms.
@@ -74,12 +76,18 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         foreach(GameObject obj in GameObject.FindGameObjectsWithTag("Player"))
         {
             PhotonView view = PhotonView.Get(obj);
-            if(view && view.IsMine)
+            if (view && view.IsMine)
             {
                 view.RPC("SetWeapons", newPlayer, view.GetComponent<RoombaControl>().selectedClass);
                 view.RPC("SetPlayerNameOverheadDisplay", newPlayer, _playerName);
                 view.RPC("SetPlayerRoombaColour", newPlayer, _myColour.r, _myColour.g, _myColour.b);
-                view.RPC("GiveScoreKills", newPlayer, view.GetComponent<PlayerStats>().score.Kills);
+
+                if (!PlayerScores.TryGetValue(view.Owner.NickName, out PlayerScore myScore))
+                {
+                    myScore = new PlayerScore();
+                }
+                view.RPC("GiveScoreKills", newPlayer, new object[] { myScore.Kills, true });
+                view.RPC("GiveScoreDeaths", newPlayer, new object[] { myScore.Deaths, true });
             }
         }
     }
@@ -95,6 +103,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         PhotonView.Get(obj).RPC("SetWeapons", RpcTarget.All, selectedClass);
         PhotonView.Get(obj).RPC("SetPlayerNameOverheadDisplay", RpcTarget.Others, _playerName);
         PhotonView.Get(obj).RPC("SetPlayerRoombaColour", RpcTarget.All, _myColour.r, _myColour.g, _myColour.b);
+        PhotonView.Get(obj).RPC("GiveScoreKills", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out PlayerScore score) ? score.Kills : 0, false });
+        PhotonView.Get(obj).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out score) ? score.Deaths : 0, false });
 
         needToSpawn = false;
         _showLobbyUi = false;
@@ -115,6 +125,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         _respawnCvs = GameObject.Find("RespawnCanvas");
 
         _myColour = new Color(Random.value, Random.value, Random.value);
+
+        PlayerScores = new Dictionary<string, PlayerScore>();
     }
 
     // Update is called once per frame

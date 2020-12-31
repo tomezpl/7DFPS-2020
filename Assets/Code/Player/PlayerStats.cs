@@ -23,7 +23,10 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         {
             return;
         }
-        score = new PlayerScore();
+        if (score == null)
+        {
+            score = new PlayerScore();
+        }
 
         foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
         {
@@ -65,7 +68,7 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     }
 
     [PunRPC]
-    public void GiveScoreKills(int killsToGive = 1)
+    public void GiveScoreKills(int killsToGive = 1, bool sync = true)
     {
         if(score == null)
         {
@@ -73,6 +76,41 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         }
 
         score.Kills += killsToGive;
+
+        if (sync)
+        {
+            SyncScoreWithLobby();
+        }
+    }
+
+    [PunRPC]
+    public void GiveScoreDeaths(int deathsToGive = 1, bool sync = true)
+    {
+        if (score == null)
+        {
+            score = new PlayerScore();
+        }
+
+        score.Deaths += deathsToGive;
+
+        if (sync)
+        {
+            SyncScoreWithLobby();
+        }
+    }
+
+    void SyncScoreWithLobby()
+    {
+        LobbyManager lobbyManager = GameObject.Find("GameManager").GetComponent<LobbyManager>();
+        string playerName = PhotonView.Get(this).Owner.NickName;
+        if (lobbyManager.PlayerScores.ContainsKey(playerName))
+        {
+            lobbyManager.PlayerScores[playerName] = score;
+        }
+        else
+        {
+            lobbyManager.PlayerScores.Add(playerName, score);
+        }
     }
 
     public void Die()
@@ -80,8 +118,9 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         health = -1;
         if (lastAttacker != null)
         {
-            PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, 1);
+            PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, new object[] { 1, true });
         }
+        PhotonView.Get(this).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { 1, true });
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
         GameObject.Find("GameManager").GetComponent<LobbyManager>().needToSpawn = true;
         PhotonNetwork.Destroy(PhotonView.Get(this));
