@@ -14,7 +14,8 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     public PlayerScore score;
     public PlayerStats lastAttacker;
 
-    public Text healthText;
+    // UI
+    public Text healthText = null, kdpText = null, winnerText = null;
 
     // Start is called before the first frame update
     void Start()
@@ -30,9 +31,21 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
 
         foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
         {
-            if(text.name == "Health")
+            switch(text.name)
             {
-                healthText = text;
+                case "Health":
+                    healthText = text;
+                    break;
+                case "KDP":
+                    kdpText = text;
+                    break;
+                case "Winner":
+                    winnerText = text;
+                    break;
+            }
+
+            if(healthText && kdpText && winnerText)
+            {
                 break;
             }
         }
@@ -46,6 +59,7 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
             if (health <= 0)
             {
                 Die();
+                healthText.text = "";
             }
 
             healthText.enabled = true;
@@ -57,12 +71,40 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
             {
                 healthText.text = $"Health: {health}";
             }
+
+            if(score != null)
+            {
+                kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
+            }
+
+            Dictionary<string, PlayerScore> players = GameObject.Find("GameManager").GetComponent<LobbyManager>().PlayerScores;
+            string winner = players.Keys.FirstOrDefault(name => !players.Any(p => p.Key != name && p.Value.TotalPoints > players[name].TotalPoints));
+            if(players.Count == 1)
+            {
+                winner = players.Keys.FirstOrDefault();
+            }
+            if(winner != default)
+            {
+                winnerText.text = $"1st place: {winner} ({players[winner].TotalPoints} points)";
+            }
+            else
+            {
+                winnerText.text = "";
+            }
         }
         else
         {
             if (healthText)
             {
                 healthText.enabled = false;
+            }
+            if(kdpText)
+            {
+                kdpText.enabled = false;
+            }
+            if(winnerText)
+            {
+                winnerText.enabled = false;
             }
         }
     }
