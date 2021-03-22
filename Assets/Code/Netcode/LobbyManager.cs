@@ -94,9 +94,6 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public void SpawnPlayer(Vector3 position, Quaternion orientation)
     {
-        // This ensures the prefab is loaded in.
-        Resources.Load(playerPrefab.name);
-
         GameObject obj = PhotonNetwork.Instantiate(playerPrefab.name, position, orientation);
         localPlayerObj = obj;
 
@@ -113,6 +110,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
+        PhotonNetwork.PrefabPool = new RoombaRumblePrefabPool();
+
         PhotonNetwork.ConnectUsingSettings();
 
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
