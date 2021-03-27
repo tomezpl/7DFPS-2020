@@ -1,10 +1,29 @@
-﻿using Photon.Pun;
+﻿using MLAPI;
+using MLAPI.Messaging;
+using MLAPI.NetworkVariable;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RoombaControl : MonoBehaviour
+public class RoombaControl : NetworkBehaviour
 {
+    //public class SyncedData
+    //{
+        public NetworkVariableVector3 Position = new NetworkVariableVector3(new NetworkVariableSettings
+        {
+            WritePermission = NetworkVariablePermission.OwnerOnly,
+            ReadPermission = NetworkVariablePermission.Everyone
+        });
+
+        public NetworkVariableInt SelectedClass = new NetworkVariableInt(new NetworkVariableSettings
+        {
+            WritePermission = NetworkVariablePermission.OwnerOnly,
+            ReadPermission = NetworkVariablePermission.Everyone
+        });
+    //}
+
+    //public SyncedData Synced = new SyncedData();
+
     public enum RoombaClass
     {
         Stabbo = 0,
@@ -24,7 +43,7 @@ public class RoombaControl : MonoBehaviour
     public bool playerControlled = true;
     public bool lockInput = false;
 
-    public bool PlayerControlled { get { return playerControlled && GetComponent<PhotonView>().IsMine; } }
+    public bool PlayerControlled { get { return playerControlled && IsLocalPlayer; } }
 
     // Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)
     Vector3 moveVector;
@@ -80,6 +99,11 @@ public class RoombaControl : MonoBehaviour
 
     void Movement()
     {
+        if(!IsOwner)
+        {
+            return;
+        }
+
         transform.Translate(MoveVector * GetWalk() * moveSpeed * Time.deltaTime, Space.World);
 
         // Allow jumping only if colliding with a floor.
@@ -88,12 +112,24 @@ public class RoombaControl : MonoBehaviour
             // Jump with the current momentum.
             rb.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed), ForceMode.Impulse);
         }
+
+        SetPositionServerRpc();
     }
 
-    [PunRPC]
-    void SetWeapons(RoombaClass roombaClass)
+    [ServerRpc]
+    void SetPositionServerRpc(ServerRpcParams rpcParams = default)
     {
-        selectedClass = roombaClass;
+        Position.Value = transform.position;
+    }
+
+    [ServerRpc]
+    void SetWeaponsServerRpc(ServerRpcParams rpcParams = default)
+    {
+        SelectedClass.Value = (int)selectedClass;
+    }
+
+    void SetWeapons()
+    {
         switch(selectedClass)
         {
             case RoombaClass.Cannon:
@@ -126,7 +162,7 @@ public class RoombaControl : MonoBehaviour
         }
     }
 
-    [PunRPC]
+    [ServerRpc]
     void SetPlayerRoombaColour(float r, float g, float b)
     {
         Color colour = new Color(r, g, b);
@@ -157,8 +193,31 @@ public class RoombaControl : MonoBehaviour
 
             // Prevent switching to the newly spawned roomba's camera by disabling it.
             cam.enabled = false;
+
+            UpdateSyncedData();
+        }
+        else
+        {
+            // If this is controlled by the local player, send an RPC with the selected loadout to the server.
+            selectedClass = NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass;
+            Debug.Log($"{name} is sending an RPC to the server");
+            SetWeaponsServerRpc();
         }
 
+    }
+
+    public override void NetworkStart()
+    {
+        if(!PlayerControlled)
+        {
+            UpdateSyncedData();
+        }
+        else
+        {
+            SetWeaponsServerRpc();
+        }
+
+        SetWeapons();
     }
 
     // Update is called once per frame
@@ -166,6 +225,7 @@ public class RoombaControl : MonoBehaviour
     {
         if (PlayerControlled)
         {
+
             if (!lockInput)
             {
                 CameraLook();
@@ -177,6 +237,22 @@ public class RoombaControl : MonoBehaviour
                 GetComponent<PlayerStats>().Die();
             }
         }
+        else
+        {
+            ReplicateServerMovement();
+        }
+    }
+
+    void ReplicateServerMovement()
+    {
+        Debug.Log($"Replicating movement for {name}({OwnerClientId})");
+        transform.position = Position.Value;
+    }
+
+    void UpdateSyncedData()
+    {
+        selectedClass = (RoombaClass)SelectedClass.Value;
+        transform.position = Position.Value;
     }
 
     Vector3 CalculateSurfaceTangent(Vector3 surfaceNormal, Transform obj)

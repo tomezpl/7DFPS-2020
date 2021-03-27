@@ -1,5 +1,4 @@
-﻿using Photon.Pun;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,7 +14,7 @@ public class CannonBullet : Despawnable
     Vector3 _spawnPos;
     float _distanceTraveled;
 
-    PhotonView photonView;
+    //PhotonView photonView;
 
     public float DamageDealt
     {
@@ -29,7 +28,7 @@ public class CannonBullet : Despawnable
     void Start()
     {
         _spawnPos = transform.position;
-        photonView = PhotonView.Get(this);
+        //photonView = PhotonView.Get(this);
     }
 
     // Update is called once per frame
@@ -40,10 +39,10 @@ public class CannonBullet : Despawnable
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (!photonView || !photonView.IsMine)
+        /*if (!photonView || !photonView.IsMine)
         {
             return;
-        }
+        }*/
 
         GetComponent<Rigidbody>().useGravity = true;
         if (collision.gameObject != owner && collision.transform.root != owner && hit == null)
@@ -55,7 +54,7 @@ public class CannonBullet : Despawnable
 
     private void OnTriggerEnter(Collider other)
     {
-        if(!photonView || !photonView.IsMine)
+        /*if(!photonView || !photonView.IsMine)
         {
             return;
         }
@@ -67,6 +66,6 @@ public class CannonBullet : Despawnable
             _distanceTraveled += Vector3.Distance(other.transform.position, _spawnPos);
             hit = other.gameObject;
             hit.GetComponent<PlayerStats>().lastAttacker = owner.GetComponent<PlayerStats>();
-        }
+        }*/
     }
 }

@@ -1,14 +1,11 @@
-﻿using ExitGames.Client.Photon;
-using Photon.Pun;
-using Photon.Realtime;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerStats : MonoBehaviour, IOnEventCallback
+public class PlayerStats : MonoBehaviour
 {
     public int health = 100;
     public PlayerScore score;
@@ -20,10 +17,10 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
     // Start is called before the first frame update
     void Start()
     {
-        if (!PhotonView.Get(this) || !PhotonView.Get(this).IsMine)
+        /*if (!PhotonView.Get(this) || !PhotonView.Get(this).IsMine)
         {
             return;
-        }
+        }*/
         if (score == null)
         {
             score = new PlayerScore();
@@ -77,7 +74,7 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
                 kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
             }
 
-            Dictionary<string, PlayerScore> players = GameObject.Find("GameManager").GetComponent<LobbyManager>().PlayerScores;
+            Dictionary<string, PlayerScore> players = GameObject.Find("NetworkManager").GetComponent<LobbyManager>().PlayerScores;
             string winner = players.Keys.FirstOrDefault(name => !players.Any(p => p.Key != name && p.Value.TotalPoints > players[name].TotalPoints));
             if(players.Count == 1)
             {
@@ -109,7 +106,7 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         }
     }
 
-    [PunRPC]
+    //[PunRPC]
     public void GiveScoreKills(int killsToGive = 1, bool sync = true)
     {
         if(score == null)
@@ -125,7 +122,7 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         }
     }
 
-    [PunRPC]
+    //[PunRPC]
     public void GiveScoreDeaths(int deathsToGive = 1, bool sync = true)
     {
         if (score == null)
@@ -143,8 +140,8 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
 
     void SyncScoreWithLobby()
     {
-        LobbyManager lobbyManager = GameObject.Find("GameManager").GetComponent<LobbyManager>();
-        string playerName = PhotonView.Get(this).Owner.NickName;
+        LobbyManager lobbyManager = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
+        string playerName = "fuckwad"/*PhotonView.Get(this).Owner.NickName*/;
         if (lobbyManager.PlayerScores.ContainsKey(playerName))
         {
             lobbyManager.PlayerScores[playerName] = score;
@@ -160,21 +157,21 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         health = -1;
         if (lastAttacker != null)
         {
-            PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, new object[] { 1, true });
+            //PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, new object[] { 1, true });
         }
-        PhotonView.Get(this).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { 1, true });
+        //PhotonView.Get(this).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { 1, true });
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
-        GameObject.Find("GameManager").GetComponent<LobbyManager>().needToSpawn = true;
-        PhotonNetwork.Destroy(PhotonView.Get(this));
+        GameObject.Find("NetworkManager").GetComponent<LobbyManager>().needToSpawn = true;
+        //PhotonNetwork.Destroy(PhotonView.Get(this));
     }
 
-    [PunRPC]
+    //[PunRPC]
     public void SetPlayerNameOverheadDisplay(string name)
     {
         GetComponentsInChildren<TextMeshPro>().First(tmp => tmp.name == "PlayerName").text = name;
     }
 
-    [PunRPC]
+    //[PunRPC]
     public void DetonateLithiumBomb()
     {
         Phone phone = GetComponentInChildren<Phone>();
@@ -185,15 +182,15 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
 
     private void OnEnable()
     {
-        PhotonNetwork.AddCallbackTarget(this);
+        //PhotonNetwork.AddCallbackTarget(this);
     }
 
     private void OnDisable()
     {
-        PhotonNetwork.RemoveCallbackTarget(this);
+        //PhotonNetwork.RemoveCallbackTarget(this);
     }
 
-    public void OnEvent(EventData photonEvent)
+    /*public void OnEvent(EventData photonEvent)
     {
         //Debug.Log($"Received {photonEvent.Code}");
 
@@ -210,8 +207,8 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
                 VictimViewId = (int)data[1],
                 DamageDealt = (int)data[2]
             };
-            Debug.Log($"Victim was {dmgData.VictimViewId}. This is {PhotonView.Get(this).ViewID} ({this.name})");
-            if (dmgData.VictimViewId == PhotonView.Get(this).ViewID)
+            //Debug.Log($"Victim was {dmgData.VictimViewId}. This is {PhotonView.Get(this).ViewID} ({this.name})");
+            /*if (dmgData.VictimViewId == PhotonView.Get(this).ViewID)
             {
                 health -= dmgData.DamageDealt;
                 foreach(GameObject obj in FindObjectsOfType<GameObject>())
@@ -223,5 +220,5 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
                 }
             }
         }
-    }
+}*/
 }

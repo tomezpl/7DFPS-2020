@@ -1,5 +1,4 @@
-﻿using Photon.Pun;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -11,7 +10,7 @@ public class PlayerNameBillboard : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        _lobby = GameObject.Find("GameManager").GetComponent<LobbyManager>();
+        _lobby = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
     }
 
     // Update is called once per frame
@@ -21,10 +20,10 @@ public class PlayerNameBillboard : MonoBehaviour
         {
             foreach(GameObject obj in GameObject.FindGameObjectsWithTag("Player"))
             {
-                if(PhotonView.Get(obj) && PhotonView.Get(obj).IsMine)
+                /*if(PhotonView.Get(obj) && PhotonView.Get(obj).IsMine)
                 {
                     continue;
-                }
+                }*/
 
                 foreach(TextMeshPro tmp in obj.GetComponentsInChildren<TextMeshPro>())
                 {

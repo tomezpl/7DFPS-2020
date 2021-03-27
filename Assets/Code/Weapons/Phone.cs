@@ -1,5 +1,4 @@
-﻿using Photon.Pun;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -47,7 +46,7 @@ public class Phone : Weapon
     {
         if(!_isExploding && (DateTime.Now > _detonationTime || Input.GetButtonDown("Fire1")) && IsMine)
         {
-            PhotonView.Get(owner).RPC("DetonateLithiumBomb", RpcTarget.All);
+            //PhotonView.Get(owner).RPC("DetonateLithiumBomb", RpcTarget.All);
         }
 
         if(_detonationTime != null)
@@ -83,21 +82,21 @@ public class Phone : Weapon
 
                 foreach (GameObject player in GameObject.FindGameObjectsWithTag("Player"))
                 {
-                    if (PhotonView.Get(player).IsMine)
+                    /*if (PhotonView.Get(player).IsMine)
                     {
                         // Don't bother damaging ourselves as the explosion is a suicide anyway.
                         continue;
-                    }
+                    }*/
 
                     float dmgMult = Mathf.InverseLerp(dmgRadius, 0f, Vector3.Distance(player.transform.position, transform.position));
 
                     Debug.Log($"Dealing {Mathf.RoundToInt(dmgMult * closeUpDmg)}");
-                    Events.DealDamage(new DamageData
+                    /*Events.DealDamage(new DamageData
                     {
                         AttackerViewId = PhotonView.Get(owner).ViewID,
                         VictimViewId = PhotonView.Get(player).ViewID,
                         DamageDealt = Mathf.RoundToInt(dmgMult * closeUpDmg)
-                    });
+                    });*/
                 }
 
                 if (IsMine)

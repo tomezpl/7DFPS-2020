@@ -1,5 +1,4 @@
-﻿using Photon.Pun;
-using Photon.Realtime;
+﻿using MLAPI;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LobbyManager : MonoBehaviourPunCallbacks
+public class LobbyManager : MonoBehaviour
 {
     public GameObject playerPrefab;
     public bool needToSpawn = true;
@@ -40,44 +39,17 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public Dictionary<string, PlayerScore> PlayerScores;
 
-    /// <summary>
-    /// Called when the client connects to the master server. Joins a test room.
-    /// TODO: Add custom rooms.
-    /// </summary>
-    public override void OnConnectedToMaster()
-    {
-        Debug.Log("Connected to master server");
-        _showLobbyUi = true;
+    public bool CanSpawn { get { return NetworkManager.Singleton.IsConnectedClient; } }
 
-        UpdateClassImage(selectedClass);
-    }
-
-    public override void OnLeftRoom()
-    {
-        base.OnLeftRoom();
-
-        _showLobbyUi = true;
-        _respawn = false;
-    }
-
-    /// <summary>
-    /// Called when a room is joined. Spawns the player.
-    /// </summary>
-    public override void OnJoinedRoom()
-    {
-        SpawnPlayer(Vector3.zero, Quaternion.identity);
-        _respawn = true;
-    }
-
-    public override void OnPlayerEnteredRoom(Player newPlayer)
+    /*public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         base.OnPlayerEnteredRoom(newPlayer);
 
         foreach(GameObject obj in GameObject.FindGameObjectsWithTag("Player"))
         {
-            PhotonView view = PhotonView.Get(obj);
-            if (view && view.IsMine)
+            if (view && NetworkManager.Singleton.IsServer)
             {
+                // Change all of this to use NetworkVariables
                 view.RPC("SetWeapons", newPlayer, view.GetComponent<RoombaControl>().selectedClass);
                 view.RPC("SetPlayerNameOverheadDisplay", newPlayer, _playerName);
                 view.RPC("SetPlayerRoombaColour", newPlayer, _myColour.r, _myColour.g, _myColour.b);
@@ -90,11 +62,11 @@ public class LobbyManager : MonoBehaviourPunCallbacks
                 view.RPC("GiveScoreDeaths", newPlayer, new object[] { myScore.Deaths, true });
             }
         }
-    }
+    }*/
 
-    public void SpawnPlayer(Vector3 position, Quaternion orientation)
+    public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId)
     {
-        GameObject obj = PhotonNetwork.Instantiate(playerPrefab.name, position, orientation);
+        /*GameObject obj = PhotonNetwork.Instantiate(playerPrefab.name, position, orientation);
         localPlayerObj = obj;
 
         PhotonView.Get(obj).RPC("SetWeapons", RpcTarget.All, selectedClass);
@@ -102,7 +74,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         PhotonView.Get(obj).RPC("SetPlayerRoombaColour", RpcTarget.All, _myColour.r, _myColour.g, _myColour.b);
         PhotonView.Get(obj).RPC("GiveScoreKills", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out PlayerScore score) ? score.Kills : 0, false });
         PhotonView.Get(obj).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out score) ? score.Deaths : 0, false });
-
+        */
+        Instantiate(playerPrefab, position, orientation).GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
         needToSpawn = false;
         _showLobbyUi = false;
     }
@@ -110,9 +83,9 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     // Start is called before the first frame update
     void Start()
     {
-        PhotonNetwork.PrefabPool = new RoombaRumblePrefabPool();
+        //PhotonNetwork.PrefabPool = new RoombaRumblePrefabPool();
 
-        PhotonNetwork.ConnectUsingSettings();
+        //PhotonNetwork.ConnectUsingSettings();
 
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
         _lobbyMenu = GameObject.Find("LobbyMenu");
@@ -126,11 +99,26 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         _myColour = new Color(Random.value, Random.value, Random.value);
 
         PlayerScores = new Dictionary<string, PlayerScore>();
+
+        NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
+
+        NetworkManager.Singleton.StartClient();
+    }
+
+    private void ClientConnected(ulong clientId)
+    {
+        if (NetworkManager.Singleton.IsServer)
+        {
+            Debug.Log("heyooo from the client side");
+            SpawnPlayer(Vector3.zero, Quaternion.identity, clientId);
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        _showLobbyUi = !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
+
         _lobbyMenu.SetActive(_showLobbyUi);
 
         _leftArrowClassBtn.SetActive(_showLeftArrowClassBtn && needToSpawn);
@@ -142,19 +130,22 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
-                SpawnPlayer(Vector3.zero, Quaternion.identity);
+                SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
             }
         }
     }
 
     public void ClickedPlay()
     {
-        Photon.Realtime.RoomOptions options = new Photon.Realtime.RoomOptions();
-        options.MaxPlayers = 8;
-        options.IsVisible = true;
+        Debug.Log("hello");
         ReadInputFields();
-        PhotonNetwork.NickName = _playerName;
-        PhotonNetwork.JoinOrCreateRoom(_roomName, new Photon.Realtime.RoomOptions(), Photon.Realtime.TypedLobby.Default);
+
+        {
+            NetworkManager.Singleton.StartHost();
+            SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
+        }
+
+        needToSpawn = true;
     }
 
     public void ReadInputFields()
@@ -190,6 +181,8 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         {
             return;
         }
+
+        Debug.Log(classNum);
 
         tvRenderer.material.mainTexture = ClassTextures[(int)classNum];
     }

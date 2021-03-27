@@ -1,5 +1,4 @@
-﻿using Photon.Pun;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -82,18 +81,18 @@ public class Cannon : Weapon
                     Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
                     //victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
 
-                    Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
+                    //Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
 
                     // Send a DealDamage event on the player we hit.
-                    Events.DealDamage(new DamageData
+                    /*Events.DealDamage(new DamageData
                     {
                         AttackerViewId = PhotonView.Get(owner).ViewID,
                         VictimViewId = PhotonView.Get(victimStats).ViewID,
                         DamageDealt = Mathf.RoundToInt(_firedShell.DamageDealt)
-                    });
+                    });*/
 
                     // Despawn the shell if hit someone.
-                    PhotonNetwork.Destroy(_firedShell.gameObject);
+                    //PhotonNetwork.Destroy(_firedShell.gameObject);
                     _firedShell = null;
                 }
             }
@@ -107,7 +106,7 @@ public class Cannon : Weapon
         _fireTimer = fireTime;
 
         // Spawn the cannon shell over network.
-        _firedShell = PhotonNetwork.Instantiate(cannonShell.name, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
+        //_firedShell = PhotonNetwork.Instantiate(cannonShell.name, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
 
         // TODO: This probably doesn't sync across clients, but might not need to as the damage event will be raised on the attacker's end anyway.
         _firedShell.owner = gameObject;

@@ -1,5 +1,4 @@
-﻿using Photon.Pun;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,14 +16,14 @@ public class Knife : Weapon
 
     Vector3 _initLocalPos;
 
-    PhotonView photonView;
+    //PhotonView photonView;
 
     // Start is called before the first frame update
     void Start()
     {
         _initLocalPos = transform.localPosition;
 
-        photonView = PhotonView.Get(this);
+        //photonView = PhotonView.Get(this);
     }
 
     // Update is called once per frame
@@ -61,12 +60,12 @@ public class Knife : Weapon
 
     private void OnTriggerStay(Collider other)
     {
-        if (!photonView || !photonView.IsMine)
+        /*if (!photonView || !photonView.IsMine)
         {
             return;
-        }
+        }*/
 
-        if (PhotonView.Get(other) && !PhotonView.Get(other).IsMine && other.GetComponent<PlayerStats>() && _stabAnimTimer > 0f && hit == null)
+        /*if (PhotonView.Get(other) && !PhotonView.Get(other).IsMine && other.GetComponent<PlayerStats>() && _stabAnimTimer > 0f && hit == null)
         {
             hit = other.gameObject;
             hit.GetComponent<PlayerStats>().lastAttacker = owner.GetComponent<PlayerStats>();
@@ -76,6 +75,6 @@ public class Knife : Weapon
                 VictimViewId = PhotonView.Get(hit).ViewID,
                 DamageDealt = Mathf.RoundToInt(dmgPerBackstab * Mathf.Max(0f, Vector3.Dot(owner.GetComponent<RoombaControl>().roombaCollider.transform.forward, hit.GetComponent<RoombaControl>().roombaCollider.transform.forward)))
             });
-        }
+        }*/
     }
 }
