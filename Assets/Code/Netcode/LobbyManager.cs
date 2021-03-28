@@ -103,6 +103,8 @@ public class LobbyManager : MonoBehaviour
         NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
 
         //NetworkManager.Singleton.StartClient();
+
+        UpdateClassImage(selectedClass);
     }
 
     private void ClientConnected(ulong clientId)
@@ -145,7 +147,7 @@ public class LobbyManager : MonoBehaviour
             SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
         }
 
-        needToSpawn = true;
+        //needToSpawn = true;
     }
     public void ClickedPlayClient()
     {
@@ -157,7 +159,7 @@ public class LobbyManager : MonoBehaviour
             //SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
         }
 
-        needToSpawn = true;
+        //needToSpawn = true;
     }
 
     public void ReadInputFields()
