@@ -9,17 +9,23 @@ public class RoombaControl : NetworkBehaviour
 {
     //public class SyncedData
     //{
-        public NetworkVariableVector3 Position = new NetworkVariableVector3(new NetworkVariableSettings
-        {
-            WritePermission = NetworkVariablePermission.ServerOnly,
-            ReadPermission = NetworkVariablePermission.Everyone
-        });
+    public NetworkVariableVector3 Position = new NetworkVariableVector3(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    });
 
-        public NetworkVariableInt SelectedClass = new NetworkVariableInt(new NetworkVariableSettings
-        {
-            WritePermission = NetworkVariablePermission.OwnerOnly,
-            ReadPermission = NetworkVariablePermission.Everyone
-        });
+    public NetworkVariableInt SelectedClass = new NetworkVariableInt(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.OwnerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    });
+
+    public NetworkVariableQuaternion Rotation = new NetworkVariableQuaternion(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    });
     //}
 
     //public SyncedData Synced = new SyncedData();
@@ -113,13 +119,14 @@ public class RoombaControl : NetworkBehaviour
             rb.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed), ForceMode.Impulse);
         }
 
-        SetPositionServerRpc(transform.position);
+        SetTransformServerRpc(transform.position, transform.rotation);
     }
 
     [ServerRpc]
-    void SetPositionServerRpc(Vector3 position, ServerRpcParams rpcParams = default)
+    void SetTransformServerRpc(Vector3 position, Quaternion rotation, ServerRpcParams rpcParams = default)
     {
         Position.Value = position;
+        Rotation.Value = rotation;
     }
 
     [ServerRpc]
@@ -249,6 +256,7 @@ public class RoombaControl : NetworkBehaviour
     {
         Debug.Log($"Replicating movement for {name}({OwnerClientId})");
         transform.position = Position.Value;
+        transform.rotation = Rotation.Value;
     }
 
     void UpdateSyncedData()
