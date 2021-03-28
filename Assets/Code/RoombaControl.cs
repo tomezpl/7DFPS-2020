@@ -137,12 +137,14 @@ public class RoombaControl : NetworkBehaviour
 
     void SetWeapons()
     {
+        Debug.Log(selectedClass);
         switch(selectedClass)
         {
             case RoombaClass.Cannon:
                 foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
                 {
-                    if(!weapon.GetComponent<Cannon>())
+                    Debug.Log("Enabling Cannon");
+                    if (!weapon.GetComponent<Cannon>())
                     {
                         weapon.gameObject.SetActive(false);
                     }
@@ -151,6 +153,7 @@ public class RoombaControl : NetworkBehaviour
             case RoombaClass.Stabbo:
                 foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
                 {
+                    Debug.Log("Enabling stabbo");
                     if(!weapon.GetComponent<Knife>())
                     {
                         weapon.gameObject.SetActive(false);
@@ -160,6 +163,7 @@ public class RoombaControl : NetworkBehaviour
             case RoombaClass.Lithium:
                 foreach (Weapon weapon in GetComponentsInChildren<Weapon>())
                 {
+                    Debug.Log("Enabling Phone");
                     if (!weapon.GetComponent<Phone>())
                     {
                         weapon.gameObject.SetActive(false);
@@ -214,14 +218,18 @@ public class RoombaControl : NetworkBehaviour
         SetWeapons();
     }
 
+    // This occurs before Start usually
     public override void NetworkStart()
     {
+        return;
+
         if(!PlayerControlled)
         {
             UpdateSyncedData();
         }
         else
         {
+            selectedClass = NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass;
             SetWeaponsServerRpc((int)selectedClass);
         }
 
@@ -254,7 +262,6 @@ public class RoombaControl : NetworkBehaviour
 
     void ReplicateServerMovement()
     {
-        Debug.Log($"Replicating movement for {name}({OwnerClientId})");
         transform.position = Position.Value;
         transform.rotation = Rotation.Value;
     }
