@@ -102,7 +102,7 @@ public class LobbyManager : MonoBehaviour
 
         NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
 
-        NetworkManager.Singleton.StartClient();
+        //NetworkManager.Singleton.StartClient();
     }
 
     private void ClientConnected(ulong clientId)
@@ -135,14 +135,26 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public void ClickedPlay()
+    public void ClickedPlayHost()
     {
-        Debug.Log("hello");
+        Debug.Log("Starting game as host");
         ReadInputFields();
 
         {
             NetworkManager.Singleton.StartHost();
             SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
+        }
+
+        needToSpawn = true;
+    }
+    public void ClickedPlayClient()
+    {
+        Debug.Log("Connecting as client");
+        ReadInputFields();
+
+        {
+            NetworkManager.Singleton.StartClient();
+            //SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
         }
 
         needToSpawn = true;

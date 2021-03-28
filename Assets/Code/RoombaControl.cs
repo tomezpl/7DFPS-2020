@@ -11,7 +11,7 @@ public class RoombaControl : NetworkBehaviour
     //{
         public NetworkVariableVector3 Position = new NetworkVariableVector3(new NetworkVariableSettings
         {
-            WritePermission = NetworkVariablePermission.OwnerOnly,
+            WritePermission = NetworkVariablePermission.ServerOnly,
             ReadPermission = NetworkVariablePermission.Everyone
         });
 
@@ -43,7 +43,7 @@ public class RoombaControl : NetworkBehaviour
     public bool playerControlled = true;
     public bool lockInput = false;
 
-    public bool PlayerControlled { get { return playerControlled && IsLocalPlayer; } }
+    public bool PlayerControlled { get { return playerControlled && IsOwner; } }
 
     // Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)
     Vector3 moveVector;
@@ -113,13 +113,13 @@ public class RoombaControl : NetworkBehaviour
             rb.AddForce((transform.up * jumpStrength) + (MoveVector * GetWalk() * moveSpeed), ForceMode.Impulse);
         }
 
-        SetPositionServerRpc();
+        SetPositionServerRpc(transform.position);
     }
 
     [ServerRpc]
-    void SetPositionServerRpc(ServerRpcParams rpcParams = default)
+    void SetPositionServerRpc(Vector3 position, ServerRpcParams rpcParams = default)
     {
-        Position.Value = transform.position;
+        Position.Value = position;
     }
 
     [ServerRpc]
@@ -163,7 +163,7 @@ public class RoombaControl : NetworkBehaviour
     }
 
     [ServerRpc]
-    void SetPlayerRoombaColour(float r, float g, float b)
+    void SetPlayerRoombaColourServerRpc(float r, float g, float b)
     {
         Color colour = new Color(r, g, b);
         roombaCollider.GetComponent<Renderer>().material.color = colour;
