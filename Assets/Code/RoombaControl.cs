@@ -123,9 +123,9 @@ public class RoombaControl : NetworkBehaviour
     }
 
     [ServerRpc]
-    void SetWeaponsServerRpc(ServerRpcParams rpcParams = default)
+    void SetWeaponsServerRpc(int selectedClass, ServerRpcParams rpcParams = default)
     {
-        SelectedClass.Value = (int)selectedClass;
+        SelectedClass.Value = selectedClass;
     }
 
     void SetWeapons()
@@ -201,9 +201,10 @@ public class RoombaControl : NetworkBehaviour
             // If this is controlled by the local player, send an RPC with the selected loadout to the server.
             selectedClass = NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass;
             Debug.Log($"{name} is sending an RPC to the server");
-            SetWeaponsServerRpc();
+            SetWeaponsServerRpc((int)selectedClass);
         }
 
+        SetWeapons();
     }
 
     public override void NetworkStart()
@@ -214,7 +215,7 @@ public class RoombaControl : NetworkBehaviour
         }
         else
         {
-            SetWeaponsServerRpc();
+            SetWeaponsServerRpc((int)selectedClass);
         }
 
         SetWeapons();
@@ -240,6 +241,7 @@ public class RoombaControl : NetworkBehaviour
         else
         {
             ReplicateServerMovement();
+            UpdateSyncedData();
         }
     }
 
@@ -252,7 +254,6 @@ public class RoombaControl : NetworkBehaviour
     void UpdateSyncedData()
     {
         selectedClass = (RoombaClass)SelectedClass.Value;
-        transform.position = Position.Value;
     }
 
     Vector3 CalculateSurfaceTangent(Vector3 surfaceNormal, Transform obj)
