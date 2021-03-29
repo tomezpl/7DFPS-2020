@@ -114,6 +114,11 @@ public class LobbyManager : MonoBehaviour
             Debug.Log("heyooo from the client side");
             SpawnPlayer(Vector3.zero, Quaternion.identity, clientId);
         }
+        else
+        {
+            // Set the respawn flag off as the server will be spawning us. This avoids UI being displayed after spawning.
+            needToSpawn = false;
+        }
     }
 
     // Update is called once per frame
