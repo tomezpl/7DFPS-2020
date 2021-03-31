@@ -129,15 +129,9 @@ public class RoombaControl : NetworkBehaviour
         Rotation.Value = rotation;
     }
 
-    [ServerRpc]
-    void SetWeaponsServerRpc(int selectedClass, ServerRpcParams rpcParams = default)
-    {
-        SelectedClass.Value = selectedClass;
-    }
-
     void SetWeapons()
     {
-        Debug.Log(selectedClass);
+        Debug.Log($"Setting {name}({OwnerClientId})'s RoombaClass to: {selectedClass}");
         switch(selectedClass)
         {
             case RoombaClass.Cannon:
@@ -205,35 +199,30 @@ public class RoombaControl : NetworkBehaviour
             // Prevent switching to the newly spawned roomba's camera by disabling it.
             cam.enabled = false;
 
-            UpdateSyncedData();
+            selectedClass = (RoombaClass)SelectedClass.Value;
+            Debug.Log($"Enabling class loadout \"{selectedClass}\" for player {OwnerClientId}");
+            SetWeapons();
         }
         else
         {
-            // If this is controlled by the local player, send an RPC with the selected loadout to the server.
-            selectedClass = NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass;
-            Debug.Log($"{name} is sending an RPC to the server");
-            SetWeaponsServerRpc((int)selectedClass);
         }
-
-        SetWeapons();
     }
 
     // This occurs before Start usually
     public override void NetworkStart()
     {
-        return;
-
-        if(!PlayerControlled)
+        SelectedClass.OnValueChanged += (_, requestedClass) =>
         {
-            UpdateSyncedData();
-        }
-        else
+            selectedClass = (RoombaClass)requestedClass;
+            Debug.Log($"Updated {name}({OwnerClientId})'s weapon class to {selectedClass}");
+            SetWeapons();
+        };
+        if (PlayerControlled)
         {
-            selectedClass = NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass;
-            SetWeaponsServerRpc((int)selectedClass);
+            SelectedClass.Value = (int)NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass;
+            selectedClass = (RoombaClass)SelectedClass.Value;
+            SetWeapons();
         }
-
-        SetWeapons();
     }
 
     // Update is called once per frame
@@ -256,7 +245,6 @@ public class RoombaControl : NetworkBehaviour
         else
         {
             ReplicateServerMovement();
-            UpdateSyncedData();
         }
     }
 
@@ -264,11 +252,6 @@ public class RoombaControl : NetworkBehaviour
     {
         transform.position = Position.Value;
         transform.rotation = Rotation.Value;
-    }
-
-    void UpdateSyncedData()
-    {
-        selectedClass = (RoombaClass)SelectedClass.Value;
     }
 
     Vector3 CalculateSurfaceTangent(Vector3 surfaceNormal, Transform obj)
