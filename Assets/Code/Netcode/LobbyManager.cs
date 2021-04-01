@@ -66,16 +66,17 @@ public class LobbyManager : MonoBehaviour
 
     public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId)
     {
-        /*GameObject obj = PhotonNetwork.Instantiate(playerPrefab.name, position, orientation);
-        localPlayerObj = obj;
+        /*
 
-        PhotonView.Get(obj).RPC("SetWeapons", RpcTarget.All, selectedClass);
         PhotonView.Get(obj).RPC("SetPlayerNameOverheadDisplay", RpcTarget.Others, _playerName);
         PhotonView.Get(obj).RPC("SetPlayerRoombaColour", RpcTarget.All, _myColour.r, _myColour.g, _myColour.b);
         PhotonView.Get(obj).RPC("GiveScoreKills", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out PlayerScore score) ? score.Kills : 0, false });
         PhotonView.Get(obj).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out score) ? score.Deaths : 0, false });
         */
-        Instantiate(playerPrefab, position, orientation).GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+        GameObject instance = Instantiate(playerPrefab, position, orientation);
+        instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+        
+
         needToSpawn = false;
         _showLobbyUi = false;
     }
@@ -83,10 +84,6 @@ public class LobbyManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        //PhotonNetwork.PrefabPool = new RoombaRumblePrefabPool();
-
-        //PhotonNetwork.ConnectUsingSettings();
-
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
         _lobbyMenu = GameObject.Find("LobbyMenu");
 
@@ -102,8 +99,6 @@ public class LobbyManager : MonoBehaviour
 
         NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
 
-        //NetworkManager.Singleton.StartClient();
-
         UpdateClassImage(selectedClass);
     }
 
@@ -116,6 +111,7 @@ public class LobbyManager : MonoBehaviour
         }
         else
         {
+            Debug.Log("Connected as a client succesfully.");
             // Set the respawn flag off as the server will be spawning us. This avoids UI being displayed after spawning.
             needToSpawn = false;
         }
@@ -137,7 +133,8 @@ public class LobbyManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.F))
             {
-                SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
+                // TODO: Respawning
+                //SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
             }
         }
     }
@@ -147,26 +144,20 @@ public class LobbyManager : MonoBehaviour
         Debug.Log("Starting game as host");
         ReadInputFields();
 
-        {
-            NetworkManager.Singleton.StartHost();
-            SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
-        }
-
-        //needToSpawn = true;
+        NetworkManager.Singleton.StartHost();
+        SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
     }
     public void ClickedPlayClient()
     {
         Debug.Log("Connecting as client");
         ReadInputFields();
 
-        {
-            NetworkManager.Singleton.StartClient();
-            //SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
-        }
-
-        //needToSpawn = true;
+        NetworkManager.Singleton.StartClient();
     }
 
+    /// <summary>
+    /// Reads data from text input fields in the lobby UI.
+    /// </summary>
     public void ReadInputFields()
     {
         _lobbyMenu.SetActive(true);
@@ -185,14 +176,8 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public void GoToRightClass()
-    {
-        UpdateClassImage(++selectedClass);
-    }
-    public void GoToLeftClass()
-    {
-        UpdateClassImage(--selectedClass);
-    }
+    public void GoToRightClass() => UpdateClassImage(++selectedClass);
+    public void GoToLeftClass() => UpdateClassImage(--selectedClass);
 
     void UpdateClassImage(RoombaControl.RoombaClass classNum)
     {
@@ -201,7 +186,7 @@ public class LobbyManager : MonoBehaviour
             return;
         }
 
-        Debug.Log(classNum);
+        Debug.Log($"Selected class: {classNum}");
 
         tvRenderer.material.mainTexture = ClassTextures[(int)classNum];
     }

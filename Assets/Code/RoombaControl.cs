@@ -1,6 +1,7 @@
 ﻿using MLAPI;
 using MLAPI.Messaging;
 using MLAPI.NetworkVariable;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -17,7 +18,13 @@ public class RoombaControl : NetworkBehaviour
 
     public NetworkVariableInt SelectedClass = new NetworkVariableInt(new NetworkVariableSettings
     {
-        WritePermission = NetworkVariablePermission.OwnerOnly,
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    });
+
+    public NetworkVariableBool SelectedClassAlreadySet = new NetworkVariableBool(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
         ReadPermission = NetworkVariablePermission.Everyone
     });
 
@@ -198,10 +205,6 @@ public class RoombaControl : NetworkBehaviour
 
             // Prevent switching to the newly spawned roomba's camera by disabling it.
             cam.enabled = false;
-
-            selectedClass = (RoombaClass)SelectedClass.Value;
-            Debug.Log($"Enabling class loadout \"{selectedClass}\" for player {OwnerClientId}");
-            SetWeapons();
         }
         else
         {
@@ -211,18 +214,47 @@ public class RoombaControl : NetworkBehaviour
     // This occurs before Start usually
     public override void NetworkStart()
     {
-        SelectedClass.OnValueChanged += (_, requestedClass) =>
-        {
-            selectedClass = (RoombaClass)requestedClass;
-            Debug.Log($"Updated {name}({OwnerClientId})'s weapon class to {selectedClass}");
-            SetWeapons();
-        };
         if (PlayerControlled)
         {
-            SelectedClass.Value = (int)NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass;
-            selectedClass = (RoombaClass)SelectedClass.Value;
-            SetWeapons();
+            SetWeaponsServerRpc((int)NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass);
         }
+        else
+        {
+            if (SelectedClassAlreadySet.Value)
+            {
+                selectedClass = (RoombaClass)SelectedClass.Value;
+                Debug.Log($"Enabling class loadout \"{selectedClass}\" for existing player {OwnerClientId}");
+                SetWeapons();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Notifies server of a weapon class update, which will then trigger a client RPC on all clients to update it.
+    /// </summary>
+    /// <param name="rpcParams"></param>
+    [ServerRpc]
+    void SetWeaponsServerRpc(int requestedClass, ServerRpcParams rpcParams = default)
+    {
+        ClientRpcParams clientRpcParams = new ClientRpcParams();
+        clientRpcParams.Send.TargetClientIds = new ulong[NetworkManager.Singleton.ConnectedClients.Count];
+        NetworkManager.Singleton.ConnectedClients.Keys.CopyTo(clientRpcParams.Send.TargetClientIds, 0);
+        SelectedClass.Value = requestedClass;
+        SetWeaponsClientRpc(requestedClass, clientRpcParams);
+        SelectedClassAlreadySet.Value = true;
+    }
+
+    /// <summary>
+    /// Replicates this player's weapon class setup for other clients.
+    /// </summary>
+    /// <param name="requestedClass"></param>
+    /// <param name="clientRpcParams"></param>
+    [ClientRpc]
+    void SetWeaponsClientRpc(int requestedClass, ClientRpcParams clientRpcParams = default)
+    {
+        selectedClass = (RoombaClass)requestedClass;
+        Debug.Log($"Updated {name}({OwnerClientId})'s weapon class to {selectedClass}");
+        SetWeapons();
     }
 
     // Update is called once per frame
