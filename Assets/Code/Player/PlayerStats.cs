@@ -91,18 +91,6 @@ public class PlayerStats : MonoBehaviour
         }
         else
         {
-            if (healthText)
-            {
-                healthText.enabled = false;
-            }
-            if(kdpText)
-            {
-                kdpText.enabled = false;
-            }
-            if(winnerText)
-            {
-                winnerText.enabled = false;
-            }
         }
     }
 
