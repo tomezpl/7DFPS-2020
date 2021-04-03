@@ -257,6 +257,28 @@ public class RoombaControl : NetworkBehaviour
         SetWeapons();
     }
 
+    [ServerRpc]
+    public void DealDamageServerRpc(int damageDealt, ulong victimClientId, ServerRpcParams serverRpcParams = default)
+    {
+        PlayerStats victimStats = null;
+        foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
+        {
+            if(stats.OwnerClientId == victimClientId)
+            {
+                victimStats = stats;
+            }
+        }
+
+        if (victimStats)
+        {
+            victimStats.Health.Value -= damageDealt;
+        }
+        else
+        {
+            Debug.LogWarning($"Couldn't deal damage to victim Player{OwnerClientId}!");
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {

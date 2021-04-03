@@ -1,12 +1,21 @@
-﻿using System.Collections;
+﻿using MLAPI;
+using MLAPI.Messaging;
+using MLAPI.NetworkVariable;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerStats : MonoBehaviour
+public class PlayerStats : NetworkBehaviour
 {
+    public NetworkVariableInt Health = new NetworkVariableInt(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    }, 100);
+
     public int health = 100;
     public PlayerScore score;
     public PlayerStats lastAttacker;
@@ -46,6 +55,17 @@ public class PlayerStats : MonoBehaviour
                 break;
             }
         }
+    }
+
+    public override void NetworkStart()
+    {
+        health = Health.Value;
+
+        Health.OnValueChanged += (_, newHealth) =>
+        {
+            Debug.Log($"Updating Player{OwnerClientId}'s health to {newHealth}");
+            health = newHealth;
+        };
     }
 
     // Update is called once per frame
