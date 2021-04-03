@@ -47,6 +47,7 @@ public class CannonBullet : Despawnable
         GetComponent<Rigidbody>().useGravity = true;
         if (collision.gameObject != owner && collision.transform.root != owner && hit == null)
         {
+            // TODO: Shouldn't a hit be activated here? Don't want player hits being granted on shells that bounce off something!
             GetComponent<Rigidbody>().useGravity = true;
             _distanceTraveled += Vector3.Distance(collision.GetContact(0).point, _spawnPos);
         }
@@ -54,6 +55,23 @@ public class CannonBullet : Despawnable
 
     private void OnTriggerEnter(Collider other)
     {
+        RoombaControl otherRoomba = other.transform.root.GetComponent<RoombaControl>();
+
+        // Return immediately if the triggered Roomba is ours.
+        if (otherRoomba?.IsOwner == true)
+        {
+            return;
+        }
+        // Perform hit detection only if the bullet hasn't hit anything already.
+        else if(otherRoomba && hit == null)
+        {
+            Debug.Log($"Attacking {other.name}");
+            GetComponent<Rigidbody>().useGravity = true;
+            _distanceTraveled = Vector3.Distance(other.transform.position, _spawnPos);
+            hit = other.gameObject;
+            hit.GetComponent<PlayerStats>().lastAttacker = owner.GetComponent<PlayerStats>();
+        }
+
         /*if(!photonView || !photonView.IsMine)
         {
             return;

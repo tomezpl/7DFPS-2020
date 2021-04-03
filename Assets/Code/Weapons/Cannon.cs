@@ -79,6 +79,7 @@ public class Cannon : Weapon
                     Debug.Log("Hit!");
                     PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
                     Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
+                    owner.DealDamageServerRpc((int)Mathf.Round(_firedShell.DamageDealt), victimStats.OwnerClientId);
                     //victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
 
                     //Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
@@ -107,6 +108,7 @@ public class Cannon : Weapon
 
         // Spawn the cannon shell over network.
         //_firedShell = PhotonNetwork.Instantiate(cannonShell.name, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
+        _firedShell = Instantiate(cannonShell, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
 
         // TODO: This probably doesn't sync across clients, but might not need to as the damage event will be raised on the attacker's end anyway.
         _firedShell.owner = gameObject;
