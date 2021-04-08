@@ -22,6 +22,8 @@ public class LobbyManager : MonoBehaviour
     bool _showLobbyUi = false;
 
     string _playerName = "";
+    public string PlayerName { get { return _playerName; } }
+
     string _roomName = "Test";
 
     GameObject _lobbyMenu;

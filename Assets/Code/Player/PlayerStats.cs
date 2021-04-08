@@ -16,6 +16,12 @@ public class PlayerStats : NetworkBehaviour
         ReadPermission = NetworkVariablePermission.Everyone
     }, 100);
 
+    public NetworkVariableString PlayerName = new NetworkVariableString(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.OwnerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    }, "");
+
     public int health = 100;
     public PlayerScore score;
     public PlayerStats lastAttacker;
@@ -66,6 +72,13 @@ public class PlayerStats : NetworkBehaviour
             Debug.Log($"Updating Player{OwnerClientId}'s health to {newHealth}");
             health = newHealth;
         };
+
+        PlayerName.OnValueChanged += (_, newName) => SetPlayerNameOverheadDisplay(newName);
+        if (IsOwner)
+        {
+            PlayerName.Value = NetworkManager.Singleton.GetComponent<LobbyManager>().PlayerName;
+        }
+        SetPlayerNameOverheadDisplay(PlayerName.Value);
     }
 
     // Update is called once per frame
@@ -176,6 +189,12 @@ public class PlayerStats : NetworkBehaviour
     //[PunRPC]
     public void SetPlayerNameOverheadDisplay(string name)
     {
+        if(IsOwner)
+        {
+            return;
+        }
+
+        Debug.Log($"Updating player {OwnerClientId}'s overhead display with name '{name}'");
         GetComponentsInChildren<TextMeshPro>().First(tmp => tmp.name == "PlayerName").text = name;
     }
 

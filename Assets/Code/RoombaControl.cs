@@ -217,6 +217,7 @@ public class RoombaControl : NetworkBehaviour
         if (PlayerControlled)
         {
             SetWeaponsServerRpc((int)NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass);
+            NetworkManager.Singleton.GetComponent<LobbyManager>().localPlayerObj = gameObject;
         }
         else
         {
