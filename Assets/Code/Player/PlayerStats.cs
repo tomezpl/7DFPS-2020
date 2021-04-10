@@ -23,24 +23,58 @@ public class PlayerStats : NetworkBehaviour
     }, "");
 
     public int health = 100;
-    public PlayerScore score;
-    public PlayerStats lastAttacker;
+
+    /// <summary>
+    /// This player's score, stored as JSON for network transport.
+    /// </summary>
+    public NetworkVariableString Score = new NetworkVariableString(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    }
+    , default);
+
+    public PlayerScore _score
+    {
+        get
+        {
+            return PlayerScore.FromString(Score.Value);
+        }
+    }
+
+    public NetworkVariable<ulong?> LastAttackerId = new NetworkVariable<ulong?>(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    }, null);
+
+    public PlayerStats LastAttacker
+    {
+        get
+        {
+            foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
+            {
+                if (stats.OwnerClientId == LastAttackerId.Value)
+                {
+                    return stats;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    // A flag preventing the Die event being called multiple times on the server.
+    public bool IsDying = false;
 
     // UI
     public Text healthText = null, kdpText = null, winnerText = null;
 
+    public string serializedScore;
+
     // Start is called before the first frame update
     void Start()
     {
-        /*if (!PhotonView.Get(this) || !PhotonView.Get(this).IsMine)
-        {
-            return;
-        }*/
-        if (score == null)
-        {
-            score = new PlayerScore();
-        }
-
         foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
         {
             switch(text.name)
@@ -79,6 +113,13 @@ public class PlayerStats : NetworkBehaviour
             PlayerName.Value = NetworkManager.Singleton.GetComponent<LobbyManager>().PlayerName;
         }
         SetPlayerNameOverheadDisplay(PlayerName.Value);
+
+        Score.OnValueChanged += (_, newScore) =>
+        {
+            Debug.Log($"Score changed. New score JSON:\n{newScore}");
+            SyncScoreWithLobby();
+        };
+        SyncScoreWithLobby();
     }
 
     // Update is called once per frame
@@ -102,10 +143,8 @@ public class PlayerStats : NetworkBehaviour
                 healthText.text = $"Health: {health}";
             }
 
-            if(score != null)
-            {
-                kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
-            }
+            PlayerScore score = _score;
+            kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
 
             Dictionary<string, PlayerScore> players = GameObject.Find("NetworkManager").GetComponent<LobbyManager>().PlayerScores;
             string winner = players.Keys.FirstOrDefault(name => !players.Any(p => p.Key != name && p.Value.TotalPoints > players[name].TotalPoints));
@@ -127,63 +166,92 @@ public class PlayerStats : NetworkBehaviour
         }
     }
 
-    //[PunRPC]
-    public void GiveScoreKills(int killsToGive = 1, bool sync = true)
+    [ServerRpc]
+    public void GiveScoreKillsServerRpc(ulong clientId, int killsToGive = 1, ServerRpcParams serverRpcParams = default)
     {
-        if(score == null)
+        foreach (PlayerStats stats in FindObjectsOfType<PlayerStats>())
         {
-            score = new PlayerScore();
-        }
-
-        score.Kills += killsToGive;
-
-        if (sync)
-        {
-            SyncScoreWithLobby();
+            if (stats.OwnerClientId == clientId)
+            {
+                Debug.Log($"Giving client {clientId} {killsToGive} kills");
+                PlayerScore score = stats._score;
+                score.Kills += killsToGive;
+                stats.Score.Value = score.ToString();
+                break;
+            }
         }
     }
 
-    //[PunRPC]
-    public void GiveScoreDeaths(int deathsToGive = 1, bool sync = true)
+    [ServerRpc]
+    public void GiveScoreDeathsServerRpc(ulong clientId, int deathsToGive = 1, ServerRpcParams serverRpcParams = default)
     {
-        if (score == null)
+        foreach (PlayerStats stats in FindObjectsOfType<PlayerStats>())
         {
-            score = new PlayerScore();
-        }
-
-        score.Deaths += deathsToGive;
-
-        if (sync)
-        {
-            SyncScoreWithLobby();
+            if (stats.OwnerClientId == clientId)
+            {
+                Debug.Log($"Giving client {clientId} {deathsToGive} deaths");
+                PlayerScore score = stats._score;
+                score.Deaths += deathsToGive;
+                Debug.Log($"Sending new score: {score.ToString()}");
+                stats.Score.Value = score.ToString();
+                break;
+            }
         }
     }
 
     void SyncScoreWithLobby()
     {
+        serializedScore = Score.Value;
         LobbyManager lobbyManager = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
-        string playerName = "fuckwad"/*PhotonView.Get(this).Owner.NickName*/;
-        if (lobbyManager.PlayerScores.ContainsKey(playerName))
+        if (lobbyManager.PlayerScores.ContainsKey(PlayerName.Value))
         {
-            lobbyManager.PlayerScores[playerName] = score;
+            lobbyManager.PlayerScores[PlayerName.Value] = _score;
         }
         else
         {
-            lobbyManager.PlayerScores.Add(playerName, score);
+            lobbyManager.PlayerScores.Add(PlayerName.Value, _score);
         }
     }
 
     public void Die()
     {
-        health = -1;
-        if (lastAttacker != null)
+        if(IsDying)
         {
+            return;
+        }
+
+        IsDying = true;
+
+        health = -1;
+        if (LastAttackerId.Value != null)
+        {
+            GiveScoreKillsServerRpc((ulong)LastAttackerId.Value);
             //PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, new object[] { 1, true });
         }
         //PhotonView.Get(this).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { 1, true });
+        GiveScoreDeathsServerRpc(OwnerClientId);
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
         GameObject.Find("NetworkManager").GetComponent<LobbyManager>().needToSpawn = true;
+        RequestDestroyPlayerServerRpc(OwnerClientId);
         //PhotonNetwork.Destroy(PhotonView.Get(this));
+    }
+
+    [ServerRpc]
+    public void RequestDestroyPlayerServerRpc(ulong destroyedClientId, ServerRpcParams serverRpcParams = default)
+    {
+        DestroyPlayerClientRpc(destroyedClientId, new ClientRpcParams { Receive = default, Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClients.Keys.ToArray() } });
+    }
+
+    [ClientRpc]
+    public void DestroyPlayerClientRpc(ulong destroyedClientId, ClientRpcParams clientRpcParams = default)
+    {
+        foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
+        {
+            if(stats.OwnerClientId == destroyedClientId)
+            {
+                Destroy(stats.gameObject);
+            }
+        }
     }
 
     //[PunRPC]

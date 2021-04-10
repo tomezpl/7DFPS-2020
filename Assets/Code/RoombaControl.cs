@@ -261,12 +261,18 @@ public class RoombaControl : NetworkBehaviour
     [ServerRpc]
     public void DealDamageServerRpc(int damageDealt, ulong victimClientId, ServerRpcParams serverRpcParams = default)
     {
+        Debug.Log($"DealDamage RPC came in from client {serverRpcParams.Receive.SenderClientId}");
         PlayerStats victimStats = null;
+        PlayerStats attackerStats = null;
         foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
         {
             if(stats.OwnerClientId == victimClientId)
             {
                 victimStats = stats;
+            }
+            if(stats.OwnerClientId == serverRpcParams.Receive.SenderClientId)
+            {
+                attackerStats = stats;
             }
         }
 
@@ -277,6 +283,11 @@ public class RoombaControl : NetworkBehaviour
         else
         {
             Debug.LogWarning($"Couldn't deal damage to victim Player{OwnerClientId}!");
+        }
+
+        if(attackerStats)
+        {
+            victimStats.LastAttackerId.Value = serverRpcParams.Receive.SenderClientId;
         }
     }
 

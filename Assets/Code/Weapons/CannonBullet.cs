@@ -69,7 +69,7 @@ public class CannonBullet : Despawnable
             GetComponent<Rigidbody>().useGravity = true;
             _distanceTraveled = Vector3.Distance(other.transform.position, _spawnPos);
             hit = other.gameObject;
-            hit.GetComponent<PlayerStats>().lastAttacker = owner.GetComponent<PlayerStats>();
+            hit.GetComponent<PlayerStats>().LastAttackerId.Value = owner.GetComponent<PlayerStats>().OwnerClientId;
         }
 
         /*if(!photonView || !photonView.IsMine)
