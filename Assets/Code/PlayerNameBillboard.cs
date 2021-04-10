@@ -20,11 +20,6 @@ public class PlayerNameBillboard : MonoBehaviour
         {
             foreach(GameObject obj in GameObject.FindGameObjectsWithTag("Player"))
             {
-                /*if(PhotonView.Get(obj) && PhotonView.Get(obj).IsMine)
-                {
-                    continue;
-                }*/
-
                 foreach(TextMeshPro tmp in obj.GetComponentsInChildren<TextMeshPro>())
                 {
                     if(tmp.name == "PlayerName")
