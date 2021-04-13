@@ -10,6 +10,28 @@ using UnityEngine.UI;
 
 public class PlayerStats : NetworkBehaviour
 {
+    private static PlayerStats _local;
+    public static PlayerStats Local
+    {
+        get
+        {
+            if(_local)
+            {
+                return _local;
+            }
+
+            foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
+            {
+                if(stats.IsOwner)
+                {
+                    return _local = stats;
+                }
+            }
+
+            return null;
+        }
+    }
+
     public NetworkVariableInt Health = new NetworkVariableInt(new NetworkVariableSettings
     {
         WritePermission = NetworkVariablePermission.ServerOnly,
@@ -70,14 +92,12 @@ public class PlayerStats : NetworkBehaviour
     // UI
     public Text healthText = null, kdpText = null, winnerText = null;
 
-    public string serializedScore;
-
     // Start is called before the first frame update
     void Start()
     {
         foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
         {
-            switch(text.name)
+            switch (text.name)
             {
                 case "Health":
                     healthText = text;
@@ -90,7 +110,7 @@ public class PlayerStats : NetworkBehaviour
                     break;
             }
 
-            if(healthText && kdpText && winnerText)
+            if (healthText && kdpText && winnerText)
             {
                 break;
             }
@@ -110,9 +130,18 @@ public class PlayerStats : NetworkBehaviour
         PlayerName.OnValueChanged += (_, newName) => SetPlayerNameOverheadDisplay(newName);
         if (IsOwner)
         {
-            PlayerName.Value = NetworkManager.Singleton.GetComponent<LobbyManager>().PlayerName;
+            PlayerName.Value = LobbyManager.Singleton.PlayerName;
         }
         SetPlayerNameOverheadDisplay(PlayerName.Value);
+
+        if (IsOwner)
+        {
+            if (LobbyManager.Singleton.PlayerScores.TryGetValue(PlayerName.Value, out PlayerScore existingScore))
+            {
+                Debug.Log($"Found an existing score for Player {PlayerName.Value}. The score is {existingScore}.");
+                RestoreScoreServerRpc(existingScore.ToString());
+            }
+        }
 
         Score.OnValueChanged += (_, newScore) =>
         {
@@ -122,6 +151,13 @@ public class PlayerStats : NetworkBehaviour
         SyncScoreWithLobby();
     }
 
+    // TODO: Rewrite to pack this into the Stream and set in NetworkStart
+    [ServerRpc]
+    void RestoreScoreServerRpc(string score, ServerRpcParams serverRpcParams = default)
+    {
+        Score.Value = score;
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -129,8 +165,8 @@ public class PlayerStats : NetworkBehaviour
         {
             if (health <= 0)
             {
-                Die();
                 healthText.text = "";
+                Die();
             }
 
             healthText.enabled = true;
@@ -142,27 +178,6 @@ public class PlayerStats : NetworkBehaviour
             {
                 healthText.text = $"Health: {health}";
             }
-
-            PlayerScore score = _score;
-            kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
-
-            Dictionary<string, PlayerScore> players = GameObject.Find("NetworkManager").GetComponent<LobbyManager>().PlayerScores;
-            string winner = players.Keys.FirstOrDefault(name => !players.Any(p => p.Key != name && p.Value.TotalPoints > players[name].TotalPoints));
-            if(players.Count == 1)
-            {
-                winner = players.Keys.FirstOrDefault();
-            }
-            if(winner != default)
-            {
-                winnerText.text = $"1st place: {winner} ({players[winner].TotalPoints} points)";
-            }
-            else
-            {
-                winnerText.text = "";
-            }
-        }
-        else
-        {
         }
     }
 
@@ -199,17 +214,21 @@ public class PlayerStats : NetworkBehaviour
         }
     }
 
-    void SyncScoreWithLobby()
+    void SyncScoreWithLobby(PlayerScore score = null)
     {
-        serializedScore = Score.Value;
+        if(score == null)
+        {
+            score = _score;
+        }
+
         LobbyManager lobbyManager = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
         if (lobbyManager.PlayerScores.ContainsKey(PlayerName.Value))
         {
-            lobbyManager.PlayerScores[PlayerName.Value] = _score;
+            lobbyManager.PlayerScores[PlayerName.Value] = score;
         }
         else
         {
-            lobbyManager.PlayerScores.Add(PlayerName.Value, _score);
+            lobbyManager.PlayerScores.Add(PlayerName.Value, score);
         }
     }
 
@@ -232,26 +251,24 @@ public class PlayerStats : NetworkBehaviour
         GiveScoreDeathsServerRpc(OwnerClientId);
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
         GameObject.Find("NetworkManager").GetComponent<LobbyManager>().needToSpawn = true;
-        RequestDestroyPlayerServerRpc(OwnerClientId);
+
+        // Hotfix for the old score being synced before the GiveScore RPCs finish:
+        PlayerScore tempScore = PlayerScore.FromString(Score.Value);
+        tempScore.Deaths++;
+
+        // Sync using a local copy of the score so we don't have to wait for the RPCs to finish.
+        // TODO: this could use putting in GameManager instead to avoid this abundant use of RPCs.
+        SyncScoreWithLobby(tempScore);
+
+        RequestDestroyPlayerServerRpc();
         //PhotonNetwork.Destroy(PhotonView.Get(this));
     }
 
     [ServerRpc]
-    public void RequestDestroyPlayerServerRpc(ulong destroyedClientId, ServerRpcParams serverRpcParams = default)
+    public void RequestDestroyPlayerServerRpc(ServerRpcParams serverRpcParams = default)
     {
-        DestroyPlayerClientRpc(destroyedClientId, new ClientRpcParams { Receive = default, Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClients.Keys.ToArray() } });
-    }
-
-    [ClientRpc]
-    public void DestroyPlayerClientRpc(ulong destroyedClientId, ClientRpcParams clientRpcParams = default)
-    {
-        foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
-        {
-            if(stats.OwnerClientId == destroyedClientId)
-            {
-                Destroy(stats.gameObject);
-            }
-        }
+        NetworkObject.Despawn(true);
+        GameManager.Singleton.FinishDestroyPlayerClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { serverRpcParams.Receive.SenderClientId } } });
     }
 
     //[PunRPC]

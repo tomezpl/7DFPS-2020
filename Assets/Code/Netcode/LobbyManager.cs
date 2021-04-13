@@ -8,7 +8,22 @@ using UnityEngine.UI;
 
 public class LobbyManager : MonoBehaviour
 {
+    private static LobbyManager _singleton;
+    public static LobbyManager Singleton
+    {
+        get
+        {
+            if (_singleton)
+            {
+                return _singleton;
+            }
+
+            return _singleton = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
+        }
+    }
+
     public GameObject playerPrefab;
+    public GameObject gameManagerPrefab;
     public bool needToSpawn = true;
     public Renderer tvRenderer;
     public GameObject localPlayerObj;
@@ -16,10 +31,10 @@ public class LobbyManager : MonoBehaviour
     // Images of different classes to display on the TV to select from.
     public Texture[] ClassTextures;
 
-    // Is this a spawn (start of match) or respawn (after death)?
-    bool _respawn = false;
+    // True if the player already died once and will only be respawned from now on.
+    public bool respawn = false;
 
-    bool _showLobbyUi = false;
+    public bool showLobbyUi = false;
 
     string _playerName = "";
     public string PlayerName { get { return _playerName; } }
@@ -68,19 +83,8 @@ public class LobbyManager : MonoBehaviour
 
     public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId)
     {
-        /*
-
-        PhotonView.Get(obj).RPC("SetPlayerNameOverheadDisplay", RpcTarget.Others, _playerName);
-        PhotonView.Get(obj).RPC("SetPlayerRoombaColour", RpcTarget.All, _myColour.r, _myColour.g, _myColour.b);
-        PhotonView.Get(obj).RPC("GiveScoreKills", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out PlayerScore score) ? score.Kills : 0, false });
-        PhotonView.Get(obj).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { PlayerScores.TryGetValue(_playerName, out score) ? score.Deaths : 0, false });
-        */
         GameObject instance = Instantiate(playerPrefab, position, orientation);
         instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-        
-
-        needToSpawn = false;
-        _showLobbyUi = false;
     }
 
     // Start is called before the first frame update
@@ -106,9 +110,12 @@ public class LobbyManager : MonoBehaviour
 
     private void ClientConnected(ulong clientId)
     {
+        respawn = false;
+
         if (NetworkManager.Singleton.IsServer)
         {
             Debug.Log("heyooo from the client side");
+            Instantiate(gameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
             SpawnPlayer(Vector3.zero, Quaternion.identity, clientId);
         }
         else
@@ -122,23 +129,14 @@ public class LobbyManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        _showLobbyUi = !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
+        showLobbyUi = !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
 
-        _lobbyMenu.SetActive(_showLobbyUi);
+        _lobbyMenu.SetActive(showLobbyUi);
 
         _leftArrowClassBtn.SetActive(_showLeftArrowClassBtn && needToSpawn);
         _rightArrowClassBtn.SetActive(_showRightArrowClassBtn && needToSpawn);
 
-        _respawnCvs.SetActive(_respawn && needToSpawn);
-
-        if (_respawn && needToSpawn)
-        {
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                // TODO: Respawning
-                //SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
-            }
-        }
+        _respawnCvs.SetActive(respawn && needToSpawn);
     }
 
     public void ClickedPlayHost()
@@ -147,6 +145,7 @@ public class LobbyManager : MonoBehaviour
         ReadInputFields();
 
         NetworkManager.Singleton.StartHost();
+        Instantiate(gameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.ServerClientId);
         SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
     }
     public void ClickedPlayClient()
@@ -163,7 +162,7 @@ public class LobbyManager : MonoBehaviour
     public void ReadInputFields()
     {
         _lobbyMenu.SetActive(true);
-        _showLobbyUi = true;
+        showLobbyUi = true;
 
         foreach(InputField field in _lobbyMenu.GetComponentsInChildren<InputField>())
         {

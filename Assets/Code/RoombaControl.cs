@@ -216,8 +216,14 @@ public class RoombaControl : NetworkBehaviour
     {
         if (PlayerControlled)
         {
-            SetWeaponsServerRpc((int)NetworkManager.Singleton.GetComponent<LobbyManager>().selectedClass);
-            NetworkManager.Singleton.GetComponent<LobbyManager>().localPlayerObj = gameObject;
+            SetWeaponsServerRpc((int)LobbyManager.Singleton.selectedClass);
+            LobbyManager.Singleton.localPlayerObj = gameObject;
+            
+            // Reset the spawn flag in GameManager.
+            GameManager.Singleton.CanRequestSpawn = true;
+
+            LobbyManager.Singleton.showLobbyUi = false;
+            LobbyManager.Singleton.needToSpawn = false;
         }
         else
         {
