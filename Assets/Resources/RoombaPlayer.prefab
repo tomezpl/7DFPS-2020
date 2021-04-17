@@ -555,16 +555,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7dca72dcd920cb348941572aa773dced, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cam: {fileID: 0}
-  barrelEnd: {fileID: 2579352459923590812}
-  owner: {fileID: 0}
-  lights:
-  - {fileID: 3667913934419633821}
+  Cam: {fileID: 4951206815986635299}
+  BarrelEnd: {fileID: 2579352459923590812}
+  Owner: {fileID: 4951206816429219197}
+  Lights:
   - {fileID: 8071233395666210018}
   - {fileID: 5789822896714728210}
-  flashTime: 0.1
-  fireTime: 0.5
-  cannonShell: {fileID: 6132847128430447258, guid: ba9e7bbce2e357341895c8b7d93650fa,
+  FlashTime: 1
+  FireTime: 1.5
+  CannonShellPrefab: {fileID: 6132847128430447258, guid: ba9e7bbce2e357341895c8b7d93650fa,
     type: 3}
 --- !u!1 &4483665299774025013
 GameObject:
@@ -773,10 +772,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b454f0adf9c3af4181f1c8be5044e34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stabAnimDuration: 0.33
-  dmgPerBackstab: 110
-  owner: {fileID: 1629128876681204445}
-  hit: {fileID: 0}
+  StabAnimDuration: 0.33
+  DamagePerBackstab: 110
+  Owner: {fileID: 1629128876681204445}
+  Hit: {fileID: 0}
 --- !u!1 &4951206815986635298
 GameObject:
   m_ObjectHideFlags: 0
@@ -913,15 +912,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b69efaf191f2f14c8af48b4e20416ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedClass: 1
-  roombaCollider: {fileID: 5092902995668429036}
-  cam: {fileID: 0}
-  moveSpeed: 3
-  strafeSpeed: 2
-  jumpStrength: 5
-  rb: {fileID: 0}
-  playerControlled: 1
-  lockInput: 0
+  Position:
+    m_InternalValue: {x: 0, y: 0, z: 0}
+  SelectedClass:
+    m_InternalValue: 0
+  SelectedClassAlreadySet:
+    m_InternalValue: 0
+  Rotation:
+    m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
+  RoombaCollider: {fileID: 0}
+  Cam: {fileID: 0}
+  MoveSpeed: 3
+  StrafeSpeed: 2
+  JumpStrength: 5
+  Rigidbody: {fileID: 0}
+  LockInput: 0
 --- !u!54 &4951206816429219074
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -963,8 +968,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a89d079a9a4272941bf8b03f455601cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Health:
+    m_InternalValue: 100
+  PlayerName:
+    m_InternalValue: 
   health: 100
-  lastAttacker: {fileID: 0}
+  Score:
+    m_InternalValue: 
+  IsDying: 0
   healthText: {fileID: 0}
   kdpText: {fileID: 0}
   winnerText: {fileID: 0}
@@ -1151,20 +1162,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24a87692f2fd15b48ae60d994b20a384, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  owner: {fileID: 1629128876681204445}
-  radiusMultiplier: 1.5
-  explosionLights:
+  Owner: {fileID: 1629128876681204445}
+  ExplosionLightRadius: 1.5
+  ExplosionLights:
   - {fileID: 3965099605866390389}
   - {fileID: 7648801256857130809}
   - {fileID: 140293188092748142}
   - {fileID: 3161224411776009587}
-  timerText: {fileID: 5679383797615965068}
-  closeUpDmg: 220
-  dmgRadius: 6
-  explosionFxTime: 0.4
-  _isExploding: 0
-  _explosionFxTimer: 0
-  timerLength: 20
+  TimerText: {fileID: 5679383797615965068}
+  CloseUpDamage: 200
+  DamageRadius: 3.5
+  ExplosionFxTime: 1
+  isExploding: 0
+  explosionFxTimer: 0
+  TimerLength: 20
 --- !u!1 &8285758754978157547
 GameObject:
   m_ObjectHideFlags: 0

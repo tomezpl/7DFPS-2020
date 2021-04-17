@@ -4,34 +4,49 @@ using UnityEngine;
 
 public class Knife : Weapon
 {
-    public float stabAnimDuration = 0.33f;
+    /// <summary>
+    /// Duration of the stabbing animation.
+    /// </summary>
+    public float StabAnimDuration = 0.33f;
 
-    public int dmgPerBackstab = 110;
+    /// <summary>
+    /// Damage dealt when the attacker is exactly behind the victim and at the same angle.
+    /// </summary>
+    public int DamagePerBackstab = 110;
 
-    public PlayerStats owner;
+    /// <summary>
+    /// Owner player of this weapon.
+    /// </summary>
+    public PlayerStats Owner;
 
-    public GameObject hit;
+    /// <summary>
+    /// The victim hit by this player's attack.
+    /// </summary>
+    public GameObject Hit;
 
-    float _stabAnimTimer = 0f;
+    /// <summary>
+    /// Timer to track the stabbing animation.
+    /// </summary>
+    float stabAnimTimer = 0f;
 
-    Vector3 _initLocalPos;
-
-    //PhotonView photonView;
+    /// <summary>
+    /// Initial position of the knife in the player object (for interpolating in the animation).
+    /// </summary>
+    Vector3 initLocalPosition;
 
     // Start is called before the first frame update
     void Start()
     {
-        _initLocalPos = transform.localPosition;
-
-        //photonView = PhotonView.Get(this);
+        initLocalPosition = transform.localPosition;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetButtonDown("Fire1") && _stabAnimTimer <= 0f && IsMine)
+        if(Input.GetButtonDown("Fire1") && stabAnimTimer <= 0f && IsMine)
         {
-            _stabAnimTimer = stabAnimDuration;
+            // Start the timer when attack input is triggered.
+            stabAnimTimer = StabAnimDuration;
         }
 
         if (IsMine)
@@ -40,26 +55,34 @@ public class Knife : Weapon
         }
     }
 
+    /// <summary>
+    /// Perform the stabbing animation (just an interpolation of the knife's position).
+    /// </summary>
     void StabAnimation()
     {
-        if(_stabAnimTimer <= 0f)
+        if(stabAnimTimer <= 0f)
         {
-            hit = null;
-            //transform.localPosition = _initLocalPos;
+            Hit = null;
             return;
         }
 
-        float stabProgress = Mathf.InverseLerp(stabAnimDuration, stabAnimDuration * .5f, _stabAnimTimer);
-        float idleProgress = Mathf.InverseLerp(stabAnimDuration * .5f, 0f, _stabAnimTimer);
-        bool stabbed = _stabAnimTimer < stabAnimDuration * .5f;
+        float stabProgress = Mathf.InverseLerp(StabAnimDuration, StabAnimDuration * .5f, stabAnimTimer);
+        float idleProgress = Mathf.InverseLerp(StabAnimDuration * .5f, 0f, stabAnimTimer);
 
-        transform.localPosition = Vector3.Lerp(_initLocalPos, _initLocalPos + Vector3.forward * .33f, stabbed ? 1f - idleProgress : stabProgress);
+        // Is the stab lunge complete now (and we're recovering to idle position)?
+        bool stabbed = stabAnimTimer < StabAnimDuration * .5f;
 
-        _stabAnimTimer -= Time.deltaTime;
+        // Interpolate knife position.
+        transform.localPosition = Vector3.Lerp(initLocalPosition, initLocalPosition + Vector3.forward * .33f, stabbed ? 1f - idleProgress : stabProgress);
+
+        // Update timer.
+        stabAnimTimer -= Time.deltaTime;
     }
 
     private void OnTriggerStay(Collider other)
     {
+        // TODO: Needs rewriting
+
         /*if (!photonView || !photonView.IsMine)
         {
             return;

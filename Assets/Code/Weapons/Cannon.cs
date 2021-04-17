@@ -5,49 +5,99 @@ using UnityEngine;
 
 public class Cannon : Weapon
 {
-    public Camera cam;
-    public Transform barrelEnd;
-    public RoombaControl owner;
+    /// <summary>
+    /// Player camera, usually same one the owner's RoombaControl uses.
+    /// </summary>
+    public Camera Cam;
 
-    public Light[] lights;
-    public float flashTime = 1f;
-    public float fireTime = 1.5f;
+    /// <summary>
+    /// Point at the end of the barrel to spawn the bullet projectile.
+    /// </summary>
+    public Transform BarrelEnd;
 
-    public GameObject cannonShell;
+    /// <summary>
+    /// Player this weapon belongs to.
+    /// </summary>
+    public RoombaControl Owner;
 
-    Quaternion _initRotation;
+    /// <summary>
+    /// <para>Lights to use for the muzzle flash.</para>
+    /// <para>Each light needs to have a pre-set intensity that acts as their peak intensity.</para>
+    /// </summary>
+    public Light[] Lights;
 
-    bool _isFiring = false;
-    float _muzzleTimer = 0f;
-    float _fireTimer = 0f;
+    /// <summary>
+    /// <para>The duration of the flash animation.</para>
+    /// <para>The shorter, the more sudden it appears.</para>
+    /// </summary>
+    public float FlashTime = 1f;
 
-    // Lights and their associated intensities.
-    Dictionary<Light, float> _lights;
+    /// <summary>
+    /// The time it takes for a single shot to complete (essentially a cooldown).
+    /// </summary>
+    public float FireTime = 1.5f;
 
-    CannonBullet _firedShell;
+    /// <summary>
+    /// Bullet projectile prefab to spawn. Used for hitreg (no hitscan here folks).
+    /// </summary>
+    public GameObject CannonShellPrefab;
+
+    /// <summary>
+    /// Initial aiming orientation of the gun.
+    /// </summary>
+    Quaternion initRotation;
+
+    /// <summary>
+    /// <para>Is the gun being fired currently?</para>
+    /// <para>This is set to true when <see cref="Fire"/> is called, then back to false once <see cref="FireTime"/> has elapsed.</para>
+    /// </summary>
+    bool isFiring = false;
+
+    /// <summary>
+    /// Time remaining on the muzzle flash animation.
+    /// </summary>
+    float muzzleTimer = 0f;
+
+    /// <summary>
+    /// Time remaining on the fire cooldown.
+    /// </summary>
+    float fireTimer = 0f;
+
+    /// <summary>
+    /// Lights mapped to their peak intensities.
+    /// </summary>
+    Dictionary<Light, float> lights;
+
+    /// <summary>
+    /// Last fired shell - we keep track of this to despawn it after it hits a target.
+    /// </summary>
+    CannonBullet firedShell;
 
     // Start is called before the first frame update
     void Start()
     {
         // Store the intial orientation of the cannon, as per the prefab.
-        _initRotation = transform.localRotation;
+        initRotation = transform.localRotation;
 
-        if (!owner)
+        // Find the owner if not assigned before runtime.
+        if (!Owner)
         {
-            owner = transform.parent.GetComponent<RoombaControl>();
+            Owner = transform.parent.GetComponent<RoombaControl>();
         }
 
-        if (!cam)
+        // Find the camera if not assigned before runtime.
+        if (!Cam)
         {
-            cam = owner.GetComponentInChildren<Camera>();
+            Cam = Owner.GetComponentInChildren<Camera>();
         }
 
-        _lights = new Dictionary<Light, float>();
-        if (lights?.Length > 0)
+        // Store all provided lights and their peak intensities in a Dictionary.
+        lights = new Dictionary<Light, float>();
+        if (Lights?.Length > 0)
         {
-            foreach (Light light in lights)
+            foreach (Light light in Lights)
             {
-                _lights.Add(light, light.intensity);
+                lights.Add(light, light.intensity);
                 light.intensity = 0f;
                 light.enabled = false;
             }
@@ -57,113 +107,125 @@ public class Cannon : Weapon
     // Update is called once per frame
     void Update()
     {
-        float camAngleY = cam.transform.localEulerAngles.y;
-        transform.localRotation = _initRotation * Quaternion.AngleAxis(camAngleY, owner.transform.up);
+        // Align the gun orientation with the camera.
+        float camAngleY = Cam.transform.localEulerAngles.y;
+        transform.localRotation = initRotation * Quaternion.AngleAxis(camAngleY, Owner.transform.up);
 
-        if (owner.PlayerControlled && Input.GetButtonDown("Fire1") && !_isFiring)
+        // Listen for fire inputs from the local player.
+        if (Owner.PlayerControlled && Input.GetButtonDown("Fire1") && !isFiring)
         {
             Fire();
         }
 
+        // Animate the muzzle flash if needed.
         MuzzleFlash();
 
-        if (_firedShell)
+        // Check that a fired shell exists.
+        if (firedShell)
         {
             // Check that the shell hit a target.
-            if (_firedShell.hit)
+            if (firedShell.Hit)
             {
-                Debug.Log(_firedShell.hit);
-                RoombaControl roombaHit = _firedShell.hit.GetComponent<RoombaControl>();
+                Debug.Log(firedShell.Hit);
+                RoombaControl roombaHit = firedShell.Hit.GetComponent<RoombaControl>();
                 // Check if we hit a player.
                 if (roombaHit)
                 {
                     Debug.Log("Hit!");
                     PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
-                    Debug.Log($"Dealt {_firedShell.DamageDealt} damage");
-                    owner.DealDamageServerRpc((int)Mathf.Round(_firedShell.DamageDealt), victimStats.OwnerClientId);
-                    //victimStats.health -= Mathf.RoundToInt(_firedShell.DamageDealt);
-
-                    //Debug.Log($"Sending damage to {PhotonView.Get(victimStats).ViewID}");
-
-                    // Send a DealDamage event on the player we hit.
-                    /*Events.DealDamage(new DamageData
-                    {
-                        AttackerViewId = PhotonView.Get(owner).ViewID,
-                        VictimViewId = PhotonView.Get(victimStats).ViewID,
-                        DamageDealt = Mathf.RoundToInt(_firedShell.DamageDealt)
-                    });*/
-
-                    // Despawn the shell if hit someone.
-                    //PhotonNetwork.Destroy(_firedShell.gameObject);
-                    _firedShell = null;
+                    Debug.Log($"Dealt {firedShell.DamageDealt} damage");
+                    Owner.DealDamageServerRpc((int)Mathf.Round(firedShell.DamageDealt), victimStats.OwnerClientId);
+                    firedShell = null;
                 }
             }
         }
     }
 
+    /// <summary>
+    /// Fires a bullet projectile in the current aiming direction and activates muzzle FX & cooldown.
+    /// </summary>
     void Fire()
     {
-        _isFiring = true;
-        _muzzleTimer = flashTime;
-        _fireTimer = fireTime;
+        isFiring = true;
+
+        // Start timers.
+        muzzleTimer = FlashTime;
+        fireTimer = FireTime;
 
         // Spawn the cannon shell over network.
-        //_firedShell = PhotonNetwork.Instantiate(cannonShell.name, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
-        _firedShell = Instantiate(cannonShell, barrelEnd.position, barrelEnd.rotation * cannonShell.transform.rotation).GetComponent<CannonBullet>();
+        firedShell = Instantiate(CannonShellPrefab, BarrelEnd.position, BarrelEnd.rotation * CannonShellPrefab.transform.rotation).GetComponent<CannonBullet>();
 
-        // TODO: This probably doesn't sync across clients, but might not need to as the damage event will be raised on the attacker's end anyway.
-        _firedShell.owner = gameObject;
+        // TODO: This probably doesn't sync across clients, 
+        // but might not need to as the damage event will be raised on the attacker's end anyway.
+        firedShell.Owner = gameObject;
 
         // Launch the cannon shell in the direction we're aiming.
-        _firedShell.GetComponent<Rigidbody>().AddForce(cam.transform.forward * 1000f);
+        firedShell.GetComponent<Rigidbody>().AddForce(Cam.transform.forward * 1000f);
     }
 
-    // Animate the muzzle flash.
+    /// <summary>
+    /// <para>Animate the muzzle flash & update muzzle and cooldown timers.</para>
+    /// <para>In short:</para>
+    /// <para>at t=0, each light provided in <see cref="Lights"/> will have its intensity at 0.</para>
+    /// <para>at t=<see cref="FlashTime"/>*0.5f, each light will be set to the intensity they were assigned in the Inspector.</para>
+    /// <para>at t=<see cref="FlashTime"/>, each light will have its intensity at 0 again.</para>
+    /// </summary>
     void MuzzleFlash()
     {
-        if (_muzzleTimer > 0f)
+        if (muzzleTimer > 0f)
         {
-            float flashProgress = Mathf.InverseLerp(flashTime, flashTime * .5f, _muzzleTimer);
-            float fadeProgress = Mathf.InverseLerp(flashTime * .5f, 0f, _muzzleTimer);
+            // Find the interpolant value based on the flash timer & duration.
+            float flashProgress = Mathf.InverseLerp(FlashTime, FlashTime * .5f, muzzleTimer);
+            float fadeProgress = Mathf.InverseLerp(FlashTime * .5f, 0f, muzzleTimer);
 
-            if (_muzzleTimer > flashTime * .5f)
+            // Use flash progress if we've not reached t=FlashTime/2 yet.
+            if (muzzleTimer > FlashTime * .5f)
             {
                 SetMuzzleFlashLights(flashProgress);
             }
+            // Switch to the fade progress value if we're past the peak.
             else
             {
                 SetMuzzleFlashLights(1f - fadeProgress);
             }
 
-            _muzzleTimer -= Time.deltaTime;
+            // Update the timer.
+            muzzleTimer -= Time.deltaTime;
         }
         else
         {
-            _muzzleTimer = 0f;
+            // Limit the timer to avoid any unexpected results.
+            muzzleTimer = 0f;
 
-            foreach (Light light in _lights.Keys)
+            // Disable all lights when they're not used.
+            foreach (Light light in lights.Keys)
             {
                 light.enabled = false;
             }
         }
 
-        if (_fireTimer > 0f)
+        // Update the firing cooldown as well.
+        if (fireTimer > 0f)
         {
-            _fireTimer -= Time.deltaTime;
+            fireTimer -= Time.deltaTime;
         }
         else
         {
-            _isFiring = false;
-            _fireTimer = 0f;
+            isFiring = false;
+            fireTimer = 0f;
         }
     }
 
+    /// <summary>
+    /// Scale the intensity of all <see cref="Lights"/>.
+    /// </summary>
+    /// <param name="scale">Scale for the lights' peak intensities.</param>
     void SetMuzzleFlashLights(float scale)
     {
-        foreach (Light light in _lights.Keys)
+        foreach (Light light in lights.Keys)
         {
             light.enabled = true;
-            light.intensity = _lights[light] * scale;
+            light.intensity = lights[light] * scale;
         }
     }
 }
