@@ -303,13 +303,4 @@ public class PlayerStats : NetworkBehaviour
         Debug.Log($"Updating player {OwnerClientId}'s overhead display with name '{name}'");
         GetComponentsInChildren<TextMeshPro>().First(tmp => tmp.name == "PlayerName").text = name;
     }
-
-    // TODO: Move this to Phone.cs?
-    public void DetonateLithiumBomb()
-    {
-        Phone phone = GetComponentInChildren<Phone>();
-        GetComponent<RoombaControl>().LockInput = true;
-        phone.isExploding = true;
-        phone.explosionFxTimer = phone.ExplosionFxTime;
-    }
 }

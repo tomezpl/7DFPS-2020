@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MLAPI.Messaging;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -82,7 +83,7 @@ public class Phone : Weapon
         if(!isExploding && (DateTime.Now > detonationTime || Input.GetButtonDown("Fire1")) && IsMine)
         {
             // TODO: Move this as an RPC in this class.
-            Owner.DetonateLithiumBomb();
+            DetonateLithiumBombServerRpc();
         }
 
         // Update the 3D timer text on the phone screen.
@@ -142,6 +143,37 @@ public class Phone : Weapon
                     Owner.Die();
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Acknowledges the bomb detonation on the server and forwards it to clients.
+    /// </summary>
+    /// <param name="serverRpcParams"></param>
+    [ServerRpc]
+    public void DetonateLithiumBombServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        // Find all connected clients that this RPC would be sent to.
+        ulong[] allClients = new ulong[NetworkManagerSingleton.ConnectedClientsList.Count];
+        NetworkManagerSingleton.ConnectedClients.Keys.CopyTo(allClients, 0);
+
+        // Send RPC to all connected clients.
+        DetonateLithiumBombClientRpc(serverRpcParams.Receive.SenderClientId);
+    }
+
+    /// <summary>
+    /// Activates the bomb detonation effects on the clients.
+    /// </summary>
+    /// <param name="detonatorClientId">Client ID of the player blowing up.</param>
+    /// <param name="clientRpcParams"></param>
+    [ClientRpc]
+    public void DetonateLithiumBombClientRpc(ulong detonatorClientId, ClientRpcParams clientRpcParams = default)
+    {
+        if (OwnerClientId == detonatorClientId)
+        {
+            Owner.GetComponent<RoombaControl>().LockInput = true;
+            isExploding = true;
+            explosionFxTimer = ExplosionFxTime;
         }
     }
 }
