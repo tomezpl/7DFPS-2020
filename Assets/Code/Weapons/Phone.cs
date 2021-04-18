@@ -67,12 +67,12 @@ public class Phone : Weapon
     void Start()
     {
         // Initialise lights.
-        foreach(Light light in ExplosionLights)
+        foreach (Light light in ExplosionLights)
         {
             light.range *= ExplosionLightRadius;
             light.enabled = false;
         }
-        
+
         // Set the bomb timer.
         detonationTime = DateTime.Now + TimeSpan.FromSeconds(TimerLength);
     }
@@ -80,14 +80,14 @@ public class Phone : Weapon
     // Update is called once per frame
     void Update()
     {
-        if(!isExploding && (DateTime.Now > detonationTime || Input.GetButtonDown("Fire1")) && IsMine)
+        if (!isExploding && (DateTime.Now > detonationTime || Input.GetButtonDown("Fire1")) && IsMine)
         {
             // TODO: Move this as an RPC in this class.
             DetonateLithiumBombServerRpc();
         }
 
         // Update the 3D timer text on the phone screen.
-        if(detonationTime != null)
+        if (detonationTime != null)
         {
             if (detonationTime > DateTime.Now)
             {
@@ -102,7 +102,7 @@ public class Phone : Weapon
             }
         }
 
-        if(isExploding)
+        if (isExploding)
         {
             // Update the explosion effect timer.
             explosionFxTimer -= Time.deltaTime;
@@ -117,29 +117,31 @@ public class Phone : Weapon
             }
 
             // Check if explosion effect duration has passed.
+            // TODO: DealDamage could be moved out of this to occur sooner than once the full effect has finished.
             if (explosionFxTimer <= 0f)
             {
                 isExploding = false;
 
-                foreach (GameObject player in GameObject.FindGameObjectsWithTag("Player"))
-                {
-                    if (IsMine)
-                    {
-                        // Don't bother damaging ourseleves as the explosion is a suicide anyway.
-                        continue;
-                    }
-
-                    float dmgMult = Mathf.InverseLerp(DamageRadius, 0f, Vector3.Distance(player.transform.position, transform.position));
-
-                    Debug.Log($"Dealing {Mathf.RoundToInt(dmgMult * CloseUpDamage)} to Player {player.GetComponent<RoombaControl>()?.OwnerClientId}");
-
-                    // Damage players in the area.
-                    // TODO: Players too far away to receive damage could be filtered out before sending RPCs to reduce network traffic.
-                    Owner.GetComponent<RoombaControl>().DealDamageServerRpc(Mathf.RoundToInt(dmgMult * CloseUpDamage), player.GetComponent<RoombaControl>().OwnerClientId);
-                }
-
                 if (IsMine)
                 {
+                    foreach (GameObject player in GameObject.FindGameObjectsWithTag("Player"))
+                    {
+                        if (player.GetComponent<RoombaControl>().PlayerControlled)
+                        {
+                            // Don't bother damaging ourseleves as the explosion is a suicide anyway.
+                            continue;
+                        }
+
+                        // Damage to deal to this player, with distance taken into account.
+                        float dmgMult = Mathf.InverseLerp(DamageRadius, 0f, Vector3.Distance(player.transform.position, transform.position));
+
+                        Debug.Log($"Dealing {Mathf.RoundToInt(dmgMult * CloseUpDamage)} to Player {player.GetComponent<RoombaControl>()?.OwnerClientId}");
+
+                        // Damage players in the area.
+                        // TODO: Players too far away to receive damage could be filtered out before sending RPCs to reduce network traffic.
+                        Owner.GetComponent<RoombaControl>().DealDamageServerRpc(Mathf.RoundToInt(dmgMult * CloseUpDamage), player.GetComponent<RoombaControl>().OwnerClientId);
+                    }
+
                     Owner.Die();
                 }
             }
