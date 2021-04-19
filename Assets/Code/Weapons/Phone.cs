@@ -82,7 +82,6 @@ public class Phone : Weapon
     {
         if (!isExploding && (DateTime.Now > detonationTime || Input.GetButtonDown("Fire1")) && IsMine)
         {
-            // TODO: Move this as an RPC in this class.
             DetonateLithiumBombServerRpc();
         }
 
