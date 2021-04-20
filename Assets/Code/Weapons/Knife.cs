@@ -30,6 +30,11 @@ public class Knife : Weapon
     float stabAnimTimer = 0f;
 
     /// <summary>
+    /// Have we stabbed anyone during this attack event yet? Prevents damage being dealt on multiple frames.
+    /// </summary>
+    bool stabbedAlready = false;
+
+    /// <summary>
     /// Initial position of the knife in the player object (for interpolating in the animation).
     /// </summary>
     Vector3 initLocalPosition;
@@ -47,6 +52,7 @@ public class Knife : Weapon
         {
             // Start the timer when attack input is triggered.
             stabAnimTimer = StabAnimDuration;
+            stabbedAlready = false;
         }
 
         if (IsMine)
@@ -63,6 +69,7 @@ public class Knife : Weapon
         if(stabAnimTimer <= 0f)
         {
             Hit = null;
+            stabbedAlready = false;
             return;
         }
 
@@ -81,23 +88,23 @@ public class Knife : Weapon
 
     private void OnTriggerStay(Collider other)
     {
-        // TODO: Needs rewriting
-
-        /*if (!photonView || !photonView.IsMine)
+        if(!IsMine)
         {
             return;
-        }*/
+        }
 
-        /*if (PhotonView.Get(other) && !PhotonView.Get(other).IsMine && other.GetComponent<PlayerStats>() && _stabAnimTimer > 0f && hit == null)
+        RoombaControl otherPlayer = other.GetComponent<RoombaControl>();
+
+        // Check for stabs on enemy players.
+        if(otherPlayer && !otherPlayer.PlayerControlled && stabAnimTimer > 0f && !stabbedAlready)
         {
-            hit = other.gameObject;
-            hit.GetComponent<PlayerStats>().lastAttacker = owner.GetComponent<PlayerStats>();
-            Events.DealDamage(new DamageData
-            {
-                AttackerViewId = photonView.ViewID,
-                VictimViewId = PhotonView.Get(hit).ViewID,
-                DamageDealt = Mathf.RoundToInt(dmgPerBackstab * Mathf.Max(0f, Vector3.Dot(owner.GetComponent<RoombaControl>().roombaCollider.transform.forward, hit.GetComponent<RoombaControl>().roombaCollider.transform.forward)))
-            });
-        }*/
+            Hit = other.gameObject;
+            stabbedAlready = true;
+
+            // Calculate the damage for this stab. A perfect backstab should deal maximum damage (DamagePerBackstab).
+            int stabDamage = Mathf.RoundToInt(DamagePerBackstab * Mathf.Max(0f, Vector3.Dot(Owner.GetComponent<RoombaControl>().RoombaCollider.transform.forward, otherPlayer.RoombaCollider.transform.forward)));
+
+            Owner.GetComponent<RoombaControl>().DealDamageServerRpc(stabDamage, otherPlayer.OwnerClientId);
+        }
     }
 }

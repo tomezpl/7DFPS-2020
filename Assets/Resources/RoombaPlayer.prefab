@@ -920,8 +920,8 @@ MonoBehaviour:
     m_InternalValue: 0
   Rotation:
     m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
-  RoombaCollider: {fileID: 0}
-  Cam: {fileID: 0}
+  RoombaCollider: {fileID: 5092902995668429036}
+  Cam: {fileID: 4951206815986635299}
   MoveSpeed: 3
   StrafeSpeed: 2
   JumpStrength: 5
