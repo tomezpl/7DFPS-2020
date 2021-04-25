@@ -109,6 +109,7 @@ public class LobbyManager : MonoBehaviour
 
     /// <summary>
     /// <para>IP address to connect to (user-entered or using the default).</para>
+    /// <para>Can include a custom port number separated by a colon.</para>
     /// <para>Returns default if no IP was provided, or null if the provided IP was invalid.</para>
     /// </summary>
     public string IpAddress
@@ -151,6 +152,9 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Server port included in the <see cref="EnteredIpAddress"/>.
+    /// </summary>
     public string EnteredPort
     {
         get
@@ -328,7 +332,7 @@ public class LobbyManager : MonoBehaviour
         // Read user-entered data from the lobby UI.
         ReadInputFields();
 
-        // TODO: Bind the network transport to the port specified in the lobby UI.
+        // Bind the user-provided port number to the network transport to host a game on a specified port.
         if(EnteredHostPort != null)
         {
             UNetTransport transport = NetworkManager.Singleton.GetComponent<UNetTransport>();
@@ -358,6 +362,7 @@ public class LobbyManager : MonoBehaviour
 
         // Bind network transport settings.
         UNetTransport transport = NetworkManager.Singleton.GetComponent<UNetTransport>();
+        // Bind port number.
         if (EnteredPort != null)
         {
             if (int.TryParse(EnteredPort, out int listenPort))
@@ -366,7 +371,7 @@ public class LobbyManager : MonoBehaviour
                 transport.ServerListenPort = listenPort;
             }
         }
-
+        // Bind IP address.
         string ipAddress = IpAddress;
         if (ipAddress != null)
         {
