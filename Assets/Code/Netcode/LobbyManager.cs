@@ -1,7 +1,10 @@
 ﻿using MLAPI;
+using MLAPI.Transports.UNET;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -73,19 +76,114 @@ public class LobbyManager : MonoBehaviour
     /// </summary>
     public bool IsLobbyUiShown = false;
 
-    string _enteredPlayerName = "";
+    private string _enteredPlayerName = "";
 
     /// <summary>
     /// Player name read from the input field in the lobby UI.
     /// </summary>
     public string PlayerName { get { return _enteredPlayerName; } }
 
-    string _enteredIpAddress = "127.0.0.1:7777";
+    private string _enteredIpAddress = "127.0.0.1:7777";
 
     /// <summary>
     /// Server IP address read from the input field in the lobby UI.
     /// </summary>
-    public string IpAddress { get { return _enteredIpAddress; } }
+    public string EnteredIpAddress { get { return _enteredIpAddress; } }
+
+    /// <summary>
+    /// Fallback address to connect to if no IP address was specified.
+    /// </summary>
+    public const string DefaultHostAddress = "127.0.0.1";
+
+    private string _enteredHostPort = "7777";
+
+    /// <summary>
+    /// Port number to host on, entered by the player.
+    /// </summary>
+    public string EnteredHostPort { get => _enteredHostPort; }
+
+    /// <summary>
+    /// Fallback port to connect on if no IP address was specified.
+    /// </summary>
+    public const string DefaultHostPort = "7777";
+
+    /// <summary>
+    /// <para>IP address to connect to (user-entered or using the default).</para>
+    /// <para>Returns default if no IP was provided, or null if the provided IP was invalid.</para>
+    /// </summary>
+    public string IpAddress
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(EnteredIpAddress))
+            {
+                // Validate IPv4 addresses.
+
+                // Check if the address contains exactly one port separator.
+                if (EnteredIpAddress.IndexOf(':') == Math.Abs(EnteredIpAddress.LastIndexOf(':')))
+                {
+                    try
+                    {
+                        return !string.IsNullOrWhiteSpace(EnteredIpAddress.Split(':')[0]) ? EnteredIpAddress : null;
+                    }
+                    catch (Exception)
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    // Is it a plain IP address?
+                    if (EnteredIpAddress.Count(c => c == '.') == 3 && !Regex.IsMatch(EnteredIpAddress, "/[A-za-z]+/g"))
+                    {
+                        return EnteredIpAddress;
+                    }
+                    else
+                    {
+                        return Regex.Matches(EnteredIpAddress, "/([A-Za-z0-9\\-]+\\.*)+:*/g").Count == 1 ? EnteredIpAddress : null;
+                    }
+                }
+            }
+            else
+            {
+                return DefaultHostAddress;
+            }
+        }
+    }
+
+    public string EnteredPort
+    {
+        get
+        {
+            string enteredIp = EnteredIpAddress;
+            if(enteredIp != null)
+            {
+                if(enteredIp.IndexOf(':') == Math.Abs(enteredIp.LastIndexOf(':')))
+                {
+                    try
+                    {
+                        return enteredIp.Split(':')[1];
+                    }
+                    catch(Exception)
+                    {
+                        return null;
+                    }
+                }
+                else if(enteredIp.IndexOf(':') == -1)
+                {
+                    return DefaultHostPort;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
 
     /// <summary>
     /// Lobby menu Canvas object.
@@ -171,7 +269,7 @@ public class LobbyManager : MonoBehaviour
 
         // Assign a random colour for the player.
         // TODO: Change this to NetworkVariableColour in order for it to sync.
-        MyColour = new Color(Random.value, Random.value, Random.value);
+        MyColour = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
 
         // Initialise a Dictionary for keeping track of player scores.
         PlayerScores = new Dictionary<string, PlayerScore>();
@@ -231,7 +329,16 @@ public class LobbyManager : MonoBehaviour
         ReadInputFields();
 
         // TODO: Bind the network transport to the port specified in the lobby UI.
-        
+        if(EnteredHostPort != null)
+        {
+            UNetTransport transport = NetworkManager.Singleton.GetComponent<UNetTransport>();
+            if (int.TryParse(EnteredHostPort, out int listenPort))
+            {
+                transport.ConnectPort = listenPort;
+                transport.ServerListenPort = listenPort;
+            }
+        }
+
         NetworkManager.Singleton.StartHost();
 
         // Spawn a GameManager & player prefab instance for the Host player.
@@ -249,6 +356,28 @@ public class LobbyManager : MonoBehaviour
         // Read user-entered data from the lobby UI.
         ReadInputFields();
 
+        // Bind network transport settings.
+        UNetTransport transport = NetworkManager.Singleton.GetComponent<UNetTransport>();
+        if (EnteredPort != null)
+        {
+            if (int.TryParse(EnteredPort, out int listenPort))
+            {
+                transport.ConnectPort = listenPort;
+                transport.ServerListenPort = listenPort;
+            }
+        }
+
+        string ipAddress = IpAddress;
+        if (ipAddress != null)
+        {
+            if(ipAddress.Contains(':'))
+            {
+                ipAddress = ipAddress.Split(':')[0];
+            }
+
+            transport.ConnectAddress = ipAddress;
+        }
+
         NetworkManager.Singleton.StartClient();
     }
 
@@ -260,15 +389,19 @@ public class LobbyManager : MonoBehaviour
         lobbyMenu.SetActive(true);
         IsLobbyUiShown = true;
 
-        foreach(InputField field in lobbyMenu.GetComponentsInChildren<InputField>())
+        foreach (InputField field in lobbyMenu.GetComponentsInChildren<InputField>())
         {
-            if(field.name == "RoomName")
+            if (field.name == "IpAddress")
             {
                 _enteredIpAddress = field.text;
             }
-            else if(field.name == "PlayerName")
+            else if (field.name == "PlayerName")
             {
                 _enteredPlayerName = field.text;
+            }
+            else if(field.name == "PortNumber")
+            {
+                _enteredHostPort = field.text;
             }
         }
     }
@@ -292,7 +425,7 @@ public class LobbyManager : MonoBehaviour
     /// </param>
     void UpdateClassImage(RoombaControl.RoombaClass classNum)
     {
-        if(!ClassSelectionRenderer)
+        if (!ClassSelectionRenderer)
         {
             return;
         }
