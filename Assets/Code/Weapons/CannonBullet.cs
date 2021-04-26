@@ -87,11 +87,15 @@ public class CannonBullet : Despawnable
         // Perform hit detection only if the bullet hasn't hit anything already.
         else if(otherRoomba && Hit == null)
         {
-            Debug.Log($"Attacking {other.name}");
             GetComponent<Rigidbody>().useGravity = true;
             distanceTravelled = Vector3.Distance(other.transform.position, spawnPosition);
             Hit = other.gameObject;
-            Hit.GetComponent<PlayerStats>().LastAttackerId.Value = Owner.GetComponent<PlayerStats>().OwnerClientId;
+
+            if (Owner.GetComponent<RoombaControl>().PlayerControlled)
+            {
+                Debug.Log($"Attacking {other.name}");
+                Hit.GetComponent<PlayerStats>().LastAttackerId.Value = Owner.GetComponent<PlayerStats>().OwnerClientId;
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using MLAPI.Messaging;
+﻿using MLAPI;
+using MLAPI.Messaging;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -115,6 +116,9 @@ public class Cannon : Weapon
         if (Owner.PlayerControlled && Input.GetButtonDown("Fire1") && !isFiring)
         {
             Fire();
+
+            // Play firing FX for other clients by triggering it on the server.
+            FireServerRpc();
         }
 
         // Animate the muzzle flash if needed.
@@ -131,10 +135,13 @@ public class Cannon : Weapon
                 // Check if we hit a player.
                 if (roombaHit)
                 {
-                    Debug.Log("Hit!");
-                    PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
-                    Debug.Log($"Dealt {firedShell.DamageDealt} damage");
-                    Owner.DealDamageServerRpc((int)Mathf.Round(firedShell.DamageDealt), victimStats.OwnerClientId);
+                    if (Owner.PlayerControlled)
+                    {
+                        Debug.Log("Hit!");
+                        PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
+                        Debug.Log($"Dealt {firedShell.DamageDealt} damage");
+                        Owner.DealDamageServerRpc((int)Mathf.Round(firedShell.DamageDealt), victimStats.OwnerClientId);
+                    }
                     firedShell = null;
                 }
             }
@@ -161,6 +168,42 @@ public class Cannon : Weapon
 
         // Launch the cannon shell in the direction we're aiming.
         firedShell.GetComponent<Rigidbody>().AddForce(Cam.transform.forward * 1000f);
+    }
+
+    /// <summary>
+    /// Triggers a player's firing FX for other clients.
+    /// </summary>
+    /// <param name="serverRpcParams"></param>
+    [ServerRpc]
+    void FireServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        // Number of target players (ie. excluding the firing player).
+        int nbTargetPlayers = NetworkManager.Singleton.ConnectedClientsList.Count - 1;
+        if (nbTargetPlayers >= 1)
+        {
+            ulong[] targetClients = new ulong[nbTargetPlayers];
+            int counter = 0;
+            foreach(ulong clientId in NetworkManager.Singleton.ConnectedClients.Keys)
+            {
+                if(clientId != serverRpcParams.Receive.SenderClientId)
+                {
+                    targetClients[counter++] = clientId;
+                }
+            }
+
+            FireClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = targetClients } });
+        }
+
+    }
+
+    /// <summary>
+    /// Triggers another player's firing FX for the local client.
+    /// </summary>
+    /// <param name="clientRpcParams"></param>
+    [ClientRpc]
+    void FireClientRpc(ClientRpcParams clientRpcParams = default)
+    {
+        Fire();
     }
 
     /// <summary>
