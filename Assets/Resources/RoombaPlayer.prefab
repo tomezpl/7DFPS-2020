@@ -559,10 +559,11 @@ MonoBehaviour:
   BarrelEnd: {fileID: 2579352459923590812}
   Owner: {fileID: 4951206816429219197}
   Lights:
+  - {fileID: 3667913934419633821}
   - {fileID: 8071233395666210018}
   - {fileID: 5789822896714728210}
-  FlashTime: 1
-  FireTime: 1.5
+  FlashTime: 0.13
+  FireTime: 0.4
   CannonShellPrefab: {fileID: 6132847128430447258, guid: ba9e7bbce2e357341895c8b7d93650fa,
     type: 3}
 --- !u!1 &4483665299774025013
