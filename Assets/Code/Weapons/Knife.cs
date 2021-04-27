@@ -1,4 +1,6 @@
-﻿using System.Collections;
+﻿using MLAPI.Messaging;
+using MLAPI;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -50,16 +52,55 @@ public class Knife : Weapon
     {
         if(Input.GetButtonDown("Fire1") && stabAnimTimer <= 0f && IsMine)
         {
-            // Start the timer when attack input is triggered.
-            stabAnimTimer = StabAnimDuration;
-            stabbedAlready = false;
+            StartStab();
+            // Invoke RPC on server which will trigger the animation for other clients too.
+            StartStabServerRpc();
         }
 
-        if (IsMine)
+        StabAnimation();
+    }
+
+    /// <summary>
+    /// Resets the stab animation parameters to the starting point.
+    /// </summary>
+    void StartStab()
+    {
+        // Start the timer when attack input is triggered.
+        stabAnimTimer = StabAnimDuration;
+        stabbedAlready = false;
+    }
+
+    /// <summary>
+    /// Triggers a player's stab animation for all other clients.
+    /// </summary>
+    /// <param name="serverRpcParams"></param>
+    [ServerRpc]
+    void StartStabServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        // Number of target players (ie. excluding the stabbing player).
+        int nbTargetPlayers = NetworkManager.Singleton.ConnectedClientsList.Count - 1;
+        if (nbTargetPlayers >= 1)
         {
-            StabAnimation();
+            ulong[] targetClients = new ulong[nbTargetPlayers];
+            int counter = 0;
+            foreach (ulong clientId in NetworkManager.Singleton.ConnectedClients.Keys)
+            {
+                if (clientId != serverRpcParams.Receive.SenderClientId)
+                {
+                    targetClients[counter++] = clientId;
+                }
+            }
+
+            StartStabClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = targetClients } });
         }
     }
+
+    /// <summary>
+    /// Starts the animation of this player's stab.
+    /// </summary>
+    /// <param name="clientRpcParams"></param>
+    [ClientRpc]
+    void StartStabClientRpc(ClientRpcParams clientRpcParams = default) => StartStab();
 
     /// <summary>
     /// Perform the stabbing animation (just an interpolation of the knife's position).
