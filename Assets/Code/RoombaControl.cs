@@ -47,6 +47,15 @@ public class RoombaControl : NetworkBehaviour
     {
         WritePermission = NetworkVariablePermission.ServerOnly,
         ReadPermission = NetworkVariablePermission.Everyone
+    }, Quaternion.identity);
+
+    /// <summary>
+    /// The player's camera orientation (global) to replicate for other clients.
+    /// </summary>
+    public NetworkVariableQuaternion CameraRotation = new NetworkVariableQuaternion(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.OwnerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
     });
 
     /// <summary>
@@ -440,6 +449,9 @@ public class RoombaControl : NetworkBehaviour
                 Movement();
             }
 
+            // Update the camera orientation for other clients.
+            CameraRotation.Value = Cam.transform.rotation;
+
             // Suicide key.
             if(Input.GetKeyDown(KeyCode.F4))
             {
@@ -461,6 +473,10 @@ public class RoombaControl : NetworkBehaviour
     {
         transform.position = Position.Value;
         transform.rotation = Rotation.Value;
+
+        // Also update the camera's independent orientation.
+        // This is then used to align certain weapons, like the Cannon.
+        Cam.transform.rotation = CameraRotation.Value;
     }
 
     /// <summary>
