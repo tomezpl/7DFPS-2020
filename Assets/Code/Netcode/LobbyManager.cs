@@ -233,7 +233,6 @@ public class LobbyManager : MonoBehaviour
     /// <summary>
     /// <para>A copy of all player's most up-to-date scores.</para>
     /// <para>These are not synchronised automatically in <see cref="LobbyManager"/>, but rather the sync is triggered by each player's script.</para>
-    /// <para>TODO: The stats should ideally be moved from <see cref="PlayerStats"/> to <see cref="GameManager"/> so that the player doesn't need to be spawned in in order to sync.</para>
     /// </summary>
     public Dictionary<string, PlayerScore> PlayerScores;
 
@@ -285,6 +284,11 @@ public class LobbyManager : MonoBehaviour
         UpdateClassImage(SelectedClass);
     }
 
+    /// <summary>
+    /// <para>Event handler for clients connecting to the server/host.</para>
+    /// <para>Is only fired for actual clients; omitted for the host player startup event.</para>
+    /// </summary>
+    /// <param name="clientId">The ID of the connecting client.</param>
     private void ClientConnected(ulong clientId)
     {
         // Reset the respawn flag in case the player was previously in a game.

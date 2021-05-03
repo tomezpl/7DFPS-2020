@@ -63,6 +63,10 @@ public partial class GameManager : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// <para>Network-synchronised name string for this player.</para>
+    /// <para>This will be assigned from the player's lobby UI where they can set their name.</para>
+    /// </summary>
     public NetworkVariableString PlayerName = new NetworkVariableString(new NetworkVariableSettings
     {
         WritePermission = NetworkVariablePermission.OwnerOnly,

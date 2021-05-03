@@ -11,6 +11,10 @@ using UnityEngine.UI;
 public class PlayerStats : NetworkBehaviour
 {
     private static PlayerStats _local;
+
+    /// <summary>
+    /// The local player's <see cref="PlayerStats"/>. null if not found.
+    /// </summary>
     public static PlayerStats Local
     {
         get
@@ -32,6 +36,9 @@ public class PlayerStats : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Network-synchronised health value for this player.
+    /// </summary>
     public NetworkVariableInt Health = new NetworkVariableInt(new NetworkVariableSettings
     {
         WritePermission = NetworkVariablePermission.ServerOnly,
@@ -40,21 +47,33 @@ public class PlayerStats : NetworkBehaviour
 
     public int health = 100;
 
+    /// <summary>
+    /// <para>Network-synchronised ID of the most recent attacker to this player.</para>
+    /// <para>Don't use this outside of server RPCs; use the <see cref="LastAttackerId"/> cast instead.</para>
+    /// </summary>
     public NetworkVariableString LastAttacker = new NetworkVariableString(new NetworkVariableSettings
     {
         WritePermission = NetworkVariablePermission.ServerOnly,
         ReadPermission = NetworkVariablePermission.Everyone
     }, "");
 
+    /// <summary>
+    /// A ulong parser for <see cref="LastAttacker"/> ID.
+    /// </summary>
     public ulong? LastAttackerId
     {
         get => !string.IsNullOrWhiteSpace(LastAttacker.Value) ? (ulong?)ulong.Parse(LastAttacker.Value) : null;
     }
 
-    // A flag preventing the Die event being called multiple times on the server.
+    /// <summary>
+    /// A flag preventing the <see cref="Die"/> event being called multiple times on the server.
+    /// </summary>
     public bool IsDying = false;
 
-    // UI
+    
+    /// <summary>
+    /// UI text object.
+    /// </summary>
     public Text healthText = null, kdpText = null, winnerText = null;
 
     // Start is called before the first frame update
