@@ -430,9 +430,10 @@ public class RoombaControl : NetworkBehaviour
         }
 
         // If attacker found in the scene, assign them as the last attacker for that victim.
-        if(attackerStats && victimStats)
+        if(victimStats && attackerStats)
         {
-            victimStats.LastAttackerId.Value = serverRpcParams.Receive.SenderClientId;
+            Debug.Log($"Setting {GameManager.FromId(victimClientId).PlayerName.Value}'s LastAttackerId to {serverRpcParams.Receive.SenderClientId}");
+            victimStats.LastAttacker.Value = $"{serverRpcParams.Receive.SenderClientId}";
         }
     }
 

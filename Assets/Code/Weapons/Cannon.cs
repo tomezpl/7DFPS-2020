@@ -138,9 +138,7 @@ public class Cannon : Weapon
                     if (Owner.PlayerControlled)
                     {
                         Debug.Log("Hit!");
-                        PlayerStats victimStats = roombaHit.GetComponent<PlayerStats>();
                         Debug.Log($"Dealt {firedShell.DamageDealt} damage");
-                        Owner.DealDamageServerRpc((int)Mathf.Round(firedShell.DamageDealt), victimStats.OwnerClientId);
                     }
                     firedShell = null;
                 }

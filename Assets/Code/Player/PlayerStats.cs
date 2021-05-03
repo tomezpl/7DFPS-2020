@@ -38,52 +38,17 @@ public class PlayerStats : NetworkBehaviour
         ReadPermission = NetworkVariablePermission.Everyone
     }, 100);
 
-    public NetworkVariableString PlayerName = new NetworkVariableString(new NetworkVariableSettings
+    public int health = 100;
+
+    public NetworkVariableString LastAttacker = new NetworkVariableString(new NetworkVariableSettings
     {
-        WritePermission = NetworkVariablePermission.OwnerOnly,
+        WritePermission = NetworkVariablePermission.ServerOnly,
         ReadPermission = NetworkVariablePermission.Everyone
     }, "");
 
-    public int health = 100;
-
-    /// <summary>
-    /// This player's score, stored as JSON for network transport.
-    /// </summary>
-    public NetworkVariableString Score = new NetworkVariableString(new NetworkVariableSettings
+    public ulong? LastAttackerId
     {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }
-    , default);
-
-    public PlayerScore _score
-    {
-        get
-        {
-            return PlayerScore.FromString(Score.Value);
-        }
-    }
-
-    public NetworkVariable<ulong?> LastAttackerId = new NetworkVariable<ulong?>(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, null);
-
-    public PlayerStats LastAttacker
-    {
-        get
-        {
-            foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
-            {
-                if (stats.OwnerClientId == LastAttackerId.Value)
-                {
-                    return stats;
-                }
-            }
-
-            return null;
-        }
+        get => !string.IsNullOrWhiteSpace(LastAttacker.Value) ? (ulong?)ulong.Parse(LastAttacker.Value) : null;
     }
 
     // A flag preventing the Die event being called multiple times on the server.
@@ -121,41 +86,14 @@ public class PlayerStats : NetworkBehaviour
     {
         health = Health.Value;
 
-        Health.OnValueChanged += (_, newHealth) =>
+        Health.OnValueChanged = (_, newHealth) =>
         {
             Debug.Log($"Updating Player{OwnerClientId}'s health to {newHealth}");
             health = newHealth;
         };
 
-        PlayerName.OnValueChanged += (_, newName) => SetPlayerNameOverheadDisplay(newName);
-        if (IsOwner)
-        {
-            PlayerName.Value = LobbyManager.Singleton.PlayerName;
-        }
-        SetPlayerNameOverheadDisplay(PlayerName.Value);
-
-        if (IsOwner)
-        {
-            if (LobbyManager.Singleton.PlayerScores.TryGetValue(PlayerName.Value, out PlayerScore existingScore))
-            {
-                Debug.Log($"Found an existing score for Player {PlayerName.Value}. The score is {existingScore}.");
-                RestoreScoreServerRpc(existingScore.ToString());
-            }
-        }
-
-        Score.OnValueChanged += (_, newScore) =>
-        {
-            Debug.Log($"Score changed. New score JSON:\n{newScore}");
-            SyncScoreWithLobby();
-        };
-        SyncScoreWithLobby();
-    }
-
-    // TODO: Rewrite to pack this into the Stream and set in NetworkStart
-    [ServerRpc]
-    void RestoreScoreServerRpc(string score, ServerRpcParams serverRpcParams = default)
-    {
-        Score.Value = score;
+        SetPlayerNameOverheadDisplay(GameManager.FromId(OwnerClientId).PlayerName.Value);
+        GameManager.FromId(OwnerClientId).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName);
     }
 
     // Update is called once per frame
@@ -181,57 +119,6 @@ public class PlayerStats : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
-    public void GiveScoreKillsServerRpc(ulong clientId, int killsToGive = 1, ServerRpcParams serverRpcParams = default)
-    {
-        foreach (PlayerStats stats in FindObjectsOfType<PlayerStats>())
-        {
-            if (stats.OwnerClientId == clientId)
-            {
-                Debug.Log($"Giving client {clientId} {killsToGive} kills");
-                PlayerScore score = stats._score;
-                score.Kills += killsToGive;
-                stats.Score.Value = score.ToString();
-                break;
-            }
-        }
-    }
-
-    [ServerRpc]
-    public void GiveScoreDeathsServerRpc(ulong clientId, int deathsToGive = 1, ServerRpcParams serverRpcParams = default)
-    {
-        foreach (PlayerStats stats in FindObjectsOfType<PlayerStats>())
-        {
-            if (stats.OwnerClientId == clientId)
-            {
-                Debug.Log($"Giving client {clientId} {deathsToGive} deaths");
-                PlayerScore score = stats._score;
-                score.Deaths += deathsToGive;
-                Debug.Log($"Sending new score: {score.ToString()}");
-                stats.Score.Value = score.ToString();
-                break;
-            }
-        }
-    }
-
-    void SyncScoreWithLobby(PlayerScore score = null)
-    {
-        if(score == null)
-        {
-            score = _score;
-        }
-
-        LobbyManager lobbyManager = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
-        if (lobbyManager.PlayerScores.ContainsKey(PlayerName.Value))
-        {
-            lobbyManager.PlayerScores[PlayerName.Value] = score;
-        }
-        else
-        {
-            lobbyManager.PlayerScores.Add(PlayerName.Value, score);
-        }
-    }
-
     /// <summary>
     /// <para>Kills the player and awards the kill to the last attacker.</para>
     /// <para>Also increments this player's death counter and switches to class selection/respawn state.</para>
@@ -250,27 +137,20 @@ public class PlayerStats : NetworkBehaviour
         health = -1;
 
         // If another player killed us, call the server RPC to give them a kill.
-        if (LastAttackerId.Value != null)
+        Debug.Log($"Last attacker was {LastAttackerId}");
+        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null)
         {
-            GiveScoreKillsServerRpc((ulong)LastAttackerId.Value);
+            GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value);
         }
 
         // Call the server RPC to count a death for us.
-        GiveScoreDeathsServerRpc(OwnerClientId);
+        GameManager.Singleton.GiveScoreDeathsServerRpc(OwnerClientId);
 
         // Switch to lobby camera.
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
 
         // Enter pending-spawn state.
         GameObject.Find("NetworkManager").GetComponent<LobbyManager>().DoesRequireSpawn = true;
-
-        // Hotfix for the old score being synced before the GiveScore RPCs finish:
-        PlayerScore tempScore = PlayerScore.FromString(Score.Value);
-        tempScore.Deaths++;
-
-        // Sync using a local copy of the score so we don't have to wait for the RPCs to finish.
-        // TODO: this could use putting in GameManager instead to avoid this abundant use of RPCs.
-        SyncScoreWithLobby(tempScore);
 
         // Call a server RPC to destroy the player.
         RequestDestroyPlayerServerRpc();

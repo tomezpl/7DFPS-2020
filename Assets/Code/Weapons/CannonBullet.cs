@@ -91,10 +91,11 @@ public class CannonBullet : Despawnable
             distanceTravelled = Vector3.Distance(other.transform.position, spawnPosition);
             Hit = other.gameObject;
 
-            if (Owner.GetComponent<RoombaControl>().PlayerControlled)
+            if (Owner && Owner.GetComponent<Cannon>().Owner.PlayerControlled)
             {
                 Debug.Log($"Attacking {other.name}");
-                Hit.GetComponent<PlayerStats>().LastAttackerId.Value = Owner.GetComponent<PlayerStats>().OwnerClientId;
+                PlayerStats victimStats = Hit.GetComponent<PlayerStats>();
+                Owner.GetComponent<Cannon>().Owner.DealDamageServerRpc((int)Mathf.Round(DamageDealt), victimStats.OwnerClientId);
             }
         }
     }
