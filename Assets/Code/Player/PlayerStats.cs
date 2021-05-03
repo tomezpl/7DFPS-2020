@@ -1,6 +1,6 @@
-﻿using ExitGames.Client.Photon;
-using Photon.Pun;
-using Photon.Realtime;
+﻿using MLAPI;
+using MLAPI.Messaging;
+using MLAPI.NetworkVariable;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,30 +8,80 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerStats : MonoBehaviour, IOnEventCallback
+public class PlayerStats : NetworkBehaviour
 {
-    public int health = 100;
-    public PlayerScore score;
-    public PlayerStats lastAttacker;
+    private static PlayerStats _local;
 
-    // UI
+    /// <summary>
+    /// The local player's <see cref="PlayerStats"/>. null if not found.
+    /// </summary>
+    public static PlayerStats Local
+    {
+        get
+        {
+            if(_local)
+            {
+                return _local;
+            }
+
+            foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
+            {
+                if(stats.IsOwner)
+                {
+                    return _local = stats;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Network-synchronised health value for this player.
+    /// </summary>
+    public NetworkVariableInt Health = new NetworkVariableInt(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    }, 100);
+
+    public int health = 100;
+
+    /// <summary>
+    /// <para>Network-synchronised ID of the most recent attacker to this player.</para>
+    /// <para>Don't use this outside of server RPCs; use the <see cref="LastAttackerId"/> cast instead.</para>
+    /// </summary>
+    public NetworkVariableString LastAttacker = new NetworkVariableString(new NetworkVariableSettings
+    {
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    }, "");
+
+    /// <summary>
+    /// A ulong parser for <see cref="LastAttacker"/> ID.
+    /// </summary>
+    public ulong? LastAttackerId
+    {
+        get => !string.IsNullOrWhiteSpace(LastAttacker.Value) ? (ulong?)ulong.Parse(LastAttacker.Value) : null;
+    }
+
+    /// <summary>
+    /// A flag preventing the <see cref="Die"/> event being called multiple times on the server.
+    /// </summary>
+    public bool IsDying = false;
+
+    
+    /// <summary>
+    /// UI text object.
+    /// </summary>
     public Text healthText = null, kdpText = null, winnerText = null;
 
     // Start is called before the first frame update
     void Start()
     {
-        if (!PhotonView.Get(this) || !PhotonView.Get(this).IsMine)
-        {
-            return;
-        }
-        if (score == null)
-        {
-            score = new PlayerScore();
-        }
-
         foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
         {
-            switch(text.name)
+            switch (text.name)
             {
                 case "Health":
                     healthText = text;
@@ -44,11 +94,25 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
                     break;
             }
 
-            if(healthText && kdpText && winnerText)
+            if (healthText && kdpText && winnerText)
             {
                 break;
             }
         }
+    }
+
+    public override void NetworkStart()
+    {
+        health = Health.Value;
+
+        Health.OnValueChanged = (_, newHealth) =>
+        {
+            Debug.Log($"Updating Player{OwnerClientId}'s health to {newHealth}");
+            health = newHealth;
+        };
+
+        SetPlayerNameOverheadDisplay(GameManager.FromId(OwnerClientId).PlayerName.Value);
+        GameManager.FromId(OwnerClientId).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName);
     }
 
     // Update is called once per frame
@@ -58,8 +122,8 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
         {
             if (health <= 0)
             {
-                Die();
                 healthText.text = "";
+                Die();
             }
 
             healthText.enabled = true;
@@ -71,157 +135,71 @@ public class PlayerStats : MonoBehaviour, IOnEventCallback
             {
                 healthText.text = $"Health: {health}";
             }
-
-            if(score != null)
-            {
-                kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
-            }
-
-            Dictionary<string, PlayerScore> players = GameObject.Find("GameManager").GetComponent<LobbyManager>().PlayerScores;
-            string winner = players.Keys.FirstOrDefault(name => !players.Any(p => p.Key != name && p.Value.TotalPoints > players[name].TotalPoints));
-            if(players.Count == 1)
-            {
-                winner = players.Keys.FirstOrDefault();
-            }
-            if(winner != default)
-            {
-                winnerText.text = $"1st place: {winner} ({players[winner].TotalPoints} points)";
-            }
-            else
-            {
-                winnerText.text = "";
-            }
-        }
-        else
-        {
-            if (healthText)
-            {
-                healthText.enabled = false;
-            }
-            if(kdpText)
-            {
-                kdpText.enabled = false;
-            }
-            if(winnerText)
-            {
-                winnerText.enabled = false;
-            }
         }
     }
 
-    [PunRPC]
-    public void GiveScoreKills(int killsToGive = 1, bool sync = true)
-    {
-        if(score == null)
-        {
-            score = new PlayerScore();
-        }
-
-        score.Kills += killsToGive;
-
-        if (sync)
-        {
-            SyncScoreWithLobby();
-        }
-    }
-
-    [PunRPC]
-    public void GiveScoreDeaths(int deathsToGive = 1, bool sync = true)
-    {
-        if (score == null)
-        {
-            score = new PlayerScore();
-        }
-
-        score.Deaths += deathsToGive;
-
-        if (sync)
-        {
-            SyncScoreWithLobby();
-        }
-    }
-
-    void SyncScoreWithLobby()
-    {
-        LobbyManager lobbyManager = GameObject.Find("GameManager").GetComponent<LobbyManager>();
-        string playerName = PhotonView.Get(this).Owner.NickName;
-        if (lobbyManager.PlayerScores.ContainsKey(playerName))
-        {
-            lobbyManager.PlayerScores[playerName] = score;
-        }
-        else
-        {
-            lobbyManager.PlayerScores.Add(playerName, score);
-        }
-    }
-
+    /// <summary>
+    /// <para>Kills the player and awards the kill to the last attacker.</para>
+    /// <para>Also increments this player's death counter and switches to class selection/respawn state.</para>
+    /// </summary>
     public void Die()
     {
-        health = -1;
-        if (lastAttacker != null)
+        // Should only be called once per death.
+        if(IsDying)
         {
-            PhotonView.Get(lastAttacker).RPC("GiveScoreKills", RpcTarget.All, new object[] { 1, true });
+            return;
         }
-        PhotonView.Get(this).RPC("GiveScoreDeaths", RpcTarget.All, new object[] { 1, true });
+
+        IsDying = true;
+
+        // Make sure the health is kept below 0. Technically unnecessary, but I'm paranoid...
+        health = -1;
+
+        // If another player killed us, call the server RPC to give them a kill.
+        Debug.Log($"Last attacker was {LastAttackerId}");
+        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null)
+        {
+            GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value);
+        }
+
+        // Call the server RPC to count a death for us.
+        GameManager.Singleton.GiveScoreDeathsServerRpc(OwnerClientId);
+
+        // Switch to lobby camera.
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
-        GameObject.Find("GameManager").GetComponent<LobbyManager>().needToSpawn = true;
-        PhotonNetwork.Destroy(PhotonView.Get(this));
+
+        // Enter pending-spawn state.
+        GameObject.Find("NetworkManager").GetComponent<LobbyManager>().DoesRequireSpawn = true;
+
+        // Call a server RPC to destroy the player.
+        RequestDestroyPlayerServerRpc();
     }
 
-    [PunRPC]
+    /// <summary>
+    /// Despawns this object on the server and notifies this player's LobbyManager to enter respawn state.
+    /// </summary>
+    /// <param name="serverRpcParams"></param>
+    [ServerRpc]
+    public void RequestDestroyPlayerServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        NetworkObject.Despawn(true);
+
+        // Notify the player that they should switch to class selection/respawn state.
+        GameManager.Singleton.FinishDestroyPlayerClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { serverRpcParams.Receive.SenderClientId } } });
+    }
+
+    /// <summary>
+    /// Updates the player's rendered name text to <paramref name="name"/>.
+    /// </summary>
+    /// <param name="name">The name to display above the player.</param>
     public void SetPlayerNameOverheadDisplay(string name)
     {
-        GetComponentsInChildren<TextMeshPro>().First(tmp => tmp.name == "PlayerName").text = name;
-    }
-
-    [PunRPC]
-    public void DetonateLithiumBomb()
-    {
-        Phone phone = GetComponentInChildren<Phone>();
-        GetComponent<RoombaControl>().lockInput = true;
-        phone._isExploding = true;
-        phone._explosionFxTimer = phone.explosionFxTime;
-    }
-
-    private void OnEnable()
-    {
-        PhotonNetwork.AddCallbackTarget(this);
-    }
-
-    private void OnDisable()
-    {
-        PhotonNetwork.RemoveCallbackTarget(this);
-    }
-
-    public void OnEvent(EventData photonEvent)
-    {
-        //Debug.Log($"Received {photonEvent.Code}");
-
-        // Check if the received event is about dealing damage to a player.
-        if(photonEvent.Code == Events.DealDamageCode)
+        if(IsOwner)
         {
-            Debug.Log("This is DealDamage event");
-            object[] data = (object[])photonEvent.CustomData;
-
-            // Deserialize damage data.
-            DamageData dmgData = new DamageData
-            {
-                AttackerViewId = (int)data[0],
-                VictimViewId = (int)data[1],
-                DamageDealt = (int)data[2]
-            };
-            Debug.Log($"Victim was {dmgData.VictimViewId}. This is {PhotonView.Get(this).ViewID} ({this.name})");
-            if (dmgData.VictimViewId == PhotonView.Get(this).ViewID)
-            {
-                health -= dmgData.DamageDealt;
-                foreach(GameObject obj in FindObjectsOfType<GameObject>())
-                {
-                    if(PhotonView.Get(obj)?.ViewID == dmgData.AttackerViewId)
-                    {
-                        lastAttacker = obj.GetComponent<PlayerStats>();
-                    }
-                }
-            }
+            return;
         }
+
+        Debug.Log($"Updating player {OwnerClientId}'s overhead display with name '{name}'");
+        GetComponentsInChildren<TextMeshPro>().First(tmp => tmp.name == "PlayerName").text = name;
     }
 }
