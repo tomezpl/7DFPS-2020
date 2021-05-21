@@ -104,9 +104,14 @@ public class RoombaControl : NetworkBehaviour
     public bool LockInput = false;
 
     /// <summary>
+    /// Debugging only: should this player be considered the local player no matter what?
+    /// </summary>
+    public bool OverridePlayerControlCheck = false;
+
+    /// <summary>
     /// Is this controlled by the local player?
     /// </summary>
-    public bool PlayerControlled { get { return playerControlled && IsOwner; } }
+    public bool PlayerControlled { get { return OverridePlayerControlCheck || (playerControlled && IsOwner); } }
 
     // Direct result of the movement vector calculation.
     Vector3 moveVector;
@@ -200,7 +205,7 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     void Movement()
     {
-        if(!IsOwner)
+        if(!IsOwner && !OverridePlayerControlCheck)
         {
             return;
         }

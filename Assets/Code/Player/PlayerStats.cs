@@ -79,24 +79,28 @@ public class PlayerStats : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
+        Text[] hudTextComponents = GameObject.Find("HUD")?.GetComponentsInChildren<Text>();
+        if (hudTextComponents != null)
         {
-            switch (text.name)
+            foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
             {
-                case "Health":
-                    healthText = text;
-                    break;
-                case "KDP":
-                    kdpText = text;
-                    break;
-                case "Winner":
-                    winnerText = text;
-                    break;
-            }
+                switch (text.name)
+                {
+                    case "Health":
+                        healthText = text;
+                        break;
+                    case "KDP":
+                        kdpText = text;
+                        break;
+                    case "Winner":
+                        winnerText = text;
+                        break;
+                }
 
-            if (healthText && kdpText && winnerText)
-            {
-                break;
+                if (healthText && kdpText && winnerText)
+                {
+                    break;
+                }
             }
         }
     }
@@ -126,14 +130,17 @@ public class PlayerStats : NetworkBehaviour
                 Die();
             }
 
-            healthText.enabled = true;
-            if (health <= 0)
+            if (healthText != null)
             {
-                healthText.text = "";
-            }
-            else
-            {
-                healthText.text = $"Health: {health}";
+                healthText.enabled = true;
+                if (health <= 0)
+                {
+                    healthText.text = "";
+                }
+                else
+                {
+                    healthText.text = $"Health: {health}";
+                }
             }
         }
     }

@@ -28,7 +28,14 @@ public class LobbyManager : MonoBehaviour
                 return _singleton;
             }
 
-            return _singleton = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
+            try
+            {
+                return _singleton = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
+            }
+            catch(Exception)
+            {
+                return null;
+            }
         }
     }
 
