@@ -251,7 +251,7 @@ public class RoombaControl : NetworkBehaviour
         }
 
         Cam.transform.localPosition = Cam.transform.localPosition.normalized * Mathf.Max(MinCameraDistance, Mathf.Min(camRaycastHitDistance, cameraDistance)) * (Cam.transform.localRotation.x < 0f ? Mathf.Cos(localEuler.x) : 1f);
-        Debug.DrawLine(Cam.transform.position, Cam.transform.position + Cam.transform.forward * cameraDistance, Color.red, 10f);
+        //Debug.DrawLine(Cam.transform.position, Cam.transform.position + Cam.transform.forward * cameraDistance, Color.red, 10f);
     }
 
     /// <summary>
