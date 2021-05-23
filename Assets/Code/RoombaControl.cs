@@ -137,6 +137,33 @@ public class RoombaControl : NetworkBehaviour
     bool isColliding;
 
     /// <summary>
+    /// The time (in seconds) of input inactivity it takes for the camera to start resetting to its initial transform.
+    /// </summary>
+    public float CameraIdleTimeout = 5f;
+
+    /// <summary>
+    /// The time (in seconds) it should take to reset back to the initial camera tranform.
+    /// </summary>
+    public float CameraResetTime = 3f;
+
+    /// <summary>
+    /// Initial camera local position - this will be set during <see cref="Start"/>
+    /// </summary>
+    Vector3 initialCameraOffset = Vector3.zero;
+
+    /// <summary>
+    /// Initial camera local orientation - this will be set during <see cref="Start"/>
+    /// </summary>
+    Quaternion initialCameraOrientation = Quaternion.identity;
+
+    /// <summary>
+    /// <para>Is the camera currently being reset to its initial position?</para>
+    /// <para>This will be true if at least <see cref="CameraIdleTimeout"/> has passed without camera input.</para>
+    /// <para>As soon as input is received again, it will be set back to false, thus interrupting the reset and giving player camera control.</para>
+    /// </summary>
+    bool isCameraResetting = false;
+
+    /// <summary>
     /// Look X axis getter.
     /// </summary>
     /// <returns></returns>
@@ -175,29 +202,30 @@ public class RoombaControl : NetworkBehaviour
         float lookX = GetLookX();
         float lookY = GetLookY();
 
-        // Limit camera yaw.
-        if (Cam.transform.localRotation.y > 0.3f)
+        // Limit camera pitch unless the camera is being reset.
+        if (isCameraResetting)
         {
-            lookX = lookX > 0f ? 0f : lookX;
-        }
-        if (Cam.transform.localRotation.y < -0.3f)
-        {
-            lookX = lookX < 0f ? 0f : lookX;
-        }
-
-        // Limit camera pitch.
-        if (Cam.transform.localRotation.x > 0.4f)
-        {
-            lookY = lookY < 0f ? 0f : lookY;
-        }
-        if (Cam.transform.localRotation.x < -0.4f)
-        {
-            lookY = lookY > 0f ? 0f : lookY;
+            if (Cam.transform.localRotation.x > 0.7f)
+            {
+                lookY = lookY < 0f ? 0f : lookY;
+            }
+            if (Cam.transform.localRotation.x < -0.7f)
+            {
+                lookY = lookY > 0f ? 0f : lookY;
+            }
         }
 
         // Apply limited camera rotations.
         Cam.transform.Rotate(transform.up, lookX, Space.World);
         Cam.transform.Rotate(Cam.transform.right, -lookY, Space.World);
+
+        Vector3 localEuler = Cam.transform.localEulerAngles * Mathf.Deg2Rad;
+        float cameraDistance = initialCameraOffset.magnitude;
+
+        // Apply orbit offset.
+        Cam.transform.localPosition = cameraDistance * new Vector3(-Mathf.Sin(localEuler.y) * Mathf.Cos(localEuler.x), Mathf.Sin(localEuler.x), -Mathf.Cos(localEuler.y) * Mathf.Cos(localEuler.x));
+
+        Debug.DrawLine(Cam.transform.position, Cam.transform.position + Cam.transform.forward * cameraDistance, Color.red, 10f);
     }
 
     /// <summary>
@@ -302,6 +330,13 @@ public class RoombaControl : NetworkBehaviour
         if(!Cam)
         {
             Cam = GetComponentInChildren<Camera>();
+        }
+
+        // Store the camera's initial transform.
+        if(Cam)
+        {
+            initialCameraOffset = Cam.transform.localPosition;
+            initialCameraOrientation = Cam.transform.localRotation;
         }
 
         // Find the rigidbody component if not assigned.
