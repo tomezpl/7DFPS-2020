@@ -931,6 +931,11 @@ MonoBehaviour:
   Rigidbody: {fileID: 0}
   LockInput: 0
   OverridePlayerControlCheck: 0
+  CameraIdleTimeout: 5
+  CameraResetTime: 3
+  MinCameraDistance: 0.58
+  SpringarmCameraRaycastMargin: 0.2
+  MaxCameraRaycastIterations: 10
 --- !u!54 &4951206816429219074
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -147,6 +147,22 @@ public class RoombaControl : NetworkBehaviour
     public float CameraResetTime = 3f;
 
     /// <summary>
+    /// The minimum distance the camera should keep from the origin point.
+    /// </summary>
+    public float MinCameraDistance = 1.5f;
+
+    /// <summary>
+    /// The distance to add to the springarm camera raycast max distance.
+    /// </summary>
+    public float SpringarmCameraRaycastMargin = 0.2f;
+
+    /// <summary>
+    /// <para>The maximum number of raycast hits we should check for the springarm camera.</para>
+    /// <para>This can be tuned for minor performance tweaking as it adjusts the number of for-loop iterations.</para>
+    /// </summary>
+    public int MaxCameraRaycastIterations = 10;
+
+    /// <summary>
     /// Initial camera local position - this will be set during <see cref="Start"/>
     /// </summary>
     Vector3 initialCameraOffset = Vector3.zero;
@@ -225,6 +241,16 @@ public class RoombaControl : NetworkBehaviour
         // Apply orbit offset.
         Cam.transform.localPosition = cameraDistance * new Vector3(-Mathf.Sin(localEuler.y) * Mathf.Cos(localEuler.x), Mathf.Sin(localEuler.x), -Mathf.Cos(localEuler.y) * Mathf.Cos(localEuler.x));
 
+        // Springarm camera: prevent objects from obstructing the player from the camera.
+        float camRaycastHitDistance = cameraDistance;
+        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~(1 << LayerMask.NameToLayer("LocalPlayer")));
+        for(int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
+        {
+            RaycastHit hit = raycastResults[i];
+            camRaycastHitDistance = Mathf.Min(camRaycastHitDistance, hit.distance);
+        }
+
+        Cam.transform.localPosition = Cam.transform.localPosition.normalized * Mathf.Max(MinCameraDistance, Mathf.Min(camRaycastHitDistance, cameraDistance)) * (Cam.transform.localRotation.x < 0f ? Mathf.Cos(localEuler.x) : 1f);
         Debug.DrawLine(Cam.transform.position, Cam.transform.position + Cam.transform.forward * cameraDistance, Color.red, 10f);
     }
 
@@ -482,6 +508,13 @@ public class RoombaControl : NetworkBehaviour
     {
         if (PlayerControlled)
         {
+            gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+            Transform[] children = GetComponentsInChildren<Transform>(true);
+            foreach(Transform child in children)
+            {
+                child.gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+            }
+
             // Allow for preventing input using LockInput.
             // Otherwise run regular input-movement updates.
             if (!LockInput)
