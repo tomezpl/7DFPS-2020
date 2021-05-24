@@ -244,13 +244,42 @@ public class RoombaControl : NetworkBehaviour
         // Springarm camera: prevent objects from obstructing the player from the camera.
         float camRaycastHitDistance = cameraDistance;
         RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~(1 << LayerMask.NameToLayer("LocalPlayer")));
+        RaycastHit closestHit = default;
         for(int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
         {
             RaycastHit hit = raycastResults[i];
             camRaycastHitDistance = Mathf.Min(camRaycastHitDistance, hit.distance);
+
+            if(camRaycastHitDistance == hit.distance)
+            {
+                closestHit = hit;
+            }
         }
 
-        Cam.transform.localPosition = Cam.transform.localPosition.normalized * Mathf.Max(MinCameraDistance, Mathf.Min(camRaycastHitDistance, cameraDistance)) * (Cam.transform.localRotation.x < 0f ? Mathf.Cos(localEuler.x) : 1f);
+        Cam.transform.localPosition = Cam.transform.localPosition.normalized * Mathf.Max(MinCameraDistance, Mathf.Min(camRaycastHitDistance, cameraDistance));
+
+        // Slide the camera along the surface.
+        if(camRaycastHitDistance < cameraDistance && raycastResults?.Length > 0)
+        {
+            // n3
+            Vector3 hitToCam = Cam.transform.position - closestHit.point;
+
+            // n2
+            Vector3 hitToNormal = closestHit.normal.normalized * hitToCam.magnitude;
+
+            // Position of the camera along the surface tangent.
+            Vector3 camSurfaceTangentPos = closestHit.point + (hitToCam + hitToNormal) / 2f;
+
+            // Make sure the camera would be at least a bare minimum away 
+            // from the player model so we don't see the insides (ewww).
+            float newDist = Vector3.Distance(camSurfaceTangentPos, Cam.transform.position);
+            if (camRaycastHitDistance < MinCameraDistance)
+            {
+                Vector3 localCamPos = transform.worldToLocalMatrix.MultiplyPoint(camSurfaceTangentPos);
+                Cam.transform.localPosition = localCamPos.normalized * Mathf.Max(localCamPos.magnitude, MinCameraDistance / 1.25f);
+            }
+        }
+
         //Debug.DrawLine(Cam.transform.position, Cam.transform.position + Cam.transform.forward * cameraDistance, Color.red, 10f);
     }
 
