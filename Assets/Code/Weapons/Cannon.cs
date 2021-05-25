@@ -130,7 +130,8 @@ public class Cannon : Weapon
         float newBarrelPitch = Mathf.Deg2Rad * newBarrelRot.eulerAngles.x;
 
         // Clamp the barrel pitch.
-        if (Mathf.Abs(newBarrelPitch - 4.85f) <= 0.1f)
+        // TODO: Add tweakable parameters for these bounds.
+        if(newBarrelRot.x < -0.56f & newBarrelRot.x > -0.765f)
         {
             BarrelEnd.parent.transform.localRotation = newBarrelRot;
         }
@@ -188,7 +189,8 @@ public class Cannon : Weapon
         firedShell.Owner = gameObject;
 
         // Launch the cannon shell in the direction we're aiming.
-        firedShell.GetComponent<Rigidbody>().AddForce(Cam.transform.forward * 1000f);
+        firedShell.GetComponent<Rigidbody>().AddForce(((BarrelEnd.transform.forward + Cam.transform.forward) / 2f) * 1000f);
+        firedShell.GetComponent<Rigidbody>().useGravity = false;
     }
 
     /// <summary>
