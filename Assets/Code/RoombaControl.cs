@@ -84,6 +84,11 @@ public class RoombaControl : NetworkBehaviour
     public Camera Cam;
 
     /// <summary>
+    /// The vertical offset to add to the camera's third-person position. Can be tweaked to give better vision while aiming.
+    /// </summary>
+    public float CamVerticalOffset = 1.1f;
+
+    /// <summary>
     /// Player movement parameters.
     /// </summary>
     public float MoveSpeed = 3f, StrafeSpeed = 2f, JumpStrength = 5f;
@@ -240,6 +245,7 @@ public class RoombaControl : NetworkBehaviour
 
         // Apply orbit offset.
         Cam.transform.localPosition = cameraDistance * new Vector3(-Mathf.Sin(localEuler.y) * Mathf.Cos(localEuler.x), Mathf.Sin(localEuler.x), -Mathf.Cos(localEuler.y) * Mathf.Cos(localEuler.x));
+        Cam.transform.localPosition += Vector3.up * CamVerticalOffset;
 
         // Springarm camera: prevent objects from obstructing the player from the camera.
         float camRaycastHitDistance = cameraDistance;
