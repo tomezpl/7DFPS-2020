@@ -147,6 +147,16 @@ public class RoombaControl : NetworkBehaviour
     public float CameraIdleTimeout = 5f;
 
     /// <summary>
+    /// Timer for tracking camera input inactivity. If it reaches <see cref="CameraIdleTimeout"/>, the camera begins to reset to its initial position.
+    /// </summary>
+    float camIdleTimer = 0f;
+
+    /// <summary>
+    /// Timer for tracking elapsed time during the camera reset interpolation.
+    /// </summary>
+    float camResetProgress = 0f;
+
+    /// <summary>
     /// The time (in seconds) it should take to reset back to the initial camera tranform.
     /// </summary>
     public float CameraResetTime = 3f;
@@ -176,6 +186,11 @@ public class RoombaControl : NetworkBehaviour
     /// Initial camera local orientation - this will be set during <see cref="Start"/>
     /// </summary>
     Quaternion initialCameraOrientation = Quaternion.identity;
+
+    /// <summary>
+    /// Camera local orientation right before <see cref="CameraIdleTimeout"/> was reached.
+    /// </summary>
+    Quaternion cameraOrientationBeforeResetY, cameraOrientationBeforeResetX = Quaternion.identity;
 
     /// <summary>
     /// <para>Is the camera currently being reset to its initial position?</para>
@@ -223,22 +238,66 @@ public class RoombaControl : NetworkBehaviour
         float lookX = GetLookX();
         float lookY = GetLookY();
 
-        // Limit camera pitch unless the camera is being reset.
-        if (isCameraResetting)
+        if(lookX == 0f && lookY == 0f)
         {
-            if (Cam.transform.localRotation.x > 0.7f)
+            camIdleTimer += Time.deltaTime;
+        }
+        else
+        {
+            camIdleTimer = 0f;
+            camResetProgress = 0f;
+
+            isCameraResetting = false;
+        }
+
+        if(camIdleTimer >= CameraIdleTimeout)
+        {
+            if(!isCameraResetting)
+            {
+                // Set the start value for the interpolation.
+                Cam.transform.localRotation.ToAngleAxis(out float angle, out Vector3 axis);
+
+                cameraOrientationBeforeResetY = Quaternion.AngleAxis(angle * Vector3.Dot(axis, Vector3.up), Vector3.up);
+                cameraOrientationBeforeResetX = Quaternion.AngleAxis(angle * Vector3.Dot(axis, Vector3.right), Vector3.right);
+            }
+
+            isCameraResetting = true;
+
+            camResetProgress += Time.deltaTime;
+        }
+
+        // Limit camera pitch unless the camera is being reset.
+        if (!isCameraResetting)
+        {
+            // TODO: this doesn't work too well
+            if (Cam.transform.localRotation.x > 0.5f)
             {
                 lookY = lookY < 0f ? 0f : lookY;
             }
-            if (Cam.transform.localRotation.x < -0.7f)
+            if (Cam.transform.localRotation.x < -0.5f)
             {
                 lookY = lookY > 0f ? 0f : lookY;
             }
         }
 
         // Apply limited camera rotations.
-        Cam.transform.Rotate(transform.up, lookX, Space.World);
-        Cam.transform.Rotate(Cam.transform.right, -lookY, Space.World);
+        if (!isCameraResetting)
+        {
+            Cam.transform.Rotate(transform.up, lookX, Space.World);
+            Cam.transform.Rotate(Cam.transform.right, -lookY, Space.World);
+        }
+        else
+        {
+            initialCameraOrientation.ToAngleAxis(out float initAngle, out Vector3 initAxis);
+            Quaternion initYaw = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.up), Vector3.up);
+            Quaternion initPitch = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.right), Vector3.right);
+
+            Quaternion yawLerp = Quaternion.Slerp(cameraOrientationBeforeResetY, initYaw, Mathf.InverseLerp(0f, CameraResetTime, camResetProgress));
+
+            Quaternion pitchLerp = Quaternion.Slerp(cameraOrientationBeforeResetX, initPitch, Mathf.InverseLerp(0f, CameraResetTime, camResetProgress));
+
+            Cam.transform.localRotation = yawLerp * pitchLerp;
+        }
 
         Vector3 localEuler = Cam.transform.localEulerAngles * Mathf.Deg2Rad;
         float cameraDistance = initialCameraOffset.magnitude;
