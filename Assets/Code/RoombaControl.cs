@@ -157,6 +157,11 @@ public class RoombaControl : NetworkBehaviour
     float camResetProgress = 0f;
 
     /// <summary>
+    /// The amount of smoothing to apply to the camera reset interpolation (0..1)
+    /// </summary>
+    public float CameraResetSmoothing = 1f;
+
+    /// <summary>
     /// The time (in seconds) it should take to reset back to the initial camera tranform.
     /// </summary>
     public float CameraResetTime = 3f;
@@ -250,20 +255,23 @@ public class RoombaControl : NetworkBehaviour
             isCameraResetting = false;
         }
 
+        if(isCameraResetting)
+        {
+            camResetProgress += Time.deltaTime;
+        }
+
         if(camIdleTimer >= CameraIdleTimeout)
         {
             if(!isCameraResetting)
             {
                 // Set the start value for the interpolation.
-                Cam.transform.localRotation.ToAngleAxis(out float angle, out Vector3 axis);
+                Vector3 euler = Cam.transform.localRotation.eulerAngles;
 
-                cameraOrientationBeforeResetY = Quaternion.AngleAxis(angle * Vector3.Dot(axis, Vector3.up), Vector3.up);
-                cameraOrientationBeforeResetX = Quaternion.AngleAxis(angle * Vector3.Dot(axis, Vector3.right), Vector3.right);
+                cameraOrientationBeforeResetY = Quaternion.AngleAxis(euler.y, Vector3.up);
+                cameraOrientationBeforeResetX = Quaternion.AngleAxis(euler.x, Vector3.right);
             }
 
             isCameraResetting = true;
-
-            camResetProgress += Time.deltaTime;
         }
 
         // Limit camera pitch unless the camera is being reset.
@@ -288,13 +296,30 @@ public class RoombaControl : NetworkBehaviour
         }
         else
         {
+            float expectedInterpolant = Mathf.InverseLerp(0f, Mathf.Max(CameraResetTime, camResetProgress), camResetProgress);
+
+            // The percentile of the camera reset interpolation at which it should move at linear speed.
+            // This is when smoothing disappears and interpolation goes full speed.
+            float linearInterpolant = CameraResetSmoothing / 2f;
+            float smoothInterpolantR = 1f - linearInterpolant;
+            float finalInterpolant = 0f;
+            if(expectedInterpolant < linearInterpolant && camResetProgress < CameraResetTime)
+            {
+                finalInterpolant = expectedInterpolant * Mathf.Max(0.01f, Mathf.InverseLerp(0f, linearInterpolant, expectedInterpolant));
+            }
+            else
+            {
+                finalInterpolant = expectedInterpolant;
+            }
+
+            // TODO: extract yaw and pitch using euler? might be easier & more confident in that
             initialCameraOrientation.ToAngleAxis(out float initAngle, out Vector3 initAxis);
             Quaternion initYaw = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.up), Vector3.up);
             Quaternion initPitch = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.right), Vector3.right);
 
-            Quaternion yawLerp = Quaternion.Slerp(cameraOrientationBeforeResetY, initYaw, Mathf.InverseLerp(0f, CameraResetTime, camResetProgress));
+            Quaternion yawLerp = Quaternion.Slerp(cameraOrientationBeforeResetY, initYaw, finalInterpolant);
 
-            Quaternion pitchLerp = Quaternion.Slerp(cameraOrientationBeforeResetX, initPitch, Mathf.InverseLerp(0f, CameraResetTime, camResetProgress));
+            Quaternion pitchLerp = Quaternion.Slerp(cameraOrientationBeforeResetX, initPitch, finalInterpolant);
 
             Cam.transform.localRotation = yawLerp * pitchLerp;
         }
