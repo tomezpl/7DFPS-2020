@@ -142,6 +142,11 @@ public class RoombaControl : NetworkBehaviour
     bool isColliding;
 
     /// <summary>
+    /// Should the camera be rigidly aligned with the player's rotation?
+    /// </summary>
+    public bool OrbitCameraWithPlayer = false;
+
+    /// <summary>
     /// The time (in seconds) of input inactivity it takes for the camera to start resetting to its initial transform.
     /// </summary>
     public float CameraIdleTimeout = 5f;
@@ -388,8 +393,15 @@ public class RoombaControl : NetworkBehaviour
             return;
         }
 
+        float roombaRotation = GetTurn() * Mathf.Sign(GetWalk());
+
         // Turn the roomba left-right.
-        transform.Rotate(transform.up, GetTurn() * Mathf.Sign(GetWalk()), Space.World);
+        transform.Rotate(transform.up, roombaRotation, Space.World);
+
+        if(!OrbitCameraWithPlayer)
+        {
+            Cam.transform.Rotate(transform.up, -roombaRotation, Space.World);
+        }
 
         // Move the roomba forwards or backwards along the floor tangent depending on the input.
         transform.Translate(MoveVector * GetWalk() * MoveSpeed * Time.deltaTime, Space.World);
