@@ -147,6 +147,11 @@ public class RoombaControl : NetworkBehaviour
     public float CameraIdleTimeout = 5f;
 
     /// <summary>
+    /// Should the player's camera reset after <see cref="CameraIdleTimeout"/> is reached?
+    /// </summary>
+    public bool IsCameraIdleTimeoutEnabled = false;
+
+    /// <summary>
     /// Timer for tracking camera input inactivity. If it reaches <see cref="CameraIdleTimeout"/>, the camera begins to reset to its initial position.
     /// </summary>
     float camIdleTimer = 0f;
@@ -260,7 +265,7 @@ public class RoombaControl : NetworkBehaviour
             camResetProgress += Time.deltaTime;
         }
 
-        if(camIdleTimer >= CameraIdleTimeout)
+        if(camIdleTimer >= CameraIdleTimeout && IsCameraIdleTimeoutEnabled)
         {
             if(!isCameraResetting)
             {
