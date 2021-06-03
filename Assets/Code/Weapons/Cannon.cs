@@ -49,6 +49,11 @@ public class Cannon : Weapon
     Quaternion initRotation;
 
     /// <summary>
+    /// Initial aiming orientation of the barrel - this will mainly be used to correct the barrel's pitch.
+    /// </summary>
+    Quaternion initBarrelRotation;
+
+    /// <summary>
     /// <para>Is the gun being fired currently?</para>
     /// <para>This is set to true when <see cref="Fire"/> is called, then back to false once <see cref="FireTime"/> has elapsed.</para>
     /// </summary>
@@ -80,6 +85,12 @@ public class Cannon : Weapon
         // Store the intial orientation of the cannon, as per the prefab.
         initRotation = transform.localRotation;
 
+        // Store the initial orientation of the barrel.
+        if (BarrelEnd)
+        {
+            initBarrelRotation = BarrelEnd.parent.transform.localRotation;
+        }
+
         // Find the owner if not assigned before runtime.
         if (!Owner)
         {
@@ -110,7 +121,20 @@ public class Cannon : Weapon
     {
         // Align the gun orientation with the camera.
         float camAngleY = Cam.transform.localEulerAngles.y;
-        transform.localRotation = initRotation * Quaternion.AngleAxis(camAngleY, Owner.transform.up);
+        transform.localRotation = initRotation * Quaternion.AngleAxis(camAngleY, Vector3.up);
+
+        // Align the barrel with the camera pitch.
+        float camAngleX = Cam.transform.localEulerAngles.x;
+        Quaternion newBarrelRot = initBarrelRotation * Quaternion.AngleAxis(-camAngleX, Vector3.right) * Quaternion.AngleAxis(-camAngleX, Vector3.right);
+
+        float newBarrelPitch = Mathf.Deg2Rad * newBarrelRot.eulerAngles.x;
+
+        // Clamp the barrel pitch.
+        // TODO: Add tweakable parameters for these bounds.
+        if(newBarrelRot.x < -0.56f & newBarrelRot.x > -0.765f)
+        {
+            BarrelEnd.parent.transform.localRotation = newBarrelRot;
+        }
 
         // Listen for fire inputs from the local player.
         if (Owner.PlayerControlled && Input.GetButtonDown("Fire1") && !isFiring)
@@ -165,7 +189,8 @@ public class Cannon : Weapon
         firedShell.Owner = gameObject;
 
         // Launch the cannon shell in the direction we're aiming.
-        firedShell.GetComponent<Rigidbody>().AddForce(Cam.transform.forward * 1000f);
+        firedShell.GetComponent<Rigidbody>().AddForce(((BarrelEnd.transform.forward + Cam.transform.forward) / 2f) * 1000f);
+        firedShell.GetComponent<Rigidbody>().useGravity = false;
     }
 
     /// <summary>

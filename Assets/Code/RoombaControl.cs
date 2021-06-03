@@ -84,6 +84,11 @@ public class RoombaControl : NetworkBehaviour
     public Camera Cam;
 
     /// <summary>
+    /// The vertical offset to add to the camera's third-person position. Can be tweaked to give better vision while aiming.
+    /// </summary>
+    public float CamVerticalOffset = 1.1f;
+
+    /// <summary>
     /// Player movement parameters.
     /// </summary>
     public float MoveSpeed = 3f, StrafeSpeed = 2f, JumpStrength = 5f;
@@ -137,6 +142,79 @@ public class RoombaControl : NetworkBehaviour
     bool isColliding;
 
     /// <summary>
+    /// Should the camera be rigidly aligned with the player's rotation?
+    /// </summary>
+    public bool OrbitCameraWithPlayer = false;
+
+    /// <summary>
+    /// The time (in seconds) of input inactivity it takes for the camera to start resetting to its initial transform.
+    /// </summary>
+    public float CameraIdleTimeout = 5f;
+
+    /// <summary>
+    /// Should the player's camera reset after <see cref="CameraIdleTimeout"/> is reached?
+    /// </summary>
+    public bool IsCameraIdleTimeoutEnabled = false;
+
+    /// <summary>
+    /// Timer for tracking camera input inactivity. If it reaches <see cref="CameraIdleTimeout"/>, the camera begins to reset to its initial position.
+    /// </summary>
+    float camIdleTimer = 0f;
+
+    /// <summary>
+    /// Timer for tracking elapsed time during the camera reset interpolation.
+    /// </summary>
+    float camResetProgress = 0f;
+
+    /// <summary>
+    /// The amount of smoothing to apply to the camera reset interpolation (0..1)
+    /// </summary>
+    public float CameraResetSmoothing = 1f;
+
+    /// <summary>
+    /// The time (in seconds) it should take to reset back to the initial camera tranform.
+    /// </summary>
+    public float CameraResetTime = 3f;
+
+    /// <summary>
+    /// The minimum distance the camera should keep from the origin point.
+    /// </summary>
+    public float MinCameraDistance = 1.5f;
+
+    /// <summary>
+    /// The distance to add to the springarm camera raycast max distance.
+    /// </summary>
+    public float SpringarmCameraRaycastMargin = 0.2f;
+
+    /// <summary>
+    /// <para>The maximum number of raycast hits we should check for the springarm camera.</para>
+    /// <para>This can be tuned for minor performance tweaking as it adjusts the number of for-loop iterations.</para>
+    /// </summary>
+    public int MaxCameraRaycastIterations = 10;
+
+    /// <summary>
+    /// Initial camera local position - this will be set during <see cref="Start"/>
+    /// </summary>
+    Vector3 initialCameraOffset = Vector3.zero;
+
+    /// <summary>
+    /// Initial camera local orientation - this will be set during <see cref="Start"/>
+    /// </summary>
+    Quaternion initialCameraOrientation = Quaternion.identity;
+
+    /// <summary>
+    /// Camera local orientation right before <see cref="CameraIdleTimeout"/> was reached.
+    /// </summary>
+    Quaternion cameraOrientationBeforeResetY, cameraOrientationBeforeResetX = Quaternion.identity;
+
+    /// <summary>
+    /// <para>Is the camera currently being reset to its initial position?</para>
+    /// <para>This will be true if at least <see cref="CameraIdleTimeout"/> has passed without camera input.</para>
+    /// <para>As soon as input is received again, it will be set back to false, thus interrupting the reset and giving player camera control.</para>
+    /// </summary>
+    bool isCameraResetting = false;
+
+    /// <summary>
     /// Look X axis getter.
     /// </summary>
     /// <returns></returns>
@@ -175,29 +253,134 @@ public class RoombaControl : NetworkBehaviour
         float lookX = GetLookX();
         float lookY = GetLookY();
 
-        // Limit camera yaw.
-        if (Cam.transform.localRotation.y > 0.3f)
+        if(lookX == 0f && lookY == 0f)
         {
-            lookX = lookX > 0f ? 0f : lookX;
+            camIdleTimer += Time.deltaTime;
         }
-        if (Cam.transform.localRotation.y < -0.3f)
+        else
         {
-            lookX = lookX < 0f ? 0f : lookX;
+            camIdleTimer = 0f;
+            camResetProgress = 0f;
+
+            isCameraResetting = false;
         }
 
-        // Limit camera pitch.
-        if (Cam.transform.localRotation.x > 0.4f)
+        if(isCameraResetting)
         {
-            lookY = lookY < 0f ? 0f : lookY;
+            camResetProgress += Time.deltaTime;
         }
-        if (Cam.transform.localRotation.x < -0.4f)
+
+        if(camIdleTimer >= CameraIdleTimeout && IsCameraIdleTimeoutEnabled)
         {
-            lookY = lookY > 0f ? 0f : lookY;
+            if(!isCameraResetting)
+            {
+                // Set the start value for the interpolation.
+                Vector3 euler = Cam.transform.localRotation.eulerAngles;
+
+                cameraOrientationBeforeResetY = Quaternion.AngleAxis(euler.y, Vector3.up);
+                cameraOrientationBeforeResetX = Quaternion.AngleAxis(euler.x, Vector3.right);
+            }
+
+            isCameraResetting = true;
+        }
+
+        // Limit camera pitch unless the camera is being reset.
+        if (!isCameraResetting)
+        {
+            // TODO: this doesn't work too well
+            if (Cam.transform.localRotation.x > 0.5f)
+            {
+                lookY = lookY < 0f ? 0f : lookY;
+            }
+            if (Cam.transform.localRotation.x < -0.5f)
+            {
+                lookY = lookY > 0f ? 0f : lookY;
+            }
         }
 
         // Apply limited camera rotations.
-        Cam.transform.Rotate(transform.up, lookX, Space.World);
-        Cam.transform.Rotate(Cam.transform.right, -lookY, Space.World);
+        if (!isCameraResetting)
+        {
+            Cam.transform.Rotate(transform.up, lookX, Space.World);
+            Cam.transform.Rotate(Cam.transform.right, -lookY, Space.World);
+        }
+        else
+        {
+            float expectedInterpolant = Mathf.InverseLerp(0f, Mathf.Max(CameraResetTime, camResetProgress), camResetProgress);
+
+            // The percentile of the camera reset interpolation at which it should move at linear speed.
+            // This is when smoothing disappears and interpolation goes full speed.
+            float linearInterpolant = CameraResetSmoothing / 2f;
+            float smoothInterpolantR = 1f - linearInterpolant;
+            float finalInterpolant = 0f;
+            if(expectedInterpolant < linearInterpolant && camResetProgress < CameraResetTime)
+            {
+                finalInterpolant = expectedInterpolant * Mathf.Max(0.01f, Mathf.InverseLerp(0f, linearInterpolant, expectedInterpolant));
+            }
+            else
+            {
+                finalInterpolant = expectedInterpolant;
+            }
+
+            // TODO: extract yaw and pitch using euler? might be easier & more confident in that
+            initialCameraOrientation.ToAngleAxis(out float initAngle, out Vector3 initAxis);
+            Quaternion initYaw = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.up), Vector3.up);
+            Quaternion initPitch = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.right), Vector3.right);
+
+            Quaternion yawLerp = Quaternion.Slerp(cameraOrientationBeforeResetY, initYaw, finalInterpolant);
+
+            Quaternion pitchLerp = Quaternion.Slerp(cameraOrientationBeforeResetX, initPitch, finalInterpolant);
+
+            Cam.transform.localRotation = yawLerp * pitchLerp;
+        }
+
+        Vector3 localEuler = Cam.transform.localEulerAngles * Mathf.Deg2Rad;
+        float cameraDistance = initialCameraOffset.magnitude;
+
+        // Apply orbit offset.
+        Cam.transform.localPosition = cameraDistance * new Vector3(-Mathf.Sin(localEuler.y) * Mathf.Cos(localEuler.x), Mathf.Sin(localEuler.x), -Mathf.Cos(localEuler.y) * Mathf.Cos(localEuler.x));
+        Cam.transform.localPosition += Vector3.up * CamVerticalOffset;
+
+        // Springarm camera: prevent objects from obstructing the player from the camera.
+        float camRaycastHitDistance = cameraDistance;
+        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~(1 << LayerMask.NameToLayer("LocalPlayer")));
+        RaycastHit closestHit = default;
+        for(int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
+        {
+            RaycastHit hit = raycastResults[i];
+            camRaycastHitDistance = Mathf.Min(camRaycastHitDistance, hit.distance);
+
+            if(camRaycastHitDistance == hit.distance)
+            {
+                closestHit = hit;
+            }
+        }
+
+        Cam.transform.localPosition = Cam.transform.localPosition.normalized * Mathf.Max(MinCameraDistance, Mathf.Min(camRaycastHitDistance, cameraDistance));
+
+        // Slide the camera along the surface.
+        if(camRaycastHitDistance < cameraDistance && raycastResults?.Length > 0)
+        {
+            // n3
+            Vector3 hitToCam = Cam.transform.position - closestHit.point;
+
+            // n2
+            Vector3 hitToNormal = closestHit.normal.normalized * hitToCam.magnitude;
+
+            // Position of the camera along the surface tangent.
+            Vector3 camSurfaceTangentPos = closestHit.point + (hitToCam + hitToNormal) / 2f;
+
+            // Make sure the camera would be at least a bare minimum away 
+            // from the player model so we don't see the insides (ewww).
+            float newDist = Vector3.Distance(camSurfaceTangentPos, Cam.transform.position);
+            if (camRaycastHitDistance < MinCameraDistance)
+            {
+                Vector3 localCamPos = transform.worldToLocalMatrix.MultiplyPoint(camSurfaceTangentPos);
+                Cam.transform.localPosition = localCamPos.normalized * Mathf.Max(localCamPos.magnitude, MinCameraDistance / 1.25f);
+            }
+        }
+
+        //Debug.DrawLine(Cam.transform.position, Cam.transform.position + Cam.transform.forward * cameraDistance, Color.red, 10f);
     }
 
     /// <summary>
@@ -210,8 +393,15 @@ public class RoombaControl : NetworkBehaviour
             return;
         }
 
+        float roombaRotation = GetTurn() * Mathf.Sign(GetWalk());
+
         // Turn the roomba left-right.
-        transform.Rotate(transform.up, GetTurn() * Mathf.Sign(GetWalk()), Space.World);
+        transform.Rotate(transform.up, roombaRotation, Space.World);
+
+        if(!OrbitCameraWithPlayer)
+        {
+            Cam.transform.Rotate(transform.up, -roombaRotation, Space.World);
+        }
 
         // Move the roomba forwards or backwards along the floor tangent depending on the input.
         transform.Translate(MoveVector * GetWalk() * MoveSpeed * Time.deltaTime, Space.World);
@@ -302,6 +492,13 @@ public class RoombaControl : NetworkBehaviour
         if(!Cam)
         {
             Cam = GetComponentInChildren<Camera>();
+        }
+
+        // Store the camera's initial transform.
+        if(Cam)
+        {
+            initialCameraOffset = Cam.transform.localPosition;
+            initialCameraOrientation = Cam.transform.localRotation;
         }
 
         // Find the rigidbody component if not assigned.
@@ -447,6 +644,13 @@ public class RoombaControl : NetworkBehaviour
     {
         if (PlayerControlled)
         {
+            gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+            Transform[] children = GetComponentsInChildren<Transform>(true);
+            foreach(Transform child in children)
+            {
+                child.gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+            }
+
             // Allow for preventing input using LockInput.
             // Otherwise run regular input-movement updates.
             if (!LockInput)
