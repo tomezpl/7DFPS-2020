@@ -287,15 +287,29 @@ public class RoombaControl : NetworkBehaviour
         // Limit camera pitch unless the camera is being reset.
         if (!isCameraResetting)
         {
-            // TODO: this doesn't work too well
-            if (Cam.transform.localRotation.x > 0.5f)
+            Vector3 eulers = Cam.transform.localRotation.eulerAngles;
+            float pitch = Mathf.Cos(Mathf.Deg2Rad * eulers.x);
+            if (eulers.x > 180f)
             {
-                lookY = lookY < 0f ? 0f : lookY;
+                if (lookY > 0f)
+                {
+                    if (pitch <= 0.75f)
+                    {
+                        lookY = -lookY;
+                    }
+                }
             }
-            if (Cam.transform.localRotation.x < -0.5f)
+            if (eulers.x < 180f)
             {
-                lookY = lookY > 0f ? 0f : lookY;
+                if(lookY < 0f)
+                {
+                    if(pitch <= 0.75f)
+                    {
+                        lookY = -lookY;
+                    }
+                }
             }
+            //Debug.Log(pitch);
         }
 
         // Apply limited camera rotations.
