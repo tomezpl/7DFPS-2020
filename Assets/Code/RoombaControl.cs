@@ -215,6 +215,11 @@ public class RoombaControl : NetworkBehaviour
     bool isCameraResetting = false;
 
     /// <summary>
+    /// Used for raycasts to check if there's a wall blocking the Roomba's path.
+    /// </summary>
+    bool canMoveAhead = true;
+
+    /// <summary>
     /// Look X axis getter.
     /// </summary>
     /// <returns></returns>
@@ -430,7 +435,7 @@ public class RoombaControl : NetworkBehaviour
         // Move the roomba forwards or backwards along the floor tangent depending on the input.
         if (isColliding)
         {
-            Rigidbody.velocity = (MoveVector * GetWalk() * MoveSpeed);
+            Rigidbody.velocity = (MoveVector * GetWalk() * MoveSpeed * (!canMoveAhead && Mathf.Sign(GetWalk()) == 1f ? 0f : 1f));
         }
 
         // Allow jumping only if colliding with a floor.
@@ -781,6 +786,15 @@ public class RoombaControl : NetworkBehaviour
         {
             moveVector2 = Vector3.zero;
             strafeVector2 = Vector3.zero;
+        }
+
+        if (Physics.Raycast(new Ray(transform.position, transform.forward), out RaycastHit wallHit, 0.5f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
+        {
+            canMoveAhead = false;
+        }
+        else
+        {
+            canMoveAhead = true;
         }
     }
 
