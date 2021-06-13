@@ -675,7 +675,11 @@ public class RoombaControl : NetworkBehaviour
             Transform[] children = GetComponentsInChildren<Transform>(true);
             foreach(Transform child in children)
             {
-                child.gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+                // Prevent changing the layer on the orientation arrow as that screws up rendering.
+                if (child.name != "PlayerOrientationArrow")
+                {
+                    child.gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+                }
             }
 
             // Allow for preventing input using LockInput.

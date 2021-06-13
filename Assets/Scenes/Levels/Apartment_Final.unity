@@ -711,6 +711,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 606390467581004272, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1463909450578009170, guid: 69d81b174f86dfa4faaa484f3130bb08,
         type: 3}
       propertyPath: m_Name
@@ -775,6 +780,41 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3522334646479084570, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_Type
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3522334646479084570, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_Lightmapping
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3895758736489404949, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_Type
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3895758736489404949, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3895758736489404949, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_Lightmapping
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3895758736489404949, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4175683722680948705, guid: 69d81b174f86dfa4faaa484f3130bb08,
+        type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4294967294
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 69d81b174f86dfa4faaa484f3130bb08, type: 3}
@@ -1277,6 +1317,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 4568975436910540947, guid: b93822439a37b3e4789aa3e9d36b3378,
+        type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4294967294
+      objectReference: {fileID: 0}
     - target: {fileID: 4568975437487985182, guid: b93822439a37b3e4789aa3e9d36b3378,
         type: 3}
       propertyPath: m_RootOrder
@@ -1341,6 +1386,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_StaticEditorFlags
       value: 4294967295
+      objectReference: {fileID: 0}
+    - target: {fileID: 4568975437628930894, guid: b93822439a37b3e4789aa3e9d36b3378,
+        type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 4294967294
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b93822439a37b3e4789aa3e9d36b3378, type: 3}
