@@ -749,6 +749,12 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1656758042784468066, guid: a88f194c93a2fc9419afd130363c06d3,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee,
+        type: 2}
     - target: {fileID: 3603336788931957335, guid: a88f194c93a2fc9419afd130363c06d3,
         type: 3}
       propertyPath: m_Name
@@ -818,6 +824,17 @@ PrefabInstance:
         type: 3}
       propertyPath: OverridePlayerControlCheck
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5679383797615965068, guid: a88f194c93a2fc9419afd130363c06d3,
+        type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee,
+        type: 2}
+    - target: {fileID: 5679383797615965068, guid: a88f194c93a2fc9419afd130363c06d3,
+        type: 3}
+      propertyPath: m_fontSizeBase
+      value: 36
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a88f194c93a2fc9419afd130363c06d3, type: 3}
