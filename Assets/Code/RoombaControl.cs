@@ -118,22 +118,22 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     public bool PlayerControlled { get { return OverridePlayerControlCheck || (playerControlled && IsOwner); } }
 
-    // Direct result of the movement vector calculation.
-    Vector3 moveVector;
+    // Direct result of the movement vector calculation. moveVector2: raycast (will take priority)
+    Vector3 moveVector, moveVector2;
 
-    // Direct result of the strafe vector calculation.
-    Vector3 strafeVector;
+    // Direct result of the strafe vector calculation. strafeVector2: raycast (will take priority)
+    Vector3 strafeVector, strafeVector2;
 
     /// <summary>
     /// <para>Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)</para>
     /// <para>Equal to <see cref="Vector3.zero"/> when the player collider is not touching a floor surface.</para>
     /// </summary>
-    Vector3 MoveVector { get { return isColliding ? moveVector : Vector3.zero; } }
+    Vector3 MoveVector { get { return isColliding ? (moveVector2 == Vector3.zero ? moveVector : moveVector2) : Vector3.zero; } }
 
     /// <summary>
     /// Strafing vector (usually orthogonal to <see cref="MoveVector"/>)
     /// </summary>
-    Vector3 StrafeVector { get { return isColliding ? strafeVector : Vector3.zero; } }
+    Vector3 StrafeVector { get { return isColliding ? (strafeVector2 == Vector3.zero ? strafeVector : strafeVector2) : Vector3.zero; } }
 
     /// <summary>
     /// <para>Is the player collider in contact with another collider?</para>
@@ -215,6 +215,11 @@ public class RoombaControl : NetworkBehaviour
     bool isCameraResetting = false;
 
     /// <summary>
+    /// Used for raycasts to check if there's a wall blocking the Roomba's path.
+    /// </summary>
+    bool canMoveAhead = true;
+
+    /// <summary>
     /// Look X axis getter.
     /// </summary>
     /// <returns></returns>
@@ -287,15 +292,29 @@ public class RoombaControl : NetworkBehaviour
         // Limit camera pitch unless the camera is being reset.
         if (!isCameraResetting)
         {
-            // TODO: this doesn't work too well
-            if (Cam.transform.localRotation.x > 0.5f)
+            Vector3 eulers = Cam.transform.localRotation.eulerAngles;
+            float pitch = Mathf.Cos(Mathf.Deg2Rad * eulers.x);
+            if (eulers.x > 180f)
             {
-                lookY = lookY < 0f ? 0f : lookY;
+                if (lookY > 0f)
+                {
+                    if (pitch <= 0.75f)
+                    {
+                        lookY = -lookY;
+                    }
+                }
             }
-            if (Cam.transform.localRotation.x < -0.5f)
+            if (eulers.x < 180f)
             {
-                lookY = lookY > 0f ? 0f : lookY;
+                if(lookY < 0f)
+                {
+                    if(pitch <= 0.75f)
+                    {
+                        lookY = -lookY;
+                    }
+                }
             }
+            //Debug.Log(pitch);
         }
 
         // Apply limited camera rotations.
@@ -403,8 +422,21 @@ public class RoombaControl : NetworkBehaviour
             Cam.transform.Rotate(transform.up, -roombaRotation, Space.World);
         }
 
+        // Raycast in front of the player to check for inclines/slopes/obstacles.
+        CheckAhead();
+
+        // Perform predictive pitch rotation to align with the raycast-hit surface if needed.
+        // This prevents the roomba from flipping forwards while going down slopes and transitioning to a different surface.
+        float angle = (moveVector == Vector3.zero || moveVector2 == Vector3.zero) ? 0f : Mathf.Acos(Vector3.Dot(moveVector2, moveVector));
+        Rigidbody.AddTorque(transform.right * -angle);
+
+        //Debug.DrawLine(transform.position, transform.position + MoveVector * 5f, Color.blue);
+
         // Move the roomba forwards or backwards along the floor tangent depending on the input.
-        transform.Translate(MoveVector * GetWalk() * MoveSpeed * Time.deltaTime, Space.World);
+        if (isColliding)
+        {
+            Rigidbody.velocity = (MoveVector * GetWalk() * MoveSpeed * (!canMoveAhead && Mathf.Sign(GetWalk()) == 1f ? 0f : 1f));
+        }
 
         // Allow jumping only if colliding with a floor.
         if (isColliding && GetJump())
@@ -648,7 +680,11 @@ public class RoombaControl : NetworkBehaviour
             Transform[] children = GetComponentsInChildren<Transform>(true);
             foreach(Transform child in children)
             {
-                child.gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+                // Prevent changing the layer on the orientation arrow as that screws up rendering.
+                if (child.name != "PlayerOrientationArrow")
+                {
+                    child.gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+                }
             }
 
             // Allow for preventing input using LockInput.
@@ -709,6 +745,11 @@ public class RoombaControl : NetworkBehaviour
         return -CalculateSurfaceTangent(collision.GetContact(0).normal);
     }
 
+    Vector3 CalculateFloorMoveVector(RaycastHit hit)
+    {
+        return -CalculateSurfaceTangent(hit.normal);
+    }
+
     /// <summary>
     /// <para>Calculates strafe vector of a surface, e.g. floor, that the player collides with.</para>
     /// <para>Usually a cross product of <see cref="MoveVector"/> and local +Y axis.</para>
@@ -718,6 +759,43 @@ public class RoombaControl : NetworkBehaviour
     Vector3 CalculateFloorStrafeVector(Collision collision)
     {
         return -Vector3.Cross(CalculateFloorMoveVector(collision), transform.up);
+    }
+
+    Vector3 CalculateFloorStrafeVector(RaycastHit hit)
+    {
+        return -Vector3.Cross(CalculateFloorMoveVector(hit), transform.up);
+    }
+
+    /// <summary>
+    /// Checks for obstacles/inclines ahead using a Raycast.
+    /// </summary>
+    private void CheckAhead()
+    {
+        //Debug.DrawLine(transform.position, transform.position + transform.forward * 1.1f);
+        RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, 1.1f, (1 << LayerMask.NameToLayer("Floor")));
+        if(hits?.Length > 0)
+        {
+            Vector3 hitTangent = CalculateFloorMoveVector(hits[0]);
+            if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.3f)
+            {
+                moveVector2 = hitTangent;
+                strafeVector2 = CalculateFloorStrafeVector(hits[0]);
+            }
+        }
+        else
+        {
+            moveVector2 = Vector3.zero;
+            strafeVector2 = Vector3.zero;
+        }
+
+        if (Physics.Raycast(new Ray(transform.position, transform.forward), out RaycastHit wallHit, 0.5f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
+        {
+            canMoveAhead = false;
+        }
+        else
+        {
+            canMoveAhead = true;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -731,8 +809,12 @@ public class RoombaControl : NetworkBehaviour
     private void OnCollisionStay(Collision collision)
     {
         // Calculate walk & strafe vectors from floor surface tangents.
-        moveVector = CalculateFloorMoveVector(collision);
-        strafeVector = CalculateFloorStrafeVector(collision);
+        Vector3 newMoveVector = CalculateFloorMoveVector(collision);
+        if(Mathf.Abs(Vector3.Dot(newMoveVector, transform.up)) < 0.3f)
+        {
+            moveVector = newMoveVector;
+            strafeVector = CalculateFloorStrafeVector(collision);
+        }
 
         if (collision.transform.CompareTag("Floor"))
         {

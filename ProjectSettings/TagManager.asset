@@ -16,8 +16,8 @@ TagManager:
   - 
   - DynamicObjects
   - LocalPlayer
-  - 
-  - 
+  - Floor
+  - OverlayOnTop
   - 
   - 
   - 
