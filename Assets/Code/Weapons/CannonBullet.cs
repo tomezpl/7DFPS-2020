@@ -62,6 +62,11 @@ public class CannonBullet : Despawnable
     public override void Update()
     {
         base.Update();
+
+        if((transform.position - spawnPosition).magnitude > 20f)
+        {
+            GetComponent<Rigidbody>().useGravity = true;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)

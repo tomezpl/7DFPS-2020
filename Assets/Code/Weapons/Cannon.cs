@@ -188,8 +188,18 @@ public class Cannon : Weapon
         // but might not need to as the damage event will be raised on the attacker's end anyway.
         firedShell.Owner = gameObject;
 
+        // very rough approximation
+        Vector3 launchDir = (BarrelEnd.transform.forward + Cam.transform.forward) / 2f;
+        if(Physics.Raycast(Owner.Cam.transform.position, Owner.Cam.transform.forward, out RaycastHit cameraRaycastHit, 20f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
+        {
+            launchDir = (cameraRaycastHit.point - BarrelEnd.transform.position);
+            Debug.Log("FOUND POINT");
+            Debug.DrawLine(BarrelEnd.transform.position, BarrelEnd.transform.position + launchDir, Color.red, 5f);
+            launchDir = launchDir.normalized;
+        }
+
         // Launch the cannon shell in the direction we're aiming.
-        firedShell.GetComponent<Rigidbody>().AddForce(((BarrelEnd.transform.forward + Cam.transform.forward) / 2f) * 1000f);
+        firedShell.GetComponent<Rigidbody>().AddForce(launchDir * 1000f);
         firedShell.GetComponent<Rigidbody>().useGravity = false;
     }
 
