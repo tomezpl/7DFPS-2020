@@ -192,10 +192,7 @@ public class Cannon : Weapon
         Vector3 launchDir = (BarrelEnd.transform.forward + Cam.transform.forward) / 2f;
         if(Physics.Raycast(Owner.Cam.transform.position, Owner.Cam.transform.forward, out RaycastHit cameraRaycastHit, 20f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
         {
-            launchDir = (cameraRaycastHit.point - BarrelEnd.transform.position);
-            Debug.Log("FOUND POINT");
-            Debug.DrawLine(BarrelEnd.transform.position, BarrelEnd.transform.position + launchDir, Color.red, 5f);
-            launchDir = launchDir.normalized;
+            launchDir = (cameraRaycastHit.point - BarrelEnd.transform.position).normalized;
         }
 
         // Launch the cannon shell in the direction we're aiming.
