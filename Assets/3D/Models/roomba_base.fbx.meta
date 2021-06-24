@@ -7,8 +7,53 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: BrushHandle
+    second: {fileID: 2100000, guid: 09c3bd07e0912c84d9516d2046662cda, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BrushSleeve
+    second: {fileID: 2100000, guid: 08810ebc45ef28345b9fc1caaf6843ed, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: CasterWheel
+    second: {fileID: 2100000, guid: 7f0611e0406e18b499c9048e4136f357, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: DebrisExtractor1
+    second: {fileID: 2100000, guid: 8874c7ebf9cddce498004322292591a5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: DebrisExtractor2
+    second: {fileID: 2100000, guid: b8b6bd9f30977a14a97ac7b582c98842, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: No Name
     second: {fileID: 2100000, guid: 88254bc975967594bba4f6003a4fd1cc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RoombaInnerPlate
+    second: {fileID: 2100000, guid: 0a0a98e1bbe948f4b9b43eb5b61a9adc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RoombaOuterRim
+    second: {fileID: 2100000, guid: ed15437a89367b748afc2b5fd62acf4f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RoombaUnderside
+    second: {fileID: 2100000, guid: fb029e62cc8caf54c8f236275e8f16e4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Wheel
+    second: {fileID: 2100000, guid: 1bee39a9d6277c74c8f5f16b45d5c425, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0
