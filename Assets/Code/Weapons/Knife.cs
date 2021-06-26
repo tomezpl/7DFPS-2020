@@ -143,7 +143,7 @@ public class Knife : Weapon
             stabbedAlready = true;
 
             // Calculate the damage for this stab. A perfect backstab should deal maximum damage (DamagePerBackstab).
-            int stabDamage = Mathf.RoundToInt(DamagePerBackstab * Mathf.Max(0f, Vector3.Dot(Owner.GetComponent<RoombaControl>().RoombaCollider.transform.forward, otherPlayer.RoombaCollider.transform.forward)));
+            int stabDamage = Mathf.RoundToInt(DamagePerBackstab * Mathf.Max(0f, Vector3.Dot(Owner.GetComponent<RoombaControl>().transform.forward, otherPlayer.transform.forward)));
 
             Owner.GetComponent<RoombaControl>().DealDamageServerRpc(stabDamage, otherPlayer.OwnerClientId);
         }

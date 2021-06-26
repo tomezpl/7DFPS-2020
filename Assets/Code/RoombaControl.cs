@@ -74,9 +74,9 @@ public class RoombaControl : NetworkBehaviour
     RoombaClass selectedClass = RoombaClass.Cannon;
 
     /// <summary>
-    /// The <see cref="MeshCollider"/> used for the player.
+    /// The <see cref="Collider"/> used for the player.
     /// </summary>
-    public MeshCollider RoombaCollider;
+    public Collider RoombaCollider;
 
     /// <summary>
     /// Player camera.
