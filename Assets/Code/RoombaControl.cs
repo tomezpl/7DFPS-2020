@@ -220,6 +220,29 @@ public class RoombaControl : NetworkBehaviour
     bool canMoveAhead = true;
 
     /// <summary>
+    /// Should the crosshair be shown?
+    /// </summary>
+    public bool ShowCrosshair = true;
+
+    /// <summary>
+    /// Whether the crosshair should be rendered or not. Provide this to the SRP pass.
+    /// </summary>
+    public static bool CrosshairRequired
+    {
+        get
+        {
+            if(LobbyManager.Singleton?.LocalPlayerObject)
+            {
+                return LobbyManager.Singleton.LocalPlayerObject.GetComponent<RoombaControl>().selectedClass == RoombaClass.Cannon;
+            }
+            else
+            {
+                return FindObjectOfType<RoombaControl>()?.ShowCrosshair ?? false;
+            }
+        }
+    }
+
+    /// <summary>
     /// Look X axis getter.
     /// </summary>
     /// <returns></returns>
@@ -258,7 +281,7 @@ public class RoombaControl : NetworkBehaviour
         float lookX = GetLookX();
         float lookY = GetLookY();
 
-        if(lookX == 0f && lookY == 0f)
+        if (lookX == 0f && lookY == 0f)
         {
             camIdleTimer += Time.deltaTime;
         }
@@ -270,14 +293,14 @@ public class RoombaControl : NetworkBehaviour
             isCameraResetting = false;
         }
 
-        if(isCameraResetting)
+        if (isCameraResetting)
         {
             camResetProgress += Time.deltaTime;
         }
 
-        if(camIdleTimer >= CameraIdleTimeout && IsCameraIdleTimeoutEnabled)
+        if (camIdleTimer >= CameraIdleTimeout && IsCameraIdleTimeoutEnabled)
         {
-            if(!isCameraResetting)
+            if (!isCameraResetting)
             {
                 // Set the start value for the interpolation.
                 Vector3 euler = Cam.transform.localRotation.eulerAngles;
@@ -306,9 +329,9 @@ public class RoombaControl : NetworkBehaviour
             }
             if (eulers.x < 180f)
             {
-                if(lookY < 0f)
+                if (lookY < 0f)
                 {
-                    if(pitch <= 0.75f)
+                    if (pitch <= 0.75f)
                     {
                         lookY = -lookY;
                     }
@@ -332,7 +355,7 @@ public class RoombaControl : NetworkBehaviour
             float linearInterpolant = CameraResetSmoothing / 2f;
             float smoothInterpolantR = 1f - linearInterpolant;
             float finalInterpolant = 0f;
-            if(expectedInterpolant < linearInterpolant && camResetProgress < CameraResetTime)
+            if (expectedInterpolant < linearInterpolant && camResetProgress < CameraResetTime)
             {
                 finalInterpolant = expectedInterpolant * Mathf.Max(0.01f, Mathf.InverseLerp(0f, linearInterpolant, expectedInterpolant));
             }
@@ -364,12 +387,12 @@ public class RoombaControl : NetworkBehaviour
         float camRaycastHitDistance = cameraDistance;
         RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~(1 << LayerMask.NameToLayer("LocalPlayer")));
         RaycastHit closestHit = default;
-        for(int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
+        for (int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
         {
             RaycastHit hit = raycastResults[i];
             camRaycastHitDistance = Mathf.Min(camRaycastHitDistance, hit.distance);
 
-            if(camRaycastHitDistance == hit.distance)
+            if (camRaycastHitDistance == hit.distance)
             {
                 closestHit = hit;
             }
@@ -378,7 +401,7 @@ public class RoombaControl : NetworkBehaviour
         Cam.transform.localPosition = Cam.transform.localPosition.normalized * Mathf.Max(MinCameraDistance, Mathf.Min(camRaycastHitDistance, cameraDistance));
 
         // Slide the camera along the surface.
-        if(camRaycastHitDistance < cameraDistance && raycastResults?.Length > 0)
+        if (camRaycastHitDistance < cameraDistance && raycastResults?.Length > 0)
         {
             // n3
             Vector3 hitToCam = Cam.transform.position - closestHit.point;
@@ -407,7 +430,7 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     void Movement()
     {
-        if(!IsOwner && !OverridePlayerControlCheck)
+        if (!IsOwner && !OverridePlayerControlCheck)
         {
             return;
         }
@@ -417,7 +440,7 @@ public class RoombaControl : NetworkBehaviour
         // Turn the roomba left-right.
         transform.Rotate(transform.up, roombaRotation, Space.World);
 
-        if(!OrbitCameraWithPlayer)
+        if (!OrbitCameraWithPlayer)
         {
             Cam.transform.Rotate(transform.up, -roombaRotation, Space.World);
         }
@@ -468,10 +491,10 @@ public class RoombaControl : NetworkBehaviour
     void SetWeapons()
     {
         Debug.Log($"Setting {name}({OwnerClientId})'s RoombaClass to: {selectedClass}");
-        switch(selectedClass)
+        switch (selectedClass)
         {
             case RoombaClass.Cannon:
-                foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
+                foreach (Weapon weapon in GetComponentsInChildren<Weapon>())
                 {
                     Debug.Log("Enabling Cannon");
                     if (!weapon.GetComponent<Cannon>())
@@ -481,10 +504,10 @@ public class RoombaControl : NetworkBehaviour
                 }
                 break;
             case RoombaClass.Stabbo:
-                foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
+                foreach (Weapon weapon in GetComponentsInChildren<Weapon>())
                 {
                     Debug.Log("Enabling stabbo");
-                    if(!weapon.GetComponent<Knife>())
+                    if (!weapon.GetComponent<Knife>())
                     {
                         weapon.gameObject.SetActive(false);
                     }
@@ -521,25 +544,25 @@ public class RoombaControl : NetworkBehaviour
         isColliding = false;
 
         // Find the camera object if not assigned.
-        if(!Cam)
+        if (!Cam)
         {
             Cam = GetComponentInChildren<Camera>();
         }
 
         // Store the camera's initial transform.
-        if(Cam)
+        if (Cam)
         {
             initialCameraOffset = Cam.transform.localPosition;
             initialCameraOrientation = Cam.transform.localRotation;
         }
 
         // Find the rigidbody component if not assigned.
-        if(!Rigidbody)
+        if (!Rigidbody)
         {
             Rigidbody = GetComponent<Rigidbody>();
         }
 
-        if(!PlayerControlled)
+        if (!PlayerControlled)
         {
             // If this isn't our roomba, disable the camera audio listener so Unity doesn't complain.
             Cam.GetComponent<AudioListener>().enabled = false;
@@ -564,7 +587,7 @@ public class RoombaControl : NetworkBehaviour
 
             // Assign this object as a reference in LobbyManager.
             LobbyManager.Singleton.LocalPlayerObject = gameObject;
-            
+
             // Reset the spawn flag in GameManager.
             GameManager.Singleton.CanRequestSpawn = true;
 
@@ -641,13 +664,13 @@ public class RoombaControl : NetworkBehaviour
         PlayerStats attackerStats = null;
 
         // Find both stats scripts.
-        foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
+        foreach (PlayerStats stats in FindObjectsOfType<PlayerStats>())
         {
-            if(stats.OwnerClientId == victimClientId)
+            if (stats.OwnerClientId == victimClientId)
             {
                 victimStats = stats;
             }
-            if(stats.OwnerClientId == serverRpcParams.Receive.SenderClientId)
+            if (stats.OwnerClientId == serverRpcParams.Receive.SenderClientId)
             {
                 attackerStats = stats;
             }
@@ -664,7 +687,7 @@ public class RoombaControl : NetworkBehaviour
         }
 
         // If attacker found in the scene, assign them as the last attacker for that victim.
-        if(victimStats && attackerStats)
+        if (victimStats && attackerStats)
         {
             Debug.Log($"Setting {GameManager.FromId(victimClientId).PlayerName.Value}'s LastAttackerId to {serverRpcParams.Receive.SenderClientId}");
             victimStats.LastAttacker.Value = $"{serverRpcParams.Receive.SenderClientId}";
@@ -678,7 +701,7 @@ public class RoombaControl : NetworkBehaviour
         {
             gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
             Transform[] children = GetComponentsInChildren<Transform>(true);
-            foreach(Transform child in children)
+            foreach (Transform child in children)
             {
                 // Prevent changing the layer on the orientation arrow as that screws up rendering.
                 if (child.name != "PlayerOrientationArrow")
@@ -699,7 +722,7 @@ public class RoombaControl : NetworkBehaviour
             CameraRotation.Value = Cam.transform.rotation;
 
             // Suicide key.
-            if(Input.GetKeyDown(KeyCode.F4))
+            if (Input.GetKeyDown(KeyCode.F4))
             {
                 GetComponent<PlayerStats>().Die();
             }
@@ -773,7 +796,7 @@ public class RoombaControl : NetworkBehaviour
     {
         //Debug.DrawLine(transform.position, transform.position + transform.forward * 1.1f);
         RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, 1.1f, (1 << LayerMask.NameToLayer("Floor")));
-        if(hits?.Length > 0)
+        if (hits?.Length > 0)
         {
             Vector3 hitTangent = CalculateFloorMoveVector(hits[0]);
             if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.3f)
@@ -810,7 +833,7 @@ public class RoombaControl : NetworkBehaviour
     {
         // Calculate walk & strafe vectors from floor surface tangents.
         Vector3 newMoveVector = CalculateFloorMoveVector(collision);
-        if(Mathf.Abs(Vector3.Dot(newMoveVector, transform.up)) < 0.3f)
+        if (Mathf.Abs(Vector3.Dot(newMoveVector, transform.up)) < 0.3f)
         {
             moveVector = newMoveVector;
             strafeVector = CalculateFloorStrafeVector(collision);

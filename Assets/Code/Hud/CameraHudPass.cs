@@ -25,6 +25,12 @@ public class CameraHudPass : ScriptableRenderPass
 
     public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
     {
+        // Don't run the method if the local player doesn't need a crosshair.
+        if(!RoombaControl.CrosshairRequired)
+        {
+            return;
+        }
+
         CommandBuffer cmd = CommandBufferPool.Get("Camera HUD Pass");
         cmd.Clear();
 
