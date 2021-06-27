@@ -14,17 +14,33 @@ public class PlayerDirectionArrow : MonoBehaviour
 
     public Transform PlayerCamera;
 
+    MeshRenderer renderer;
+
+    RoombaControl owner;
+
     // Start is called before the first frame update
     void Start()
     {
         initialPosition = transform.localPosition;
         initialScale = transform.localScale;
+
+        renderer = GetComponent<MeshRenderer>();
+        owner = GetComponentInParent<RoombaControl>();
     }
 
     // Update is called once per frame
     void Update()
     {
         SlideIndicator();
+
+        if (owner && !owner.PlayerControlled)
+        {
+            renderer.enabled = false;
+        }
+        else
+        {
+            renderer.enabled = true;
+        }
     }
 
     /// <summary>
