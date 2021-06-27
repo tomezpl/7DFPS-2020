@@ -189,7 +189,9 @@ public class Cannon : Weapon
         firedShell.Owner = gameObject;
 
         // very rough approximation
-        Vector3 launchDir = (BarrelEnd.transform.forward + Cam.transform.forward) / 2f;
+        float deltaPitch = Vector3.Dot(-BarrelEnd.transform.up, Owner.Cam.transform.up);
+        //Debug.Log($"delta pitch: {deltaPitch}");
+        Vector3 launchDir = deltaPitch <= 0.997f ? Owner.Cam.transform.forward : BarrelEnd.transform.forward;
         if(Physics.Raycast(Owner.Cam.transform.position, Owner.Cam.transform.forward, out RaycastHit cameraRaycastHit, 20f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
         {
             launchDir = (cameraRaycastHit.point - BarrelEnd.transform.position).normalized;

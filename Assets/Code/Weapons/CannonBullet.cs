@@ -65,7 +65,7 @@ public class CannonBullet : Despawnable
 
         if((transform.position - spawnPosition).magnitude > 20f)
         {
-            GetComponent<Rigidbody>().useGravity = true;
+            //GetComponent<Rigidbody>().useGravity = true;
         }
     }
 
