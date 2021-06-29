@@ -92,7 +92,7 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// Player movement parameters.
     /// </summary>
-    public float MoveSpeed = 3f, StrafeSpeed = 2f, JumpStrength = 5f;
+    public float MoveSpeed = 3f, StrafeSpeed = 2f, TurnSpeed = 150f, JumpStrength = 5f;
 
     /// <summary>
     /// Player's rigidbody component for simulating physics.
@@ -436,14 +436,15 @@ public class RoombaControl : NetworkBehaviour
             return;
         }
 
-        float roombaRotation = GetTurn() * Mathf.Sign(GetWalk());
+        float roombaRotation = GetTurn() * Mathf.Sign(GetWalk()) * Time.deltaTime * TurnSpeed;
 
         // Turn the roomba left-right.
+        Quaternion prevCamRotation = Cam.transform.rotation;
         transform.Rotate(transform.up, roombaRotation, Space.World);
 
         if (!OrbitCameraWithPlayer)
         {
-            Cam.transform.Rotate(transform.up, -roombaRotation, Space.World);
+            Cam.transform.rotation = prevCamRotation;
         }
 
         // Raycast in front of the player to check for inclines/slopes/obstacles.
