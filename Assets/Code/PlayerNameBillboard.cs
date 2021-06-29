@@ -33,7 +33,7 @@ public class PlayerNameBillboard : MonoBehaviour
                     if (tmp.name == "PlayerName")
                     {
                         // Point it at the local player's camera.
-                        tmp.transform.LookAt(lobby.LocalPlayerObject.transform);
+                        tmp.transform.LookAt(lobby.LocalPlayerObject.GetComponent<RoombaControl>().Cam.transform);
                         tmp.transform.Rotate(0f, 180f, 0f, Space.Self);
                         break;
                     }
