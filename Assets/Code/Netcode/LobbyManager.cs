@@ -260,20 +260,9 @@ public class LobbyManager : MonoBehaviour
         GameObject instance = Instantiate(PlayerPrefab, position, orientation);
         using (MemoryStream ms = new MemoryStream())
         {
-            // Extract all components.
-            float[] pos = new float[] { position.x, position.y, position.z };
-            float[] rot = new float[] { orientation.x, orientation.y, orientation.z, orientation.w };
-
-            // Write it all into the stream to be sent as payload.
-            for(int i = 0; i < pos.Length; i++)
-            {
-                ms.Write(BitConverter.GetBytes(pos[i]), 0, sizeof(float));
-            }
-            for(int i = 0; i < rot.Length; i++)
-            {
-                ms.Write(BitConverter.GetBytes(rot[i]), 0, sizeof(float));
-            }
-
+            // Write the spawnpoint's position and orientation bytes to the stream.
+            NetcodeHelpers.StreamHelper.WritePosition(ms, position);
+            NetcodeHelpers.StreamHelper.WriteOrientation(ms, orientation);
             ms.Flush();
 
             instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, ms);
