@@ -4,6 +4,7 @@ using MLAPI.NetworkVariable;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 /// <summary>
@@ -578,8 +579,30 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// Occurs before <see cref="Start"/>
     /// </summary>
-    public override void NetworkStart()
+    public override void NetworkStart(Stream stream)
     {
+        if(stream != null && stream.CanRead)
+        {
+            // Extract the spawnpoint from the stream.
+            Vector3 position = NetcodeHelpers.StreamHelper.ReadPosition(stream);
+            Quaternion orientation = NetcodeHelpers.StreamHelper.ReadOrientation(stream);
+
+            Debug.Log($"Spawnpoint was P {position}, O {orientation}");
+
+            // This prevents the player object spawning at (0, 0, 0) for a few frames.
+            transform.position = position;
+            transform.rotation = orientation;
+            if (IsServer)
+            {
+                Position.Value = position;
+                Rotation.Value = orientation;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Couldn't read stream");
+        }
+
         if (PlayerControlled)
         {
             // Update our weapons on the server.
