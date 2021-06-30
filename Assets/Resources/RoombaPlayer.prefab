@@ -1058,6 +1058,7 @@ MonoBehaviour:
   CamVerticalOffset: 1.1
   MoveSpeed: 3
   StrafeSpeed: 2
+  TurnSpeed: 150
   JumpStrength: 5
   Rigidbody: {fileID: 0}
   LockInput: 0
@@ -1070,6 +1071,7 @@ MonoBehaviour:
   MinCameraDistance: 0.7
   SpringarmCameraRaycastMargin: 0.2
   MaxCameraRaycastIterations: 10
+  ShowCrosshair: 1
 --- !u!54 &4951206816429219074
 Rigidbody:
   m_ObjectHideFlags: 0
