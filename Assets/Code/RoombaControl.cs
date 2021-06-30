@@ -440,11 +440,16 @@ public class RoombaControl : NetworkBehaviour
 
         // Turn the roomba left-right.
         Quaternion prevCamRotation = Cam.transform.rotation;
+        Vector3 prevCamPosition = Cam.transform.position;
         transform.Rotate(transform.up, roombaRotation, Space.World);
 
         if (!OrbitCameraWithPlayer)
         {
+            // Counters the player rotation.
             Cam.transform.rotation = prevCamRotation;
+
+            // Prevents jitter.
+            Cam.transform.position = prevCamPosition;
         }
 
         // Raycast in front of the player to check for inclines/slopes/obstacles.
