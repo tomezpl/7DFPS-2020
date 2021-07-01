@@ -227,12 +227,12 @@ public class RoombaControl : NetworkBehaviour
 
     /// <summary>
     /// <para>Rotation stored from previous physics frame.</para>
-    /// <para>This is used to determine if the player is turning, regardless of input. See <see cref="isTurning"/></para>
+    /// <para>This is used to determine if the player is turning, regardless of input. See <see cref="isSliding"/></para>
     /// </summary>
     Quaternion fixedPrevRotation = Quaternion.identity;
 
     /// <summary>
-    /// Stores the current attempted rotation. Used in conjunction with <see cref="fixedPrevRotation"/> to provide a determinant for <see cref="isTurning"/>.
+    /// Stores the current attempted rotation. Used in conjunction with <see cref="fixedPrevRotation"/> to provide a determinant for <see cref="isSliding"/>.
     /// </summary>
     Quaternion explicitRotation = Quaternion.identity;
 
@@ -252,9 +252,14 @@ public class RoombaControl : NetworkBehaviour
     Vector3 explicitVelocity = Vector3.zero;
 
     /// <summary>
-    /// Is the player's rotation changing? Determined on fixed physics step.
+    /// Forward vector on last fixed frame.
     /// </summary>
-    bool isTurning = false;
+    Vector3 fixedPrevForward = Vector3.forward;
+
+    /// <summary>
+    /// Is the player moving sideways (e.g. due to turning while also driving into a wall)? Determined on fixed physics step.
+    /// </summary>
+    bool isSliding = false;
 
     /// <summary>
     /// Is the player moving forwards?
@@ -262,14 +267,14 @@ public class RoombaControl : NetworkBehaviour
     bool isDriving = false;
 
     /// <summary>
-    /// Actual determinant used for <see cref="isTurning"/>.
+    /// Actual determinant used for <see cref="isSliding"/>.
     /// </summary>
-    float isTurningDet = 1f;
+    float isSlidingDet = 1f;
 
     /// <summary>
-    /// An interpolant value [0..1] of how much of the threshold angular velocity we have.
+    /// An interpolant value [0..1] of how much of the threshold sideways velocity we have.
     /// </summary>
-    float isTurningInterpolant = 1f;
+    float isSlidingInterpolant = 1f;
 
     float timeSinceLastPhysicsUpdate = 0f;
 
@@ -503,12 +508,12 @@ public class RoombaControl : NetworkBehaviour
             float forwardDet = Mathf.Abs(Vector3.Dot(explicitVelocity.normalized, transform.forward));
 
             isDriving = forwardDet > 0.9f;
-            bool preventCameraTurn = turningInputActive && drivingInputActive && !isDriving && !isTurning;
-            Debug.Log($"{fixedPrevVelocity}, speed: {forwardDet}");
-            Debug.Log($"turningInput: {turningInputActive}, drivingInput: {drivingInputActive}, isDriving: {isDriving}, isTurning: {isTurning}");
-            Debug.Log("PREVENT CAMERA TURN: " + preventCameraTurn);
+            isSliding = isSlidingDet > forwardDet;
+            bool preventCameraTurn = turningInputActive && drivingInputActive && !isDriving && isSliding;
+            Debug.Log($"{fixedPrevVelocity}, speed: {forwardDet}, slidingDet: {isSlidingDet}");
 
             // Counters the player rotation.
+            //Cam.transform.rotation = Quaternion.Lerp(Cam.transform.rotation, prevCamRotation, Mathf.Pow(forwardDet * isSlidingInterpolant, 2f));
             Cam.transform.rotation = (preventCameraTurn) ? Cam.transform.rotation : prevCamRotation;
             //Cam.transform.rotation = Quaternion.Slerp(Cam.transform.rotation, prevCamRotation, preventCameraTurn ? 0f : isTurningInterpolant);
 
@@ -795,13 +800,17 @@ public class RoombaControl : NetworkBehaviour
     {
         explicitRotation = transform.rotation;
 
-        isTurningDet = Mathf.Abs(explicitRotation.w * fixedPrevRotation.w + explicitRotation.x * fixedPrevRotation.x + explicitRotation.y * fixedPrevRotation.y + explicitRotation.z * fixedPrevRotation.z);
-        isTurningInterpolant = Mathf.InverseLerp(0f, 0.0002f, 1f - isTurningDet);
-        isTurning = isTurningInterpolant >= 1f;
-        Debug.Log(isTurning);
+        //isTurningDet = Mathf.Abs(explicitRotation.w * fixedPrevRotation.w + explicitRotation.x * fixedPrevRotation.x + explicitRotation.y * fixedPrevRotation.y + explicitRotation.z * fixedPrevRotation.z);
+        //isTurningInterpolant = Mathf.InverseLerp(0f, 0.0002f, 1f - isTurningDet);
+        isSlidingDet = 1f - Mathf.Abs(Vector3.Dot(fixedPrevForward, transform.right));
+        //Debug.Log($"turning det {isSlidingDet}");
+        isSlidingInterpolant = Mathf.InverseLerp(0f, 0.45f, isSlidingDet);
+        isSliding = isSlidingInterpolant >= 1f;
+        Debug.Log(isSliding);
 
         fixedPrevRotation = explicitRotation;
         fixedPrevVelocity = Rigidbody.velocity;
+        fixedPrevForward = transform.forward;
 
         timeSinceLastPhysicsUpdate = 0f;
 
