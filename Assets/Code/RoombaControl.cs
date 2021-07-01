@@ -226,6 +226,54 @@ public class RoombaControl : NetworkBehaviour
     public bool ShowCrosshair = true;
 
     /// <summary>
+    /// <para>Rotation stored from previous physics frame.</para>
+    /// <para>This is used to determine if the player is turning, regardless of input. See <see cref="isTurning"/></para>
+    /// </summary>
+    Quaternion fixedPrevRotation = Quaternion.identity;
+
+    /// <summary>
+    /// Stores the current attempted rotation. Used in conjunction with <see cref="fixedPrevRotation"/> to provide a determinant for <see cref="isTurning"/>.
+    /// </summary>
+    Quaternion explicitRotation = Quaternion.identity;
+
+    /// <summary>
+    /// Linear velocity stored from previos physics frame. Used with <see cref="fixedPrevRotation"/>.
+    /// </summary>
+    Vector3 fixedPrevVelocity = Vector3.zero;
+
+    /// <summary>
+    /// Position on the last fixed frame.
+    /// </summary>
+    Vector3 prevPosition = Vector3.zero;
+
+    /// <summary>
+    /// Velocity vector calculated explicitly on FixedUpdate using <see cref="prevPosition"/>.
+    /// </summary>
+    Vector3 explicitVelocity = Vector3.zero;
+
+    /// <summary>
+    /// Is the player's rotation changing? Determined on fixed physics step.
+    /// </summary>
+    bool isTurning = false;
+
+    /// <summary>
+    /// Is the player moving forwards?
+    /// </summary>
+    bool isDriving = false;
+
+    /// <summary>
+    /// Actual determinant used for <see cref="isTurning"/>.
+    /// </summary>
+    float isTurningDet = 1f;
+
+    /// <summary>
+    /// An interpolant value [0..1] of how much of the threshold angular velocity we have.
+    /// </summary>
+    float isTurningInterpolant = 1f;
+
+    float timeSinceLastPhysicsUpdate = 0f;
+
+    /// <summary>
     /// Whether the crosshair should be rendered or not. Provide this to the SRP pass.
     /// </summary>
     public static bool CrosshairRequired
@@ -259,13 +307,13 @@ public class RoombaControl : NetworkBehaviour
     /// Walk input getter.
     /// </summary>
     /// <returns></returns>
-    float GetWalk() => Input.GetAxis("Vertical");
+    float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Vertical") : Input.GetAxis("Vertical");
 
     /// <summary>
     /// Yaw rotation input getter.
     /// </summary>
     /// <returns></returns>
-    float GetTurn() => Input.GetAxis("Horizontal");
+    float GetTurn(bool raw = false) => raw ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
 
     /// <summary>
     /// Jump trigger input getter.
@@ -441,15 +489,32 @@ public class RoombaControl : NetworkBehaviour
         // Turn the roomba left-right.
         Quaternion prevCamRotation = Cam.transform.rotation;
         Vector3 prevCamPosition = Cam.transform.position;
+        Quaternion prevRotation = transform.rotation;
         transform.Rotate(transform.up, roombaRotation, Space.World);
+
+        explicitRotation = transform.rotation;
 
         if (!OrbitCameraWithPlayer)
         {
+            // Prevents camera turning around the player when they're stuck against a wall.
+            bool turningInputActive = Mathf.Abs(GetTurn(true)) == 1f;
+            bool drivingInputActive = Mathf.Abs(GetWalk(true)) == 1f;
+
+            float forwardDet = Mathf.Abs(Vector3.Dot(explicitVelocity.normalized, transform.forward));
+
+            isDriving = forwardDet > 0.9f;
+            bool preventCameraTurn = turningInputActive && drivingInputActive && !isDriving && !isTurning;
+            Debug.Log($"{fixedPrevVelocity}, speed: {forwardDet}");
+            Debug.Log($"turningInput: {turningInputActive}, drivingInput: {drivingInputActive}, isDriving: {isDriving}, isTurning: {isTurning}");
+            Debug.Log("PREVENT CAMERA TURN: " + preventCameraTurn);
+
             // Counters the player rotation.
-            Cam.transform.rotation = prevCamRotation;
+            Cam.transform.rotation = (preventCameraTurn) ? Cam.transform.rotation : prevCamRotation;
+            //Cam.transform.rotation = Quaternion.Slerp(Cam.transform.rotation, prevCamRotation, preventCameraTurn ? 0f : isTurningInterpolant);
 
             // Prevents jitter.
-            Cam.transform.position = prevCamPosition;
+            //Cam.transform.position = Vector3.Slerp(Cam.transform.position, prevCamPosition, preventCameraTurn ? 0f : isTurningInterpolant);
+            Cam.transform.position = (preventCameraTurn) ? Cam.transform.position : prevCamPosition;
         }
 
         // Raycast in front of the player to check for inclines/slopes/obstacles.
@@ -721,6 +786,27 @@ public class RoombaControl : NetworkBehaviour
             Debug.Log($"Setting {GameManager.FromId(victimClientId).PlayerName.Value}'s LastAttackerId to {serverRpcParams.Receive.SenderClientId}");
             victimStats.LastAttacker.Value = $"{serverRpcParams.Receive.SenderClientId}";
         }
+    }
+
+    /// <summary>
+    /// Every physics frame.
+    /// </summary>
+    void FixedUpdate()
+    {
+        explicitRotation = transform.rotation;
+
+        isTurningDet = Mathf.Abs(explicitRotation.w * fixedPrevRotation.w + explicitRotation.x * fixedPrevRotation.x + explicitRotation.y * fixedPrevRotation.y + explicitRotation.z * fixedPrevRotation.z);
+        isTurningInterpolant = Mathf.InverseLerp(0f, 0.0002f, 1f - isTurningDet);
+        isTurning = isTurningInterpolant >= 1f;
+        Debug.Log(isTurning);
+
+        fixedPrevRotation = explicitRotation;
+        fixedPrevVelocity = Rigidbody.velocity;
+
+        timeSinceLastPhysicsUpdate = 0f;
+
+        explicitVelocity = transform.position - prevPosition;
+        prevPosition = transform.position;
     }
 
     // Update is called once per frame
