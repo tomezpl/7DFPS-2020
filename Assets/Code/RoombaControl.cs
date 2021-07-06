@@ -225,6 +225,43 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     public bool ShowCrosshair = true;
 
+    #region Fix for camera turning when player moves sideways against a wall
+    /// <summary>
+    /// Position on the last fixed frame.
+    /// </summary>
+    Vector3 prevPosition = Vector3.zero;
+
+    /// <summary>
+    /// Velocity vector calculated explicitly on FixedUpdate using <see cref="prevPosition"/>.
+    /// </summary>
+    Vector3 explicitVelocity = Vector3.zero;
+
+    /// <summary>
+    /// Forward vector on last fixed frame.
+    /// </summary>
+    Vector3 fixedPrevForward = Vector3.forward;
+
+    /// <summary>
+    /// Is the player moving sideways (e.g. due to turning while also driving into a wall)? Determined on fixed physics step.
+    /// </summary>
+    bool isSliding = false;
+
+    /// <summary>
+    /// Is the player moving forwards?
+    /// </summary>
+    bool isDriving = false;
+
+    /// <summary>
+    /// Actual determinant used for <see cref="isSliding"/>.
+    /// </summary>
+    float slidingDot = 1f;
+
+    /// <summary>
+    /// An interpolant value [0..1] of how much of the threshold sideways velocity we have.
+    /// </summary>
+    float isSlidingInterpolant = 1f;
+    #endregion
+
     /// <summary>
     /// Whether the crosshair should be rendered or not. Provide this to the SRP pass.
     /// </summary>
@@ -259,13 +296,13 @@ public class RoombaControl : NetworkBehaviour
     /// Walk input getter.
     /// </summary>
     /// <returns></returns>
-    float GetWalk() => Input.GetAxis("Vertical");
+    float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
 
     /// <summary>
     /// Yaw rotation input getter.
     /// </summary>
     /// <returns></returns>
-    float GetTurn() => Input.GetAxis("Horizontal");
+    float GetTurn(bool raw = false) => raw ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
 
     /// <summary>
     /// Jump trigger input getter.
@@ -445,11 +482,25 @@ public class RoombaControl : NetworkBehaviour
 
         if (!OrbitCameraWithPlayer)
         {
+            // Prevents camera turning around the player when they're stuck against a wall.
+            bool turningInputActive = Mathf.Abs(GetTurn(true)) > 0f;
+            bool drivingInputActive = Mathf.Abs(GetWalk(true)) > 0f;
+
+            // Use the dot product to find how much our current velocity is aligned with the forward-vector.
+            float forwardDot = Mathf.Abs(Vector3.Dot(explicitVelocity.normalized, transform.forward));
+
+            // Determine if we're successfully moving forwards or sliding sideways as a result of pushing against a wall.
+            isDriving = forwardDot > 0.9f;
+            isSliding = slidingDot > forwardDot;
+
+            // If all of those conditions are true, the camera's global transform will be reset to that of last frame.
+            bool preventCameraTurn = turningInputActive && drivingInputActive && !isDriving && isSliding;
+
             // Counters the player rotation.
-            Cam.transform.rotation = prevCamRotation;
+            Cam.transform.rotation = (preventCameraTurn) ? Cam.transform.rotation : prevCamRotation;
 
             // Prevents jitter.
-            Cam.transform.position = prevCamPosition;
+            Cam.transform.position = (preventCameraTurn) ? Cam.transform.position : prevCamPosition;
         }
 
         // Raycast in front of the player to check for inclines/slopes/obstacles.
@@ -721,6 +772,22 @@ public class RoombaControl : NetworkBehaviour
             Debug.Log($"Setting {GameManager.FromId(victimClientId).PlayerName.Value}'s LastAttackerId to {serverRpcParams.Receive.SenderClientId}");
             victimStats.LastAttacker.Value = $"{serverRpcParams.Receive.SenderClientId}";
         }
+    }
+
+    /// <summary>
+    /// Every physics frame.
+    /// </summary>
+    void FixedUpdate()
+    {
+        // Use the dot product of the previous physics frame's forward-vector and the current right-vector.
+        // This will let us check how much our velocity is aligned with either vector.
+        slidingDot = 1f - Mathf.Abs(Vector3.Dot(fixedPrevForward, transform.right));
+        isSlidingInterpolant = Mathf.InverseLerp(0f, 0.45f, slidingDot);
+
+        fixedPrevForward = transform.forward;
+
+        explicitVelocity = transform.position - prevPosition;
+        prevPosition = transform.position;
     }
 
     // Update is called once per frame
