@@ -296,7 +296,7 @@ public class RoombaControl : NetworkBehaviour
     /// Walk input getter.
     /// </summary>
     /// <returns></returns>
-    float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Vertical") : Input.GetAxis("Vertical");
+    float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
 
     /// <summary>
     /// Yaw rotation input getter.
@@ -483,8 +483,8 @@ public class RoombaControl : NetworkBehaviour
         if (!OrbitCameraWithPlayer)
         {
             // Prevents camera turning around the player when they're stuck against a wall.
-            bool turningInputActive = Mathf.Abs(GetTurn(true)) == 1f;
-            bool drivingInputActive = Mathf.Abs(GetWalk(true)) == 1f;
+            bool turningInputActive = Mathf.Abs(GetTurn(true)) > 0f;
+            bool drivingInputActive = Mathf.Abs(GetWalk(true)) > 0f;
 
             // Use the dot product to find how much our current velocity is aligned with the forward-vector.
             float forwardDot = Mathf.Abs(Vector3.Dot(explicitVelocity.normalized, transform.forward));
