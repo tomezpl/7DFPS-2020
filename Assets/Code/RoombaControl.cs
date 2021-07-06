@@ -225,22 +225,7 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     public bool ShowCrosshair = true;
 
-    /// <summary>
-    /// <para>Rotation stored from previous physics frame.</para>
-    /// <para>This is used to determine if the player is turning, regardless of input. See <see cref="isSliding"/></para>
-    /// </summary>
-    Quaternion fixedPrevRotation = Quaternion.identity;
-
-    /// <summary>
-    /// Stores the current attempted rotation. Used in conjunction with <see cref="fixedPrevRotation"/> to provide a determinant for <see cref="isSliding"/>.
-    /// </summary>
-    Quaternion explicitRotation = Quaternion.identity;
-
-    /// <summary>
-    /// Linear velocity stored from previos physics frame. Used with <see cref="fixedPrevRotation"/>.
-    /// </summary>
-    Vector3 fixedPrevVelocity = Vector3.zero;
-
+    #region Fix for camera turning when player moves sideways against a wall
     /// <summary>
     /// Position on the last fixed frame.
     /// </summary>
@@ -269,14 +254,13 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// Actual determinant used for <see cref="isSliding"/>.
     /// </summary>
-    float isSlidingDet = 1f;
+    float slidingDot = 1f;
 
     /// <summary>
     /// An interpolant value [0..1] of how much of the threshold sideways velocity we have.
     /// </summary>
     float isSlidingInterpolant = 1f;
-
-    float timeSinceLastPhysicsUpdate = 0f;
+    #endregion
 
     /// <summary>
     /// Whether the crosshair should be rendered or not. Provide this to the SRP pass.
@@ -494,10 +478,7 @@ public class RoombaControl : NetworkBehaviour
         // Turn the roomba left-right.
         Quaternion prevCamRotation = Cam.transform.rotation;
         Vector3 prevCamPosition = Cam.transform.position;
-        Quaternion prevRotation = transform.rotation;
         transform.Rotate(transform.up, roombaRotation, Space.World);
-
-        explicitRotation = transform.rotation;
 
         if (!OrbitCameraWithPlayer)
         {
@@ -505,20 +486,20 @@ public class RoombaControl : NetworkBehaviour
             bool turningInputActive = Mathf.Abs(GetTurn(true)) == 1f;
             bool drivingInputActive = Mathf.Abs(GetWalk(true)) == 1f;
 
-            float forwardDet = Mathf.Abs(Vector3.Dot(explicitVelocity.normalized, transform.forward));
+            // Use the dot product to find how much our current velocity is aligned with the forward-vector.
+            float forwardDot = Mathf.Abs(Vector3.Dot(explicitVelocity.normalized, transform.forward));
 
-            isDriving = forwardDet > 0.9f;
-            isSliding = isSlidingDet > forwardDet;
+            // Determine if we're successfully moving forwards or sliding sideways as a result of pushing against a wall.
+            isDriving = forwardDot > 0.9f;
+            isSliding = slidingDot > forwardDot;
+
+            // If all of those conditions are true, the camera's global transform will be reset to that of last frame.
             bool preventCameraTurn = turningInputActive && drivingInputActive && !isDriving && isSliding;
-            Debug.Log($"{fixedPrevVelocity}, speed: {forwardDet}, slidingDet: {isSlidingDet}");
 
             // Counters the player rotation.
-            //Cam.transform.rotation = Quaternion.Lerp(Cam.transform.rotation, prevCamRotation, Mathf.Pow(forwardDet * isSlidingInterpolant, 2f));
             Cam.transform.rotation = (preventCameraTurn) ? Cam.transform.rotation : prevCamRotation;
-            //Cam.transform.rotation = Quaternion.Slerp(Cam.transform.rotation, prevCamRotation, preventCameraTurn ? 0f : isTurningInterpolant);
 
             // Prevents jitter.
-            //Cam.transform.position = Vector3.Slerp(Cam.transform.position, prevCamPosition, preventCameraTurn ? 0f : isTurningInterpolant);
             Cam.transform.position = (preventCameraTurn) ? Cam.transform.position : prevCamPosition;
         }
 
@@ -798,21 +779,12 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     void FixedUpdate()
     {
-        explicitRotation = transform.rotation;
+        // Use the dot product of the previous physics frame's forward-vector and the current right-vector.
+        // This will let us check how much our velocity is aligned with either vector.
+        slidingDot = 1f - Mathf.Abs(Vector3.Dot(fixedPrevForward, transform.right));
+        isSlidingInterpolant = Mathf.InverseLerp(0f, 0.45f, slidingDot);
 
-        //isTurningDet = Mathf.Abs(explicitRotation.w * fixedPrevRotation.w + explicitRotation.x * fixedPrevRotation.x + explicitRotation.y * fixedPrevRotation.y + explicitRotation.z * fixedPrevRotation.z);
-        //isTurningInterpolant = Mathf.InverseLerp(0f, 0.0002f, 1f - isTurningDet);
-        isSlidingDet = 1f - Mathf.Abs(Vector3.Dot(fixedPrevForward, transform.right));
-        //Debug.Log($"turning det {isSlidingDet}");
-        isSlidingInterpolant = Mathf.InverseLerp(0f, 0.45f, isSlidingDet);
-        isSliding = isSlidingInterpolant >= 1f;
-        Debug.Log(isSliding);
-
-        fixedPrevRotation = explicitRotation;
-        fixedPrevVelocity = Rigidbody.velocity;
         fixedPrevForward = transform.forward;
-
-        timeSinceLastPhysicsUpdate = 0f;
 
         explicitVelocity = transform.position - prevPosition;
         prevPosition = transform.position;
