@@ -164,7 +164,9 @@ public class PlayerStats : NetworkBehaviour
 
         // If another player killed us, call the server RPC to give them a kill.
         Debug.Log($"Last attacker was {LastAttackerId}");
-        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null)
+
+        // Make sure we can find a GameManager for this ID and that it doesn't belong to us (self-kills shouldn't count as kill points).
+        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null && LastAttackerId != OwnerClientId)
         {
             GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value);
         }
