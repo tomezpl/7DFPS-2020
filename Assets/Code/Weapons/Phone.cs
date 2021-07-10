@@ -141,7 +141,8 @@ public class Phone : Weapon
                         Owner.GetComponent<RoombaControl>().DealDamageServerRpc(Mathf.RoundToInt(dmgMult * CloseUpDamage), player.GetComponent<RoombaControl>().OwnerClientId);
                     }
 
-                    Owner.Die();
+                    // Send a DealDamage RPC to update LastAttackerId.
+                    Owner.GetComponent<RoombaControl>().DealDamageServerRpc(CloseUpDamage, NetworkManager.LocalClientId);
                 }
             }
         }
