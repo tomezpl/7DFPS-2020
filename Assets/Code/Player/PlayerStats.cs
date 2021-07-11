@@ -79,24 +79,28 @@ public class PlayerStats : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
+        Text[] hudTextComponents = GameObject.Find("HUD")?.GetComponentsInChildren<Text>();
+        if (hudTextComponents != null)
         {
-            switch (text.name)
+            foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
             {
-                case "Health":
-                    healthText = text;
-                    break;
-                case "KDP":
-                    kdpText = text;
-                    break;
-                case "Winner":
-                    winnerText = text;
-                    break;
-            }
+                switch (text.name)
+                {
+                    case "Health":
+                        healthText = text;
+                        break;
+                    case "KDP":
+                        kdpText = text;
+                        break;
+                    case "Winner":
+                        winnerText = text;
+                        break;
+                }
 
-            if (healthText && kdpText && winnerText)
-            {
-                break;
+                if (healthText && kdpText && winnerText)
+                {
+                    break;
+                }
             }
         }
     }
@@ -126,14 +130,17 @@ public class PlayerStats : NetworkBehaviour
                 Die();
             }
 
-            healthText.enabled = true;
-            if (health <= 0)
+            if (healthText != null)
             {
-                healthText.text = "";
-            }
-            else
-            {
-                healthText.text = $"Health: {health}";
+                healthText.enabled = true;
+                if (health <= 0)
+                {
+                    healthText.text = "";
+                }
+                else
+                {
+                    healthText.text = $"Health: {health}";
+                }
             }
         }
     }
@@ -157,7 +164,9 @@ public class PlayerStats : NetworkBehaviour
 
         // If another player killed us, call the server RPC to give them a kill.
         Debug.Log($"Last attacker was {LastAttackerId}");
-        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null)
+
+        // Make sure we can find a GameManager for this ID and that it doesn't belong to us (self-kills shouldn't count as kill points).
+        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null && LastAttackerId != OwnerClientId)
         {
             GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value);
         }

@@ -3,6 +3,7 @@ using MLAPI.Transports.UNET;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TMPro;
@@ -28,7 +29,14 @@ public class LobbyManager : MonoBehaviour
                 return _singleton;
             }
 
-            return _singleton = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
+            try
+            {
+                return _singleton = GameObject.Find("NetworkManager").GetComponent<LobbyManager>();
+            }
+            catch(Exception)
+            {
+                return null;
+            }
         }
     }
 
@@ -250,7 +258,15 @@ public class LobbyManager : MonoBehaviour
     public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId)
     {
         GameObject instance = Instantiate(PlayerPrefab, position, orientation);
-        instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+        using (MemoryStream ms = new MemoryStream())
+        {
+            // Write the spawnpoint's position and orientation bytes to the stream.
+            NetcodeHelpers.StreamHelper.WritePosition(ms, position);
+            NetcodeHelpers.StreamHelper.WriteOrientation(ms, orientation);
+            ms.Flush();
+
+            instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, ms);
+        }
     }
 
     // Start is called before the first frame update
@@ -299,7 +315,9 @@ public class LobbyManager : MonoBehaviour
             Debug.Log($"Server: A client with id {clientId} just connected. Spawning a GameManager and player instance for them.");
 
             Instantiate(GameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
-            SpawnPlayer(Vector3.zero, Quaternion.identity, clientId);
+
+            (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
+            SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId);
         }
         else
         {
@@ -351,7 +369,9 @@ public class LobbyManager : MonoBehaviour
 
         // Spawn a GameManager & player prefab instance for the Host player.
         Instantiate(GameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.ServerClientId);
-        SpawnPlayer(Vector3.zero, Quaternion.identity, NetworkManager.Singleton.LocalClientId);
+
+        (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
+        SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, NetworkManager.Singleton.LocalClientId);
     }
 
     /// <summary>

@@ -209,7 +209,71 @@ public partial class GameManager : NetworkBehaviour
     [ServerRpc]
     public void RequestPlayerSpawnServerRpc(ServerRpcParams serverRpcParams = default)
     {
-        LobbyManager.Singleton.SpawnPlayer(Vector3.zero, Quaternion.identity, serverRpcParams.Receive.SenderClientId);
+        (Vector3 pos, Quaternion orientation) spawnPoint = FindSafestSpawnPoint();
+        LobbyManager.Singleton.SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, serverRpcParams.Receive.SenderClientId);
+    }
+
+    /// <summary>
+    /// Searches for a spawn point as far away from players as possible.
+    /// </summary>
+    /// <returns>The spawn coords deemed to be safest based on distance to players.</returns>
+    public (Vector3 pos, Quaternion orientation) FindSafestSpawnPoint()
+    {
+        try
+        {
+            RoombaControl[] players = FindObjectsOfType<RoombaControl>();
+            GameObject[] spawnPoints = GameObject.FindGameObjectsWithTag("SpawnPoint");
+
+            float maxDistanceFound = 0f;
+            int maxDistanceIndex = -1;
+
+            for (int i = 0; i < spawnPoints.Length; i++)
+            {
+                // Closest player's distance to this spawnpoint.
+                // Initialise to -1 for the first player loop iteration.
+                float closestPlayer = -1f;
+
+                foreach (RoombaControl player in players)
+                {
+                    float distance = Vector3.Distance(spawnPoints[i].transform.position, player.transform.position);
+                    if (closestPlayer < 0f)
+                    {
+                        closestPlayer = distance;
+                    }
+                    else
+                    {
+                        closestPlayer = Mathf.Min(closestPlayer, distance);
+                    }
+
+                    // Terminate early if any player is already closer than the global max distance found thus far.
+                    if (closestPlayer < maxDistanceFound)
+                    {
+                        break;
+                    }
+                }
+
+                if (closestPlayer > maxDistanceFound)
+                {
+                    maxDistanceFound = closestPlayer;
+                    maxDistanceIndex = i;
+                }
+            }
+
+            // If no safe spawn point was found, choose a random one.
+            if (maxDistanceIndex < 0)
+            {
+                maxDistanceIndex = UnityEngine.Random.Range(0, spawnPoints.Length - 1);
+            }
+
+            Transform spawnPointTransform = spawnPoints[maxDistanceIndex].transform;
+            return (spawnPointTransform.position, spawnPointTransform.rotation);
+        }
+        catch(Exception)
+        {
+            // Failsafe. This method doesn't need to run on each frame so using a try-catch should be fine,
+            // and it saves us some headaches.
+            return (Vector3.zero, Quaternion.identity);
+        }
     }
 
     /// <summary>

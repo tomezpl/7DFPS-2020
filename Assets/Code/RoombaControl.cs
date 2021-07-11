@@ -4,6 +4,7 @@ using MLAPI.NetworkVariable;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 /// <summary>
@@ -74,9 +75,9 @@ public class RoombaControl : NetworkBehaviour
     RoombaClass selectedClass = RoombaClass.Cannon;
 
     /// <summary>
-    /// The <see cref="MeshCollider"/> used for the player.
+    /// The <see cref="Collider"/> used for the player.
     /// </summary>
-    public MeshCollider RoombaCollider;
+    public Collider RoombaCollider;
 
     /// <summary>
     /// Player camera.
@@ -84,9 +85,14 @@ public class RoombaControl : NetworkBehaviour
     public Camera Cam;
 
     /// <summary>
+    /// The vertical offset to add to the camera's third-person position. Can be tweaked to give better vision while aiming.
+    /// </summary>
+    public float CamVerticalOffset = 1.1f;
+
+    /// <summary>
     /// Player movement parameters.
     /// </summary>
-    public float MoveSpeed = 3f, StrafeSpeed = 2f, JumpStrength = 5f;
+    public float MoveSpeed = 3f, StrafeSpeed = 2f, TurnSpeed = 150f, JumpStrength = 5f;
 
     /// <summary>
     /// Player's rigidbody component for simulating physics.
@@ -104,32 +110,175 @@ public class RoombaControl : NetworkBehaviour
     public bool LockInput = false;
 
     /// <summary>
+    /// Debugging only: should this player be considered the local player no matter what?
+    /// </summary>
+    public bool OverridePlayerControlCheck = false;
+
+    /// <summary>
     /// Is this controlled by the local player?
     /// </summary>
-    public bool PlayerControlled { get { return playerControlled && IsOwner; } }
+    public bool PlayerControlled { get { return OverridePlayerControlCheck || (playerControlled && IsOwner); } }
 
-    // Direct result of the movement vector calculation.
-    Vector3 moveVector;
+    // Direct result of the movement vector calculation. moveVector2: raycast (will take priority)
+    Vector3 moveVector, moveVector2;
 
-    // Direct result of the strafe vector calculation.
-    Vector3 strafeVector;
+    // Direct result of the strafe vector calculation. strafeVector2: raycast (will take priority)
+    Vector3 strafeVector, strafeVector2;
 
     /// <summary>
     /// <para>Movement vector; this is a cross product of the collider floor normal and the player's up vector. (Surface tangent)</para>
     /// <para>Equal to <see cref="Vector3.zero"/> when the player collider is not touching a floor surface.</para>
     /// </summary>
-    Vector3 MoveVector { get { return isColliding ? moveVector : Vector3.zero; } }
+    Vector3 MoveVector { get { return isColliding ? (moveVector2 == Vector3.zero ? moveVector : moveVector2) : Vector3.zero; } }
 
     /// <summary>
     /// Strafing vector (usually orthogonal to <see cref="MoveVector"/>)
     /// </summary>
-    Vector3 StrafeVector { get { return isColliding ? strafeVector : Vector3.zero; } }
+    Vector3 StrafeVector { get { return isColliding ? (strafeVector2 == Vector3.zero ? strafeVector : strafeVector2) : Vector3.zero; } }
 
     /// <summary>
     /// <para>Is the player collider in contact with another collider?</para>
     /// <para>This gets updated in OnCollision/OnTrigger callbacks and should not be modified in the update loop.</para>
     /// </summary>
     bool isColliding;
+
+    /// <summary>
+    /// Should the camera be rigidly aligned with the player's rotation?
+    /// </summary>
+    public bool OrbitCameraWithPlayer = false;
+
+    /// <summary>
+    /// The time (in seconds) of input inactivity it takes for the camera to start resetting to its initial transform.
+    /// </summary>
+    public float CameraIdleTimeout = 5f;
+
+    /// <summary>
+    /// Should the player's camera reset after <see cref="CameraIdleTimeout"/> is reached?
+    /// </summary>
+    public bool IsCameraIdleTimeoutEnabled = false;
+
+    /// <summary>
+    /// Timer for tracking camera input inactivity. If it reaches <see cref="CameraIdleTimeout"/>, the camera begins to reset to its initial position.
+    /// </summary>
+    float camIdleTimer = 0f;
+
+    /// <summary>
+    /// Timer for tracking elapsed time during the camera reset interpolation.
+    /// </summary>
+    float camResetProgress = 0f;
+
+    /// <summary>
+    /// The amount of smoothing to apply to the camera reset interpolation (0..1)
+    /// </summary>
+    public float CameraResetSmoothing = 1f;
+
+    /// <summary>
+    /// The time (in seconds) it should take to reset back to the initial camera tranform.
+    /// </summary>
+    public float CameraResetTime = 3f;
+
+    /// <summary>
+    /// The minimum distance the camera should keep from the origin point.
+    /// </summary>
+    public float MinCameraDistance = 1.5f;
+
+    /// <summary>
+    /// The distance to add to the springarm camera raycast max distance.
+    /// </summary>
+    public float SpringarmCameraRaycastMargin = 0.2f;
+
+    /// <summary>
+    /// <para>The maximum number of raycast hits we should check for the springarm camera.</para>
+    /// <para>This can be tuned for minor performance tweaking as it adjusts the number of for-loop iterations.</para>
+    /// </summary>
+    public int MaxCameraRaycastIterations = 10;
+
+    /// <summary>
+    /// Initial camera local position - this will be set during <see cref="Start"/>
+    /// </summary>
+    Vector3 initialCameraOffset = Vector3.zero;
+
+    /// <summary>
+    /// Initial camera local orientation - this will be set during <see cref="Start"/>
+    /// </summary>
+    Quaternion initialCameraOrientation = Quaternion.identity;
+
+    /// <summary>
+    /// Camera local orientation right before <see cref="CameraIdleTimeout"/> was reached.
+    /// </summary>
+    Quaternion cameraOrientationBeforeResetY, cameraOrientationBeforeResetX = Quaternion.identity;
+
+    /// <summary>
+    /// <para>Is the camera currently being reset to its initial position?</para>
+    /// <para>This will be true if at least <see cref="CameraIdleTimeout"/> has passed without camera input.</para>
+    /// <para>As soon as input is received again, it will be set back to false, thus interrupting the reset and giving player camera control.</para>
+    /// </summary>
+    bool isCameraResetting = false;
+
+    /// <summary>
+    /// Used for raycasts to check if there's a wall blocking the Roomba's path.
+    /// </summary>
+    bool canMoveAhead = true;
+
+    /// <summary>
+    /// Should the crosshair be shown?
+    /// </summary>
+    public bool ShowCrosshair = true;
+
+    #region Fix for camera turning when player moves sideways against a wall
+    /// <summary>
+    /// Position on the last fixed frame.
+    /// </summary>
+    Vector3 prevPosition = Vector3.zero;
+
+    /// <summary>
+    /// Velocity vector calculated explicitly on FixedUpdate using <see cref="prevPosition"/>.
+    /// </summary>
+    Vector3 explicitVelocity = Vector3.zero;
+
+    /// <summary>
+    /// Forward vector on last fixed frame.
+    /// </summary>
+    Vector3 fixedPrevForward = Vector3.forward;
+
+    /// <summary>
+    /// Is the player moving sideways (e.g. due to turning while also driving into a wall)? Determined on fixed physics step.
+    /// </summary>
+    bool isSliding = false;
+
+    /// <summary>
+    /// Is the player moving forwards?
+    /// </summary>
+    bool isDriving = false;
+
+    /// <summary>
+    /// Actual determinant used for <see cref="isSliding"/>.
+    /// </summary>
+    float slidingDot = 1f;
+
+    /// <summary>
+    /// An interpolant value [0..1] of how much of the threshold sideways velocity we have.
+    /// </summary>
+    float isSlidingInterpolant = 1f;
+    #endregion
+
+    /// <summary>
+    /// Whether the crosshair should be rendered or not. Provide this to the SRP pass.
+    /// </summary>
+    public static bool CrosshairRequired
+    {
+        get
+        {
+            if(LobbyManager.Singleton?.LocalPlayerObject)
+            {
+                return LobbyManager.Singleton.LocalPlayerObject.GetComponent<RoombaControl>().selectedClass == RoombaClass.Cannon;
+            }
+            else
+            {
+                return FindObjectOfType<RoombaControl>()?.ShowCrosshair ?? false;
+            }
+        }
+    }
 
     /// <summary>
     /// Look X axis getter.
@@ -147,13 +296,13 @@ public class RoombaControl : NetworkBehaviour
     /// Walk input getter.
     /// </summary>
     /// <returns></returns>
-    float GetWalk() => Input.GetAxis("Vertical");
+    float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
 
     /// <summary>
     /// Yaw rotation input getter.
     /// </summary>
     /// <returns></returns>
-    float GetTurn() => Input.GetAxis("Horizontal");
+    float GetTurn(bool raw = false) => raw ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
 
     /// <summary>
     /// Jump trigger input getter.
@@ -170,29 +319,148 @@ public class RoombaControl : NetworkBehaviour
         float lookX = GetLookX();
         float lookY = GetLookY();
 
-        // Limit camera yaw.
-        if (Cam.transform.localRotation.y > 0.3f)
+        if (lookX == 0f && lookY == 0f)
         {
-            lookX = lookX > 0f ? 0f : lookX;
+            camIdleTimer += Time.deltaTime;
         }
-        if (Cam.transform.localRotation.y < -0.3f)
+        else
         {
-            lookX = lookX < 0f ? 0f : lookX;
+            camIdleTimer = 0f;
+            camResetProgress = 0f;
+
+            isCameraResetting = false;
         }
 
-        // Limit camera pitch.
-        if (Cam.transform.localRotation.x > 0.4f)
+        if (isCameraResetting)
         {
-            lookY = lookY < 0f ? 0f : lookY;
+            camResetProgress += Time.deltaTime;
         }
-        if (Cam.transform.localRotation.x < -0.4f)
+
+        if (camIdleTimer >= CameraIdleTimeout && IsCameraIdleTimeoutEnabled)
         {
-            lookY = lookY > 0f ? 0f : lookY;
+            if (!isCameraResetting)
+            {
+                // Set the start value for the interpolation.
+                Vector3 euler = Cam.transform.localRotation.eulerAngles;
+
+                cameraOrientationBeforeResetY = Quaternion.AngleAxis(euler.y, Vector3.up);
+                cameraOrientationBeforeResetX = Quaternion.AngleAxis(euler.x, Vector3.right);
+            }
+
+            isCameraResetting = true;
+        }
+
+        // Limit camera pitch unless the camera is being reset.
+        if (!isCameraResetting)
+        {
+            Vector3 eulers = Cam.transform.localRotation.eulerAngles;
+            float pitch = Mathf.Cos(Mathf.Deg2Rad * eulers.x);
+            if (eulers.x > 180f)
+            {
+                if (lookY > 0f)
+                {
+                    if (pitch <= 0.75f)
+                    {
+                        lookY = -lookY;
+                    }
+                }
+            }
+            if (eulers.x < 180f)
+            {
+                if (lookY < 0f)
+                {
+                    if (pitch <= 0.75f)
+                    {
+                        lookY = -lookY;
+                    }
+                }
+            }
+            //Debug.Log(pitch);
         }
 
         // Apply limited camera rotations.
-        Cam.transform.Rotate(transform.up, lookX, Space.World);
-        Cam.transform.Rotate(Cam.transform.right, -lookY, Space.World);
+        if (!isCameraResetting)
+        {
+            Cam.transform.Rotate(transform.up, lookX, Space.World);
+            Cam.transform.Rotate(Cam.transform.right, -lookY, Space.World);
+        }
+        else
+        {
+            float expectedInterpolant = Mathf.InverseLerp(0f, Mathf.Max(CameraResetTime, camResetProgress), camResetProgress);
+
+            // The percentile of the camera reset interpolation at which it should move at linear speed.
+            // This is when smoothing disappears and interpolation goes full speed.
+            float linearInterpolant = CameraResetSmoothing / 2f;
+            float smoothInterpolantR = 1f - linearInterpolant;
+            float finalInterpolant = 0f;
+            if (expectedInterpolant < linearInterpolant && camResetProgress < CameraResetTime)
+            {
+                finalInterpolant = expectedInterpolant * Mathf.Max(0.01f, Mathf.InverseLerp(0f, linearInterpolant, expectedInterpolant));
+            }
+            else
+            {
+                finalInterpolant = expectedInterpolant;
+            }
+
+            // TODO: extract yaw and pitch using euler? might be easier & more confident in that
+            initialCameraOrientation.ToAngleAxis(out float initAngle, out Vector3 initAxis);
+            Quaternion initYaw = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.up), Vector3.up);
+            Quaternion initPitch = Quaternion.AngleAxis(initAngle * Vector3.Dot(initAxis, Vector3.right), Vector3.right);
+
+            Quaternion yawLerp = Quaternion.Slerp(cameraOrientationBeforeResetY, initYaw, finalInterpolant);
+
+            Quaternion pitchLerp = Quaternion.Slerp(cameraOrientationBeforeResetX, initPitch, finalInterpolant);
+
+            Cam.transform.localRotation = yawLerp * pitchLerp;
+        }
+
+        Vector3 localEuler = Cam.transform.localEulerAngles * Mathf.Deg2Rad;
+        float cameraDistance = initialCameraOffset.magnitude;
+
+        // Apply orbit offset.
+        Cam.transform.localPosition = cameraDistance * new Vector3(-Mathf.Sin(localEuler.y) * Mathf.Cos(localEuler.x), Mathf.Sin(localEuler.x), -Mathf.Cos(localEuler.y) * Mathf.Cos(localEuler.x));
+        Cam.transform.localPosition += Vector3.up * CamVerticalOffset;
+
+        // Springarm camera: prevent objects from obstructing the player from the camera.
+        float camRaycastHitDistance = cameraDistance;
+        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~(1 << LayerMask.NameToLayer("LocalPlayer")));
+        RaycastHit closestHit = default;
+        for (int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
+        {
+            RaycastHit hit = raycastResults[i];
+            camRaycastHitDistance = Mathf.Min(camRaycastHitDistance, hit.distance);
+
+            if (camRaycastHitDistance == hit.distance)
+            {
+                closestHit = hit;
+            }
+        }
+
+        Cam.transform.localPosition = Cam.transform.localPosition.normalized * Mathf.Max(MinCameraDistance, Mathf.Min(camRaycastHitDistance, cameraDistance));
+
+        // Slide the camera along the surface.
+        if (camRaycastHitDistance < cameraDistance && raycastResults?.Length > 0)
+        {
+            // n3
+            Vector3 hitToCam = Cam.transform.position - closestHit.point;
+
+            // n2
+            Vector3 hitToNormal = closestHit.normal.normalized * hitToCam.magnitude;
+
+            // Position of the camera along the surface tangent.
+            Vector3 camSurfaceTangentPos = closestHit.point + (hitToCam + hitToNormal) / 2f;
+
+            // Make sure the camera would be at least a bare minimum away 
+            // from the player model so we don't see the insides (ewww).
+            float newDist = Vector3.Distance(camSurfaceTangentPos, Cam.transform.position);
+            if (camRaycastHitDistance < MinCameraDistance)
+            {
+                Vector3 localCamPos = transform.worldToLocalMatrix.MultiplyPoint(camSurfaceTangentPos);
+                Cam.transform.localPosition = localCamPos.normalized * Mathf.Max(localCamPos.magnitude, MinCameraDistance / 1.25f);
+            }
+        }
+
+        //Debug.DrawLine(Cam.transform.position, Cam.transform.position + Cam.transform.forward * cameraDistance, Color.red, 10f);
     }
 
     /// <summary>
@@ -200,16 +468,56 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     void Movement()
     {
-        if(!IsOwner)
+        if (!IsOwner && !OverridePlayerControlCheck)
         {
             return;
         }
 
+        float roombaRotation = GetTurn() * Mathf.Sign(GetWalk()) * Time.deltaTime * TurnSpeed;
+
         // Turn the roomba left-right.
-        transform.Rotate(transform.up, GetTurn() * Mathf.Sign(GetWalk()), Space.World);
+        Quaternion prevCamRotation = Cam.transform.rotation;
+        Vector3 prevCamPosition = Cam.transform.position;
+        transform.Rotate(transform.up, roombaRotation, Space.World);
+
+        if (!OrbitCameraWithPlayer)
+        {
+            // Prevents camera turning around the player when they're stuck against a wall.
+            bool turningInputActive = Mathf.Abs(GetTurn(true)) > 0f;
+            bool drivingInputActive = Mathf.Abs(GetWalk(true)) > 0f;
+
+            // Use the dot product to find how much our current velocity is aligned with the forward-vector.
+            float forwardDot = Mathf.Abs(Vector3.Dot(explicitVelocity.normalized, transform.forward));
+
+            // Determine if we're successfully moving forwards or sliding sideways as a result of pushing against a wall.
+            isDriving = forwardDot > 0.9f;
+            isSliding = slidingDot > forwardDot;
+
+            // If all of those conditions are true, the camera's global transform will be reset to that of last frame.
+            bool preventCameraTurn = turningInputActive && drivingInputActive && !isDriving && isSliding;
+
+            // Counters the player rotation.
+            Cam.transform.rotation = (preventCameraTurn) ? Cam.transform.rotation : prevCamRotation;
+
+            // Prevents jitter.
+            Cam.transform.position = (preventCameraTurn) ? Cam.transform.position : prevCamPosition;
+        }
+
+        // Raycast in front of the player to check for inclines/slopes/obstacles.
+        CheckAhead();
+
+        // Perform predictive pitch rotation to align with the raycast-hit surface if needed.
+        // This prevents the roomba from flipping forwards while going down slopes and transitioning to a different surface.
+        float angle = (moveVector == Vector3.zero || moveVector2 == Vector3.zero) ? 0f : Mathf.Acos(Vector3.Dot(moveVector2, moveVector));
+        Rigidbody.AddTorque(transform.right * -angle);
+
+        //Debug.DrawLine(transform.position, transform.position + MoveVector * 5f, Color.blue);
 
         // Move the roomba forwards or backwards along the floor tangent depending on the input.
-        transform.Translate(MoveVector * GetWalk() * MoveSpeed * Time.deltaTime, Space.World);
+        if (isColliding)
+        {
+            Rigidbody.velocity = (MoveVector * GetWalk() * MoveSpeed * (!canMoveAhead && Mathf.Sign(GetWalk()) == 1f ? 0f : 1f));
+        }
 
         // Allow jumping only if colliding with a floor.
         if (isColliding && GetJump())
@@ -241,10 +549,10 @@ public class RoombaControl : NetworkBehaviour
     void SetWeapons()
     {
         Debug.Log($"Setting {name}({OwnerClientId})'s RoombaClass to: {selectedClass}");
-        switch(selectedClass)
+        switch (selectedClass)
         {
             case RoombaClass.Cannon:
-                foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
+                foreach (Weapon weapon in GetComponentsInChildren<Weapon>())
                 {
                     Debug.Log("Enabling Cannon");
                     if (!weapon.GetComponent<Cannon>())
@@ -254,10 +562,10 @@ public class RoombaControl : NetworkBehaviour
                 }
                 break;
             case RoombaClass.Stabbo:
-                foreach(Weapon weapon in GetComponentsInChildren<Weapon>())
+                foreach (Weapon weapon in GetComponentsInChildren<Weapon>())
                 {
                     Debug.Log("Enabling stabbo");
-                    if(!weapon.GetComponent<Knife>())
+                    if (!weapon.GetComponent<Knife>())
                     {
                         weapon.gameObject.SetActive(false);
                     }
@@ -294,18 +602,25 @@ public class RoombaControl : NetworkBehaviour
         isColliding = false;
 
         // Find the camera object if not assigned.
-        if(!Cam)
+        if (!Cam)
         {
             Cam = GetComponentInChildren<Camera>();
         }
 
+        // Store the camera's initial transform.
+        if (Cam)
+        {
+            initialCameraOffset = Cam.transform.localPosition;
+            initialCameraOrientation = Cam.transform.localRotation;
+        }
+
         // Find the rigidbody component if not assigned.
-        if(!Rigidbody)
+        if (!Rigidbody)
         {
             Rigidbody = GetComponent<Rigidbody>();
         }
 
-        if(!PlayerControlled)
+        if (!PlayerControlled)
         {
             // If this isn't our roomba, disable the camera audio listener so Unity doesn't complain.
             Cam.GetComponent<AudioListener>().enabled = false;
@@ -321,8 +636,30 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// Occurs before <see cref="Start"/>
     /// </summary>
-    public override void NetworkStart()
+    public override void NetworkStart(Stream stream)
     {
+        if(stream != null && stream.CanRead)
+        {
+            // Extract the spawnpoint from the stream.
+            Vector3 position = NetcodeHelpers.StreamHelper.ReadPosition(stream);
+            Quaternion orientation = NetcodeHelpers.StreamHelper.ReadOrientation(stream);
+
+            Debug.Log($"Spawnpoint was P {position}, O {orientation}");
+
+            // This prevents the player object spawning at (0, 0, 0) for a few frames.
+            transform.position = position;
+            transform.rotation = orientation;
+            if (IsServer)
+            {
+                Position.Value = position;
+                Rotation.Value = orientation;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Couldn't read stream");
+        }
+
         if (PlayerControlled)
         {
             // Update our weapons on the server.
@@ -330,7 +667,7 @@ public class RoombaControl : NetworkBehaviour
 
             // Assign this object as a reference in LobbyManager.
             LobbyManager.Singleton.LocalPlayerObject = gameObject;
-            
+
             // Reset the spawn flag in GameManager.
             GameManager.Singleton.CanRequestSpawn = true;
 
@@ -407,13 +744,13 @@ public class RoombaControl : NetworkBehaviour
         PlayerStats attackerStats = null;
 
         // Find both stats scripts.
-        foreach(PlayerStats stats in FindObjectsOfType<PlayerStats>())
+        foreach (PlayerStats stats in FindObjectsOfType<PlayerStats>())
         {
-            if(stats.OwnerClientId == victimClientId)
+            if (stats.OwnerClientId == victimClientId)
             {
                 victimStats = stats;
             }
-            if(stats.OwnerClientId == serverRpcParams.Receive.SenderClientId)
+            if (stats.OwnerClientId == serverRpcParams.Receive.SenderClientId)
             {
                 attackerStats = stats;
             }
@@ -430,11 +767,27 @@ public class RoombaControl : NetworkBehaviour
         }
 
         // If attacker found in the scene, assign them as the last attacker for that victim.
-        if(victimStats && attackerStats)
+        if (victimStats && attackerStats)
         {
             Debug.Log($"Setting {GameManager.FromId(victimClientId).PlayerName.Value}'s LastAttackerId to {serverRpcParams.Receive.SenderClientId}");
             victimStats.LastAttacker.Value = $"{serverRpcParams.Receive.SenderClientId}";
         }
+    }
+
+    /// <summary>
+    /// Every physics frame.
+    /// </summary>
+    void FixedUpdate()
+    {
+        // Use the dot product of the previous physics frame's forward-vector and the current right-vector.
+        // This will let us check how much our velocity is aligned with either vector.
+        slidingDot = 1f - Mathf.Abs(Vector3.Dot(fixedPrevForward, transform.right));
+        isSlidingInterpolant = Mathf.InverseLerp(0f, 0.45f, slidingDot);
+
+        fixedPrevForward = transform.forward;
+
+        explicitVelocity = transform.position - prevPosition;
+        prevPosition = transform.position;
     }
 
     // Update is called once per frame
@@ -442,6 +795,17 @@ public class RoombaControl : NetworkBehaviour
     {
         if (PlayerControlled)
         {
+            gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+            Transform[] children = GetComponentsInChildren<Transform>(true);
+            foreach (Transform child in children)
+            {
+                // Prevent changing the layer on the orientation arrow as that screws up rendering.
+                if (child.name != "PlayerOrientationArrow")
+                {
+                    child.gameObject.layer = LayerMask.NameToLayer("LocalPlayer");
+                }
+            }
+
             // Allow for preventing input using LockInput.
             // Otherwise run regular input-movement updates.
             if (!LockInput)
@@ -454,7 +818,7 @@ public class RoombaControl : NetworkBehaviour
             CameraRotation.Value = Cam.transform.rotation;
 
             // Suicide key.
-            if(Input.GetKeyDown(KeyCode.F4))
+            if (Input.GetKeyDown(KeyCode.F4))
             {
                 GetComponent<PlayerStats>().Die();
             }
@@ -500,6 +864,11 @@ public class RoombaControl : NetworkBehaviour
         return -CalculateSurfaceTangent(collision.GetContact(0).normal);
     }
 
+    Vector3 CalculateFloorMoveVector(RaycastHit hit)
+    {
+        return -CalculateSurfaceTangent(hit.normal);
+    }
+
     /// <summary>
     /// <para>Calculates strafe vector of a surface, e.g. floor, that the player collides with.</para>
     /// <para>Usually a cross product of <see cref="MoveVector"/> and local +Y axis.</para>
@@ -509,6 +878,43 @@ public class RoombaControl : NetworkBehaviour
     Vector3 CalculateFloorStrafeVector(Collision collision)
     {
         return -Vector3.Cross(CalculateFloorMoveVector(collision), transform.up);
+    }
+
+    Vector3 CalculateFloorStrafeVector(RaycastHit hit)
+    {
+        return -Vector3.Cross(CalculateFloorMoveVector(hit), transform.up);
+    }
+
+    /// <summary>
+    /// Checks for obstacles/inclines ahead using a Raycast.
+    /// </summary>
+    private void CheckAhead()
+    {
+        //Debug.DrawLine(transform.position, transform.position + transform.forward * 1.1f);
+        RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, 1.1f, (1 << LayerMask.NameToLayer("Floor")));
+        if (hits?.Length > 0)
+        {
+            Vector3 hitTangent = CalculateFloorMoveVector(hits[0]);
+            if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.3f)
+            {
+                moveVector2 = hitTangent;
+                strafeVector2 = CalculateFloorStrafeVector(hits[0]);
+            }
+        }
+        else
+        {
+            moveVector2 = Vector3.zero;
+            strafeVector2 = Vector3.zero;
+        }
+
+        if (Physics.Raycast(new Ray(transform.position, transform.forward), out RaycastHit wallHit, 0.5f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
+        {
+            canMoveAhead = false;
+        }
+        else
+        {
+            canMoveAhead = true;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -522,8 +928,12 @@ public class RoombaControl : NetworkBehaviour
     private void OnCollisionStay(Collision collision)
     {
         // Calculate walk & strafe vectors from floor surface tangents.
-        moveVector = CalculateFloorMoveVector(collision);
-        strafeVector = CalculateFloorStrafeVector(collision);
+        Vector3 newMoveVector = CalculateFloorMoveVector(collision);
+        if (Mathf.Abs(Vector3.Dot(newMoveVector, transform.up)) < 0.3f)
+        {
+            moveVector = newMoveVector;
+            strafeVector = CalculateFloorStrafeVector(collision);
+        }
 
         if (collision.transform.CompareTag("Floor"))
         {
