@@ -17,6 +17,11 @@ public class Cannon : Weapon
     public Transform BarrelEnd;
 
     /// <summary>
+    /// Bone to control rotation.
+    /// </summary>
+    public Transform YawBone, PitchBone;
+
+    /// <summary>
     /// Player this weapon belongs to.
     /// </summary>
     public RoombaControl Owner;
@@ -121,19 +126,26 @@ public class Cannon : Weapon
     {
         // Align the gun orientation with the camera.
         float camAngleY = Cam.transform.localEulerAngles.y;
-        transform.localRotation = initRotation * Quaternion.AngleAxis(camAngleY, Vector3.up);
+        YawBone.localRotation = initRotation;
+
+        // Correction(s) for stupid Blender exports...
+        YawBone.localRotation *= Quaternion.AngleAxis(-90f, Vector3.right);
+        YawBone.localRotation *= Quaternion.AngleAxis(180f, Vector3.up);
+
+        YawBone.localRotation *= Quaternion.AngleAxis(camAngleY, Vector3.up);
 
         // Align the barrel with the camera pitch.
         float camAngleX = Cam.transform.localEulerAngles.x;
-        Quaternion newBarrelRot = initBarrelRotation * Quaternion.AngleAxis(-camAngleX, Vector3.right) * Quaternion.AngleAxis(-camAngleX, Vector3.right);
+        Quaternion newPitch = initBarrelRotation * Quaternion.AngleAxis(-camAngleX, Vector3.right);
 
-        float newBarrelPitch = Mathf.Deg2Rad * newBarrelRot.eulerAngles.x;
+        Quaternion oldPitch = PitchBone.transform.localRotation;
+        PitchBone.transform.localRotation = newPitch;
 
         // Clamp the barrel pitch.
         // TODO: Add tweakable parameters for these bounds.
-        if(newBarrelRot.x < -0.56f & newBarrelRot.x > -0.765f)
+        if (Vector3.Dot(Owner.transform.up, PitchBone.transform.up) < 0.4f)
         {
-            BarrelEnd.parent.transform.localRotation = newBarrelRot;
+            PitchBone.transform.localRotation = oldPitch;
         }
 
         // Listen for fire inputs from the local player.
