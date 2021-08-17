@@ -49,14 +49,19 @@ public class Cannon : Weapon
     public GameObject CannonShellPrefab;
 
     /// <summary>
-    /// Initial aiming orientation of the gun.
+    /// Limit on the X-axis rotation of the PitchBone.
     /// </summary>
-    Quaternion initRotation;
+    public const float PitchLimit = 0.4f;
 
     /// <summary>
-    /// Initial aiming orientation of the barrel - this will mainly be used to correct the barrel's pitch.
+    /// Initial orientation of the <see cref="YawBone"/>.
     /// </summary>
-    Quaternion initBarrelRotation;
+    Quaternion initYawBoneRotation;
+
+    /// <summary>
+    /// Initial orientation of the <see cref="PitchBone"/>.
+    /// </summary>
+    Quaternion initPitchBoneRotation;
 
     /// <summary>
     /// <para>Is the gun being fired currently?</para>
@@ -87,13 +92,16 @@ public class Cannon : Weapon
     // Start is called before the first frame update
     void Start()
     {
-        // Store the intial orientation of the cannon, as per the prefab.
-        initRotation = transform.localRotation;
-
-        // Store the initial orientation of the barrel.
-        if (BarrelEnd)
+        // Store the intial orientation of the yaw bone.
+        if (YawBone)
         {
-            initBarrelRotation = BarrelEnd.parent.transform.localRotation;
+            initYawBoneRotation = YawBone.localRotation;
+        }
+
+        // Store the initial orientation of the pitch bone.
+        if (PitchBone)
+        {
+            initPitchBoneRotation = PitchBone.localRotation;
         }
 
         // Find the owner if not assigned before runtime.
@@ -121,32 +129,35 @@ public class Cannon : Weapon
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    /// <summary>
+    /// Performs Quaternion rotations to align the gun with the camera direction.
+    /// </summary>
+    void AlignGunWithCam()
     {
         // Align the gun orientation with the camera.
         float camAngleY = Cam.transform.localEulerAngles.y;
-        YawBone.localRotation = initRotation;
-
-        // Correction(s) for stupid Blender exports...
-        YawBone.localRotation *= Quaternion.AngleAxis(-90f, Vector3.right);
-        YawBone.localRotation *= Quaternion.AngleAxis(180f, Vector3.up);
+        YawBone.localRotation = initYawBoneRotation;
 
         YawBone.localRotation *= Quaternion.AngleAxis(camAngleY, Vector3.up);
 
         // Align the barrel with the camera pitch.
         float camAngleX = Cam.transform.localEulerAngles.x;
-        Quaternion newPitch = initBarrelRotation * Quaternion.AngleAxis(-camAngleX, Vector3.right);
+        float pitchSin = Mathf.Sin(Mathf.Deg2Rad * camAngleX);
+        Quaternion newPitch = (YawBone == PitchBone ? YawBone.localRotation : initPitchBoneRotation) * Quaternion.AngleAxis(camAngleX, Vector3.right);
 
-        Quaternion oldPitch = PitchBone.transform.localRotation;
-        PitchBone.transform.localRotation = newPitch;
-
-        // Clamp the barrel pitch.
-        // TODO: Add tweakable parameters for these bounds.
-        if (Vector3.Dot(Owner.transform.up, PitchBone.transform.up) < 0.4f)
+        // Clamp pitch.
+        if (Mathf.Abs(pitchSin) > PitchLimit)
         {
-            PitchBone.transform.localRotation = oldPitch;
+            newPitch *= Quaternion.AngleAxis(-Mathf.Asin(Mathf.Sign(pitchSin) * (Mathf.Abs(pitchSin) - PitchLimit)) * Mathf.Rad2Deg, Vector3.right);
         }
+
+        PitchBone.transform.localRotation = newPitch;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        AlignGunWithCam();
 
         // Listen for fire inputs from the local player.
         if (Owner.PlayerControlled && Input.GetButtonDown("Fire1") && !isFiring)
