@@ -7,8 +7,53 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Barrel
+    second: {fileID: 2100000, guid: 7cf9613254948184e8d5662ebcb1ee2b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bullet
+    second: {fileID: 2100000, guid: 9d15e9f376aaf884dbb7a8c9a3a84df9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BulletTip
+    second: {fileID: 2100000, guid: fa3880aaab8b0dd42b92e49aa8cb989b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cylinder
+    second: {fileID: 2100000, guid: a9965d1d0eb9930408fe543c7150caa0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GunMainChassis
+    second: {fileID: 2100000, guid: ad8fd2661e469524ebac1044453aea27, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GunStock
+    second: {fileID: 2100000, guid: 54ca52cde6622e44aa9785c0b5fbdcd6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mag
+    second: {fileID: 2100000, guid: 8617c093ee27d0747b1610dbdba8e3ba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: No Name
     second: {fileID: 2100000, guid: dab2f6e48f04ad04089255e4c54b0286, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TripodAnchor
+    second: {fileID: 2100000, guid: 0ad7ffe53714b43408403d207582910b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TripodLegs
+    second: {fileID: 2100000, guid: 43751b2466678a848887586e28425b58, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0
