@@ -54,6 +54,11 @@ public class Cannon : Weapon
     public const float PitchLimit = 0.4f;
 
     /// <summary>
+    /// FxController scripts to activate on <see cref="Fire"/>.
+    /// </summary>
+    public FxController[] FxObjects = new FxController[0];
+
+    /// <summary>
     /// Initial orientation of the <see cref="YawBone"/>.
     /// </summary>
     Quaternion initYawBoneRotation;
@@ -118,7 +123,10 @@ public class Cannon : Weapon
 
         // Store all provided lights and their peak intensities in a Dictionary.
         lights = new Dictionary<Light, float>();
-        if (Lights?.Length > 0)
+
+        // 19/08/2021: Replaced this with FxControllers.
+        // TODO: Remove muzzle flash controls from this class and just use FxControllers from now on.
+        /*if (Lights?.Length > 0)
         {
             foreach (Light light in Lights)
             {
@@ -126,7 +134,7 @@ public class Cannon : Weapon
                 light.intensity = 0f;
                 light.enabled = false;
             }
-        }
+        }*/
     }
 
     /// <summary>
@@ -206,6 +214,15 @@ public class Cannon : Weapon
 
         // Spawn the cannon shell over network.
         firedShell = Instantiate(CannonShellPrefab, BarrelEnd.position, BarrelEnd.rotation * CannonShellPrefab.transform.rotation).GetComponent<CannonBullet>();
+
+        // Trigger any FxControllers.
+        if(FxObjects?.Length > 0)
+        {
+            foreach(FxController fxController in FxObjects)
+            {
+                fxController.Trigger();
+            }
+        }
 
         // TODO: This probably doesn't sync across clients, 
         // but might not need to as the damage event will be raised on the attacker's end anyway.

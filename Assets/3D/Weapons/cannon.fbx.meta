@@ -22,6 +22,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: ControllerBox
+    second: {fileID: 2100000, guid: d6614095a28a03a4d8eb8dbd21effd71, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: Cylinder
     second: {fileID: 2100000, guid: a9965d1d0eb9930408fe543c7150caa0, type: 2}
   - first:
@@ -47,6 +52,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: RedCable
+    second: {fileID: 2100000, guid: 877387f45b6db1a42bcf576c8eaaf52f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: TripodAnchor
     second: {fileID: 2100000, guid: 0ad7ffe53714b43408403d207582910b, type: 2}
   - first:
@@ -54,6 +64,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: TripodLegs
     second: {fileID: 2100000, guid: 43751b2466678a848887586e28425b58, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: YellowCable
+    second: {fileID: 2100000, guid: 76bc8a3e1d5817647a8e0d4ed154941b, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0
