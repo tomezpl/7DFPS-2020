@@ -58,6 +58,15 @@ public class Cannon : Weapon
     /// </summary>
     public FxController[] FxObjects = new FxController[0];
 
+    public enum FiringMode
+    {
+        Single = 0,
+        Burst,
+        FullAuto
+    }
+
+    public FiringMode CurrentFiringMode = FiringMode.FullAuto;
+
     /// <summary>
     /// Initial orientation of the <see cref="YawBone"/>.
     /// </summary>
@@ -194,8 +203,11 @@ public class Cannon : Weapon
     {
         AlignGunWithCam();
 
+        // Get the fire input based on the firing mode.
+        bool acceptFireInput = CurrentFiringMode == FiringMode.FullAuto ? Input.GetButton("Fire1") : Input.GetButtonDown("Fire1");
+
         // Listen for fire inputs from the local player.
-        if (Owner.PlayerControlled && Input.GetButtonDown("Fire1") && !isFiring)
+        if (Owner.PlayerControlled && acceptFireInput && !isFiring)
         {
             Fire();
 
