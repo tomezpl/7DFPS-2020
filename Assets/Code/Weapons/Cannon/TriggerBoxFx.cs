@@ -9,7 +9,7 @@ public class TriggerBoxFx : FxController
     /// <summary>
     /// Time in seconds to disable <see cref="FiringTexture"/>.
     /// </summary>
-    public float ResetFiringStateAfter = 0.25f;
+    public float ResetFiringStateAfter = 0.1f;
 
     public Color MuzzleFlashColour = new Color();
     public float MuzzleFlashIntensity = 0.3f;
@@ -30,7 +30,7 @@ public class TriggerBoxFx : FxController
 
         if (muzzleFlashLight == null)
         {
-            muzzleFlashLight = Instantiate(new GameObject("MuzzleFlashLight"), Owner.BarrelEnd).AddComponent<Light>();
+            muzzleFlashLight = Owner.BarrelEnd.gameObject.AddComponent<Light>();
             muzzleFlashLight.color = MuzzleFlashColour;
             muzzleFlashLight.range = MuzzleFlashRange;
             muzzleFlashLight.intensity = MuzzleFlashIntensity;

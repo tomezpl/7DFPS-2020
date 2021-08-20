@@ -36,12 +36,12 @@ public class Cannon : Weapon
     /// <para>The duration of the flash animation.</para>
     /// <para>The shorter, the more sudden it appears.</para>
     /// </summary>
-    public float FlashTime = 1f;
+    public float FlashTime = 0.09f;
 
     /// <summary>
     /// The time it takes for a single shot to complete (essentially a cooldown).
     /// </summary>
-    public float FireTime = 1.5f;
+    public float FireTime = 0.1f;
 
     /// <summary>
     /// Bullet projectile prefab to spawn. Used for hitreg (no hitscan here folks).

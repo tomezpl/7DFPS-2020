@@ -16,7 +16,7 @@ MonoBehaviour:
   ActiveTexture: {fileID: 2800000, guid: 6d3c7323c08b95c4785f6809b0e9fb75, type: 3}
   FiringTexture: {fileID: 2800000, guid: 4b3ff1defdda7bf4296e773972bb9bf9, type: 3}
   MaterialToChangeIndex: 0
-  ResetFiringStateAfter: 0.25
+  ResetFiringStateAfter: 0.1
   MuzzleFlashColour: {r: 1, g: 0.9710896, b: 0.638, a: 0}
   MuzzleFlashIntensity: 0.3
   MuzzleFlashRange: 2
@@ -554,8 +554,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
-  FlashTime: 0.13
-  FireTime: 0.15
+  FlashTime: 0.09
+  FireTime: 0.1
   CannonShellPrefab: {fileID: 6132847128430447258, guid: ba9e7bbce2e357341895c8b7d93650fa,
     type: 3}
   FxObjects:
