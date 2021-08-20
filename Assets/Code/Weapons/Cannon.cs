@@ -159,7 +159,34 @@ public class Cannon : Weapon
             newPitch *= Quaternion.AngleAxis(-Mathf.Asin(Mathf.Sign(pitchSin) * (Mathf.Abs(pitchSin) - PitchLimit)) * Mathf.Rad2Deg, Vector3.right);
         }
 
-        PitchBone.transform.localRotation = newPitch;
+        PitchBone.transform.localRotation = newPitch * GunRecoil();
+    }
+
+    /// <summary>
+    /// Applies recoil effect. A <see cref="RecoilFx"/> needs to be defined in <see cref="FxObjects"/>.
+    /// </summary>
+    /// <returns>A <see cref="Quaternion"/> to apply in <see cref="AlignGunWithCam"/>.</returns>
+    Quaternion GunRecoil()
+    {
+        RecoilFx recoilFx = null;
+
+        foreach(FxController fx in FxObjects)
+        {
+            if(fx is RecoilFx)
+            {
+                recoilFx = (RecoilFx)fx;
+                break;
+            }
+        }
+
+        if(recoilFx != null)
+        {
+            return recoilFx.RecoilPitchExternal;
+        }
+        else
+        {
+            return Quaternion.identity;
+        }
     }
 
     // Update is called once per frame
