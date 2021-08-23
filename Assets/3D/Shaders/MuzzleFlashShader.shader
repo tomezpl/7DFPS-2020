@@ -5,6 +5,7 @@
         _MainTex ("Texture", 2D) = "white" {}
         _InnerColor("Inner colour of the flash", Color) = (1.0, 1.0, 1.0, 1.0)
         _OuterColor("Outer colour of the flash", Color) = (0.1, 0.1, 0.1, 1.0)
+        _MuzzleFlashDirection("Direction of the muzzle flash", Vector) = (0, 0, 1)
     }
         SubShader
         {
@@ -24,6 +25,7 @@
                 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
                 float4 _InnerColor, _OuterColor;
+        float3 _MuzzleFlashDirection;
 
             // Euclidean distance
             /*float distance(fixed2 a, fixed2 b)
@@ -87,6 +89,12 @@
 
                 // Defining the color variable and returning it.
                 half4 customColor = lerp(outerCol, innerCol, dist > 0.5 ? 0.0 : max(innerCol.a, outerCol.a));
+
+                float3 camDir = float3(UNITY_MATRIX_V[0][2], UNITY_MATRIX_V[1][2], UNITY_MATRIX_V[2][2]);
+                float orientation = dot(camDir, _MuzzleFlashDirection);
+
+                customColor.a *= 1 - abs(orientation);
+
                 //half4 customColor = half4(0.5, 0, 0, 0.5);
                 return customColor;
             }
