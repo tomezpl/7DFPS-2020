@@ -6,6 +6,7 @@
         _InnerColor("Inner colour of the flash", Color) = (1.0, 1.0, 1.0, 1.0)
         _OuterColor("Outer colour of the flash", Color) = (0.1, 0.1, 0.1, 1.0)
         _MuzzleFlashDirection("Direction of the muzzle flash", Vector) = (0, 0, 1)
+        _MuzzleFlashAngle("Angle of the muzzle flash", Float) = 0
     }
         SubShader
         {
@@ -26,6 +27,7 @@
 
                 float4 _InnerColor, _OuterColor;
         float3 _MuzzleFlashDirection;
+        float _MuzzleFlashAngle;
 
             // Euclidean distance
             /*float distance(fixed2 a, fixed2 b)
@@ -74,28 +76,46 @@
                 return OUT;
             }
 
-
-            // The fragment shader definition.
-            half4 frag(Varyings IN) : SV_Target
+            half4 flashColour(float distance, float outlineDistance, float maxDistance)
             {
-                float dist = distance(IN.uv, float2(0.5, 0.5));
-
-            float innerFactor = inverseLerp(0.5 - dist, 0.0, 0.1);
-                float outerFactor = inverseLerp(0.5 - dist, 0.0, 0.5);
+                float innerFactor = inverseLerp(maxDistance - distance, 0.0, outlineDistance);
+                float outerFactor = inverseLerp(maxDistance - distance, 0.0, maxDistance);
 
                 half4 innerCol = _InnerColor * half4(1, 1, 1, innerFactor);
                 //innerCol = half4(0, 0, 0, 0);
                 half4 outerCol = _OuterColor * half4(1, 1, 1, outerFactor);
 
                 // Defining the color variable and returning it.
-                half4 customColor = lerp(outerCol, innerCol, dist > 0.5 ? 0.0 : max(innerCol.a, outerCol.a));
+                return lerp(outerCol, innerCol, distance > maxDistance ? 0.0 : max(innerCol.a, outerCol.a));
+            }
 
-                float3 camDir = float3(UNITY_MATRIX_V[0][2], UNITY_MATRIX_V[1][2], UNITY_MATRIX_V[2][2]);
+            // Colour when muzzle flash is aligned on the Z-axis
+            half4 facingFront(float2 uv)
+            {
+                float dist = distance(uv, float2(0.5, 0.5));
+
+                return flashColour(dist, 0.1, 0.5);
+            }
+
+            // Colour when muzzle flash direction is perpendicular to camera on Z-axis.
+            half4 facingSide(float2 uv)
+            {
+                float dist = distance(uv, float2(0.6, 0.6));
+
+                return flashColour(dist, 0.1, 0.4);
+            }
+
+            // The fragment shader definition.
+            half4 frag(Varyings IN) : SV_Target
+            {
+                half4 customColor = facingSide(IN.uv);
+
+                // Ignore Y-axis as we want facingSide to also apply when viewed from above.
+                float3 camDir = float3(UNITY_MATRIX_V[0][2], 0, UNITY_MATRIX_V[2][2]);
                 float orientation = dot(camDir, _MuzzleFlashDirection);
 
-                customColor.a *= 1 - abs(orientation);
+                customColor.a *= abs(orientation);
 
-                //half4 customColor = half4(0.5, 0, 0, 0.5);
                 return customColor;
             }
             ENDHLSL
