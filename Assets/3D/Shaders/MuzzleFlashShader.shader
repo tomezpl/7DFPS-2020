@@ -98,24 +98,32 @@
             }
 
             // Colour when muzzle flash direction is perpendicular to camera on Z-axis.
-            half4 facingSide(float2 uv)
+            half4 facingSide(float2 uv, float xOrientation)
             {
-                float dist = distance(uv, float2(0.6, 0.6));
+                float sideFactor = inverseLerp(xOrientation, -1, 1);
+                sideFactor = xOrientation;
+                //sideFactor = abs(sideFactor);
 
-                return flashColour(dist, 0.1, 0.4);
+                float dist[3] = {
+                    distance(uv, float2(0.5 + 0.25 * sideFactor, 0.4)),
+                    distance(uv, float2(0.5 + 0.25 * sideFactor, 0.6)),
+                    distance(uv, float2(0.5 - 0.2 * sideFactor, 0.5))
+                };
+
+                return flashColour(dist[0], 0.04, 0.2) + flashColour(dist[1], 0.04, 0.2) + flashColour(dist[2], 0.1, 0.5);
             }
 
             // The fragment shader definition.
             half4 frag(Varyings IN) : SV_Target
             {
-                half4 customColor = facingSide(IN.uv);
 
                 // Ignore Y-axis as we want facingSide to also apply when viewed from above.
-                float3 camDir = float3(UNITY_MATRIX_V[0][2], 0, UNITY_MATRIX_V[2][2]);
+                float3 camDir = float3(UNITY_MATRIX_V[0][0], 0, UNITY_MATRIX_V[2][0]);
                 float orientation = dot(camDir, _MuzzleFlashDirection);
 
-                customColor.a *= abs(orientation);
 
+                half4 customColor = lerp(facingSide(IN.uv, -orientation), facingFront(IN.uv), 1 - abs(orientation));
+                //customColor = half4(half3(1, 1, 1) * inverseLerp(orientation, -1, 1), 1);
                 return customColor;
             }
             ENDHLSL
