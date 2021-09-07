@@ -129,7 +129,7 @@
 
 
                 half4 customColor = lerp(facingSide(IN.uv, -orientation), facingFront(IN.uv), 1 - abs(orientation));
-                customColor.a *= lerp(0.3, 1, max(0, sin(_Time * 800)));
+                customColor.a *= lerp(0.1, 0.3, max(0, sin(_Time * 800)));
                 //customColor = half4(half3(1, 1, 1) * inverseLerp(orientation, -1, 1), 1);
                 return customColor;
             }
