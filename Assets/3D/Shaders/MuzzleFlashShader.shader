@@ -105,12 +105,18 @@
                 //sideFactor = abs(sideFactor);
 
                 float dist[3] = {
-                    distance(uv, float2(0.5 + 0.25 * sideFactor, 0.4)),
-                    distance(uv, float2(0.5 + 0.25 * sideFactor, 0.6)),
+                    distance(uv, float2(0.5 + 0.15 * sideFactor, 0.38)),
+                    distance(uv, float2(0.5 + 0.15 * sideFactor, 0.62)),
                     distance(uv, float2(0.5 - 0.2 * sideFactor, 0.5))
                 };
+                
+                float wave = lerp(0.97, 1, abs(sin(_Time * 400)));
+                float waveSmall = lerp(0.99, 1, abs(sin(_Time * 400)));
 
-                return flashColour(dist[0], 0.04, 0.2) + flashColour(dist[1], 0.04, 0.2) + flashColour(dist[2], 0.1, 0.5);
+                return 
+                    flashColour(dist[0], 0.04, 0.2 * waveSmall) +
+                    flashColour(dist[1], 0.04, 0.2 * waveSmall) +
+                    flashColour(dist[2], 0.1, 0.5 * wave);
             }
 
             // The fragment shader definition.
@@ -123,6 +129,7 @@
 
 
                 half4 customColor = lerp(facingSide(IN.uv, -orientation), facingFront(IN.uv), 1 - abs(orientation));
+                customColor.a *= lerp(0.3, 1, max(0, sin(_Time * 800)));
                 //customColor = half4(half3(1, 1, 1) * inverseLerp(orientation, -1, 1), 1);
                 return customColor;
             }
