@@ -86,6 +86,11 @@ public partial class GameManager : NetworkBehaviour
     public Text healthText, kdpText, winnerText;
 
     /// <summary>
+    /// Local player instance.
+    /// </summary>
+    public RoombaControl SpawnedPlayer = null;
+
+    /// <summary>
     /// Searches for a specified client's <see cref="GameManager"/> instance.
     /// </summary>
     /// <param name="clientId">The client to search for.</param>

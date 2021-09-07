@@ -630,6 +630,7 @@ public class RoombaControl : NetworkBehaviour
         }
         else
         {
+            GameManager.Singleton.SpawnedPlayer = this;
         }
     }
 

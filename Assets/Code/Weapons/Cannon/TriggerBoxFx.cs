@@ -15,6 +15,8 @@ public class TriggerBoxFx : FxController
     public float MuzzleFlashIntensity = 0.3f;
     public float MuzzleFlashRange = 2f;
 
+    public MeshRenderer MuzzleFlashRenderer;
+
     public Cannon Owner = null;
 
     Light muzzleFlashLight = null;
@@ -35,6 +37,11 @@ public class TriggerBoxFx : FxController
             muzzleFlashLight.range = MuzzleFlashRange;
             muzzleFlashLight.intensity = MuzzleFlashIntensity;
         }
+
+        if(MuzzleFlashRenderer != null)
+        {
+            MuzzleFlashRenderer.enabled = true;
+        }
     }
 
     private void Start()
@@ -44,6 +51,11 @@ public class TriggerBoxFx : FxController
         if(Owner == null)
         {
             Owner = GetComponentInParent<Cannon>();
+        }
+
+        if (MuzzleFlashRenderer != null)
+        {
+            MuzzleFlashRenderer.enabled = false;
         }
     }
 
@@ -70,6 +82,11 @@ public class TriggerBoxFx : FxController
         {
             Destroy(muzzleFlashLight);
             muzzleFlashLight = null;
+        }
+
+        if (MuzzleFlashRenderer != null)
+        {
+            MuzzleFlashRenderer.enabled = false;
         }
     }
 
