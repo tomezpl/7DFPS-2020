@@ -2,10 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Basic billboard script. Makes a sprite (rendered through a <see cref="MeshRenderer"/>) face towards the camera.
+/// To allow for manually tweaking orientation, the <see cref="MeshRenderer"/> needs to be placed on a child object (to preserve manual orientation via localRotation).
+/// </summary>
 public class SimpleBillboard : MonoBehaviour
 {
-    Material billboardMaterial = null;
-    Vector3 initPos = Vector3.zero;
+    protected Material billboardMaterial = null;
+    protected Vector3 initPos = Vector3.zero;
+
+    /// <summary>
+    /// Offset to be applied towards the camera when it aligns with the billboard's X-axis.
+    /// This is useful for things like ensuring the sprite doesn't clip into an object (cheating Z-ordering, basically).
+    /// </summary>
+    public float XAxisFacingOffset = 0.1f;
 
     // Start is called before the first frame update
     void Start()
@@ -21,31 +31,34 @@ public class SimpleBillboard : MonoBehaviour
 
         if(currentCam)
         {
-            //float pitchDiff = transform.position - currentCam.transform.position
-
-            //transform.rotation = Quaternion.AngleAxis(-90f, Vector3.right) * Quaternion.AngleAxis(pitchDiff, Vector3.forward);
-
             transform.LookAt(currentCam.transform, Vector3.up);
 
-            if (transform.parent)
-            {
-                float xAxisDot = Vector3.Dot(transform.parent.right, (transform.position - currentCam.transform.position).normalized);
-                //transform.localPosition = initPos + new Vector3(xAxisDot * 3f, 0f);
-                Vector3 unitOffset = transform.worldToLocalMatrix.MultiplyVector(transform.right) * transform.localScale.magnitude;
-                transform.localPosition = initPos + unitOffset * 0.1f * -xAxisDot;
-            }
+            ApplyLocalOffsetX(currentCam);
 
             UpdateShader();
-            //transform.Rotate(transform.forward, 180f);
-            //transform.Rotate(transform.right, -90f);
         }
     }
 
-    void UpdateShader()
+    /// <summary>
+    /// Brings the billboard closer to the <paramref name="currentCam"/> when the camera aligns with the parent's local X-axis.
+    /// </summary>
+    /// <param name="currentCam"></param>
+    protected virtual void ApplyLocalOffsetX(Camera currentCam)
     {
-        if(billboardMaterial && transform.parent)
+        if (transform.parent)
         {
-            billboardMaterial.SetVector(Shader.PropertyToID("_MuzzleFlashDirection"), transform.parent.forward);
+            float xAxisDot = Vector3.Dot(transform.parent.right, (transform.position - currentCam.transform.position).normalized);
+
+            Vector3 unitOffset = transform.worldToLocalMatrix.MultiplyVector(transform.right) * transform.localScale.magnitude;
+            transform.localPosition = initPos + unitOffset * XAxisFacingOffset * -xAxisDot;
         }
+    }
+
+    /// <summary>
+    /// Override as needed for specific scripts & shaders.
+    /// </summary>
+    protected virtual void UpdateShader()
+    {
+        // dummy
     }
 }

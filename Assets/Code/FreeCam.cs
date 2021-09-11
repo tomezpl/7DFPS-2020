@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Basic freecam script for debug use. Attach to a GameObject with a Camera component.
+/// </summary>
 public class FreeCam : MonoBehaviour
 {
     float yawTheta = 0f, pitchTheta = 0f;

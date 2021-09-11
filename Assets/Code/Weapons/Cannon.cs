@@ -58,13 +58,30 @@ public class Cannon : Weapon
     /// </summary>
     public FxController[] FxObjects = new FxController[0];
 
+    /// <summary>
+    /// Firing modes supported by the Cannon.
+    /// </summary>
     public enum FiringMode
     {
+        /// <summary>
+        /// Single tap fire (semi-automatic).
+        /// </summary>
         Single = 0,
+
+        /// <summary>
+        /// Short round burst.
+        /// </summary>
         Burst,
+
+        /// <summary>
+        /// Fully automatic (hold to continuously fire).
+        /// </summary>
         FullAuto
     }
 
+    /// <summary>
+    /// Currently active firing mode.
+    /// </summary>
     public FiringMode CurrentFiringMode = FiringMode.FullAuto;
 
     /// <summary>
@@ -84,19 +101,9 @@ public class Cannon : Weapon
     bool isFiring = false;
 
     /// <summary>
-    /// Time remaining on the muzzle flash animation.
-    /// </summary>
-    float muzzleTimer = 0f;
-
-    /// <summary>
     /// Time remaining on the fire cooldown.
     /// </summary>
     float fireTimer = 0f;
-
-    /// <summary>
-    /// Lights mapped to their peak intensities.
-    /// </summary>
-    Dictionary<Light, float> lights;
 
     /// <summary>
     /// Last fired shell - we keep track of this to despawn it after it hits a target.
@@ -129,21 +136,6 @@ public class Cannon : Weapon
         {
             Cam = Owner.GetComponentInChildren<Camera>();
         }
-
-        // Store all provided lights and their peak intensities in a Dictionary.
-        lights = new Dictionary<Light, float>();
-
-        // 19/08/2021: Replaced this with FxControllers.
-        // TODO: Remove muzzle flash controls from this class and just use FxControllers from now on.
-        /*if (Lights?.Length > 0)
-        {
-            foreach (Light light in Lights)
-            {
-                lights.Add(light, light.intensity);
-                light.intensity = 0f;
-                light.enabled = false;
-            }
-        }*/
     }
 
     /// <summary>
@@ -215,8 +207,8 @@ public class Cannon : Weapon
             FireServerRpc();
         }
 
-        // Animate the muzzle flash if needed.
-        MuzzleFlash();
+        // Update values for fire rate cooldown.
+        ControlFireRate();
 
         // Check that a fired shell exists.
         if (firedShell)
@@ -247,8 +239,6 @@ public class Cannon : Weapon
     {
         isFiring = true;
 
-        // Start timers.
-        muzzleTimer = FlashTime;
         fireTimer = FireTime;
 
         // Spawn the cannon shell over network.
@@ -318,68 +308,20 @@ public class Cannon : Weapon
     }
 
     /// <summary>
-    /// <para>Animate the muzzle flash & update muzzle and cooldown timers.</para>
-    /// <para>In short:</para>
-    /// <para>at t=0, each light provided in <see cref="Lights"/> will have its intensity at 0.</para>
-    /// <para>at t=<see cref="FlashTime"/>*0.5f, each light will be set to the intensity they were assigned in the Inspector.</para>
-    /// <para>at t=<see cref="FlashTime"/>, each light will have its intensity at 0 again.</para>
+    /// Caps fire rate to the set interval.
     /// </summary>
-    void MuzzleFlash()
+    void ControlFireRate()
     {
-        if (muzzleTimer > 0f)
-        {
-            // Find the interpolant value based on the flash timer & duration.
-            float flashProgress = Mathf.InverseLerp(FlashTime, FlashTime * .5f, muzzleTimer);
-            float fadeProgress = Mathf.InverseLerp(FlashTime * .5f, 0f, muzzleTimer);
-
-            // Use flash progress if we've not reached t=FlashTime/2 yet.
-            if (muzzleTimer > FlashTime * .5f)
-            {
-                SetMuzzleFlashLights(flashProgress);
-            }
-            // Switch to the fade progress value if we're past the peak.
-            else
-            {
-                SetMuzzleFlashLights(1f - fadeProgress);
-            }
-
-            // Update the timer.
-            muzzleTimer -= Time.deltaTime;
-        }
-        else
-        {
-            // Limit the timer to avoid any unexpected results.
-            muzzleTimer = 0f;
-
-            // Disable all lights when they're not used.
-            foreach (Light light in lights.Keys)
-            {
-                light.enabled = false;
-            }
-        }
-
-        // Update the firing cooldown as well.
         if (fireTimer > 0f)
         {
+            // Update the firing cooldown (time between shots).
             fireTimer -= Time.deltaTime;
         }
         else
         {
+            // If cooldown was reached, reset state to allow next shot.
             isFiring = false;
             fireTimer = 0f;
-        }
-    }
-
-    /// <summary>
-    /// Scale the intensity of all <see cref="Lights"/>.
-    /// </summary>
-    /// <param name="scale">Scale for the lights' peak intensities.</param>
-    void SetMuzzleFlashLights(float scale)
-    {
-        foreach (Light light in lights.Keys)
-        {
-            light.enabled = true;
-            light.intensity = lights[light] * scale;
         }
     }
 }

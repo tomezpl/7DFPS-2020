@@ -630,6 +630,7 @@ public class RoombaControl : NetworkBehaviour
         }
         else
         {
+            // Set the local player object instance in GameManager so it can be referenced by other scripts.
             GameManager.Singleton.SpawnedPlayer = this;
         }
     }

@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2384356293567369030}
-  - component: {fileID: 2384356293567369029}
+  - component: {fileID: -1904592708818930101}
   m_Layer: 0
   m_Name: MuzzleFlash
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &2384356293567369029
+--- !u!114 &-1904592708818930101
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,7 +41,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2384356293567369028}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cb929f2c8e57920418433f0632f322ee, type: 3}
+  m_Script: {fileID: 11500000, guid: 29b58fe7eb90d1d41a5644c6343ba4dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &2384356294104634109
