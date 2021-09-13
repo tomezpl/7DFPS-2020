@@ -8,6 +8,7 @@ using UnityEngine;
 /// </summary>
 public class SimpleBillboard : MonoBehaviour
 {
+    protected MeshRenderer billboard = null;
     protected Material billboardMaterial = null;
     protected Vector3 initPos = Vector3.zero;
 
@@ -15,28 +16,35 @@ public class SimpleBillboard : MonoBehaviour
     /// Offset to be applied towards the camera when it aligns with the billboard's X-axis.
     /// This is useful for things like ensuring the sprite doesn't clip into an object (cheating Z-ordering, basically).
     /// </summary>
-    public float XAxisFacingOffset = 0.1f;
+    public float XAxisFacingOffset = 0.05f;
 
     // Start is called before the first frame update
-    void Start()
+    protected virtual void Start()
     {
-        billboardMaterial = GetComponentInChildren<MeshRenderer>().material;
+        billboard = GetComponentInChildren<MeshRenderer>();
+        billboardMaterial = billboard.material;
+
         initPos = transform.localPosition;
     }
 
     // Update is called once per frame
-    void Update()
+    protected virtual void Update()
     {
         Camera currentCam = GameManager.Singleton?.SpawnedPlayer?.Cam ?? Camera.current ?? Camera.main;
 
         if(currentCam)
         {
-            transform.LookAt(currentCam.transform, Vector3.up);
+            BillboardRotation(currentCam);
 
             ApplyLocalOffsetX(currentCam);
 
             UpdateShader();
         }
+    }
+
+    protected virtual void BillboardRotation(Camera currentCam)
+    {
+        transform.LookAt(currentCam.transform, Vector3.up);
     }
 
     /// <summary>

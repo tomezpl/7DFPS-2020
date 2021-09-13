@@ -76,7 +76,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1281562333432975023}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.437, z: 0.622}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 7279178815560659888}
@@ -1854,6 +1854,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 5864288577690302338}
     m_Modifications:
+    - target: {fileID: -1904592708818930101, guid: 86029d8f0e028fc479511df8c4d1a46a,
+        type: 3}
+      propertyPath: Pivot
+      value: 
+      objectReference: {fileID: 5864288577690302338}
+    - target: {fileID: -1904592708818930101, guid: 86029d8f0e028fc479511df8c4d1a46a,
+        type: 3}
+      propertyPath: XAxisFacingOffset
+      value: 0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 2384356293567369028, guid: 86029d8f0e028fc479511df8c4d1a46a,
         type: 3}
       propertyPath: m_Name
@@ -1887,12 +1897,12 @@ PrefabInstance:
     - target: {fileID: 2384356293567369030, guid: 86029d8f0e028fc479511df8c4d1a46a,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.481
+      value: 0.027
       objectReference: {fileID: 0}
     - target: {fileID: 2384356293567369030, guid: 86029d8f0e028fc479511df8c4d1a46a,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.528
+      value: -0.319
       objectReference: {fileID: 0}
     - target: {fileID: 2384356293567369030, guid: 86029d8f0e028fc479511df8c4d1a46a,
         type: 3}
@@ -1928,6 +1938,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2384356294104634105, guid: 86029d8f0e028fc479511df8c4d1a46a,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -4.92
+      objectReference: {fileID: 0}
+    - target: {fileID: 2384356294104634105, guid: 86029d8f0e028fc479511df8c4d1a46a,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2384356294104634105, guid: 86029d8f0e028fc479511df8c4d1a46a,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 86029d8f0e028fc479511df8c4d1a46a, type: 3}
