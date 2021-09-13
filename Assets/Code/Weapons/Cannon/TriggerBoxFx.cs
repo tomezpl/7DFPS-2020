@@ -11,6 +11,11 @@ public class TriggerBoxFx : FxController
     public Texture2D BaseTexture, ActiveTexture, FiringTexture;
 
     /// <summary>
+    /// Emissive maps for the corresponding states.
+    /// </summary>
+    public Texture2D BaseEmissive, ActiveEmissive, FiringEmissive;
+
+    /// <summary>
     /// Index of the material on the box's <see cref="MeshRenderer"/> containing the texture.
     /// </summary>
     public int MaterialToChangeIndex;
@@ -66,7 +71,7 @@ public class TriggerBoxFx : FxController
     public override void Trigger()
     {
         // Set cannon's triggerbox texture.
-        SetTexture(FiringTexture);
+        SetTexture(FiringTexture, FiringEmissive);
 
         // Start timer.
         countTime = true;
@@ -90,7 +95,7 @@ public class TriggerBoxFx : FxController
 
     private void Start()
     {
-        SetTexture(ActiveTexture);
+        SetTexture(ActiveTexture, ActiveEmissive);
 
         if(Owner == null)
         {
@@ -120,7 +125,7 @@ public class TriggerBoxFx : FxController
 
     private void ResetFiringState()
     {
-        SetTexture(ActiveTexture);
+        SetTexture(ActiveTexture, ActiveEmissive);
         countTime = false;
         timeElapsedSinceTrigger = 0f;
 
@@ -136,15 +141,20 @@ public class TriggerBoxFx : FxController
         }
     }
 
-    private void SetTexture(Texture2D texture)
+    private void SetTexture(Texture2D mainTex, Texture2D emissiveTex = null)
     {
         Material materialToChange = GetComponent<MeshRenderer>().materials[MaterialToChangeIndex];
 
         if (materialToChange)
         {
-            if (texture)
+            if (mainTex)
             {
-                materialToChange.mainTexture = texture;
+                materialToChange.mainTexture = mainTex;
+            }
+
+            if(emissiveTex)
+            {
+                materialToChange.SetTexture("_EmissionMap", emissiveTex);
             }
         }
     }
