@@ -423,7 +423,7 @@ public class RoombaControl : NetworkBehaviour
 
         // Springarm camera: prevent objects from obstructing the player from the camera.
         float camRaycastHitDistance = cameraDistance;
-        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~(1 << LayerMask.NameToLayer("LocalPlayer")));
+        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~LayerMask.GetMask("LocalPlayer", "SmallProjectile"));
         RaycastHit closestHit = default;
         for (int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
         {
