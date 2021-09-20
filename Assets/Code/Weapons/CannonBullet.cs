@@ -99,7 +99,7 @@ public class CannonBullet : Despawnable
             if (Owner && Owner.GetComponent<Cannon>().Owner.PlayerControlled)
             {
                 Debug.Log($"Attacking {other.name}");
-                PlayerStats victimStats = Hit.GetComponent<PlayerStats>();
+                PlayerStats victimStats = otherRoomba.GetComponent<PlayerStats>();
                 Owner.GetComponent<Cannon>().Owner.DealDamageServerRpc((int)Mathf.Round(DamageDealt), victimStats.OwnerClientId);
             }
         }
