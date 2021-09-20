@@ -12,6 +12,11 @@ public class Knife : Weapon
     public float StabAnimDuration = 0.33f;
 
     /// <summary>
+    /// The orientation (in euler angles) to rotate the hammer towards during the hit animation.
+    /// </summary>
+    public Vector3 HitAnimTargetEuler = new Vector3(90f, 0f, 0f);
+
+    /// <summary>
     /// Damage dealt when the attacker is exactly behind the victim and at the same angle.
     /// </summary>
     public int DamagePerBackstab = 110;
@@ -41,10 +46,16 @@ public class Knife : Weapon
     /// </summary>
     Vector3 initLocalPosition;
 
+    /// <summary>
+    /// Initial rotation of the hammer in the player object (for interpolating in the animation).
+    /// </summary>
+    Quaternion initLocalOrientation;
+
     // Start is called before the first frame update
     void Start()
     {
         initLocalPosition = transform.localPosition;
+        initLocalOrientation = transform.localRotation;
     }
 
     // Update is called once per frame
@@ -121,7 +132,10 @@ public class Knife : Weapon
         bool stabbed = stabAnimTimer < StabAnimDuration * .5f;
 
         // Interpolate knife position.
-        transform.localPosition = Vector3.Lerp(initLocalPosition, initLocalPosition + Vector3.forward * .33f, stabbed ? 1f - idleProgress : stabProgress);
+        //transform.localPosition = Vector3.Lerp(initLocalPosition, initLocalPosition + Vector3.forward * .33f, stabbed ? 1f - idleProgress : stabProgress);
+
+        // Interpolate hammer rotation.
+        transform.localRotation = Quaternion.Slerp(initLocalOrientation, initLocalOrientation * Quaternion.Euler(HitAnimTargetEuler), stabbed ? 1f - idleProgress : stabProgress);
 
         // Update timer.
         stabAnimTimer -= Time.deltaTime;
@@ -134,7 +148,7 @@ public class Knife : Weapon
             return;
         }
 
-        RoombaControl otherPlayer = other.GetComponent<RoombaControl>();
+        RoombaControl otherPlayer = other.GetComponent<RoombaControl>() ?? other.GetComponentInParent<RoombaControl>();
 
         // Check for stabs on enemy players.
         if(otherPlayer && !otherPlayer.PlayerControlled && stabAnimTimer > 0f && !stabbedAlready)
