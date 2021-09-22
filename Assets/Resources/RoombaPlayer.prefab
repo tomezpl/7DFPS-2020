@@ -649,6 +649,32 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &210897215973057443
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3807586565289585913}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.22399999, y: 0.29, z: 1.1989762}
+  m_Center: {x: 0.00020603836, y: 1.62, z: -0.081088275}
+--- !u!65 &3178355712079447694
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3807586565289585913}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.22399999, y: 1.7358632, z: 0.33}
+  m_Center: {x: 0.00020603836, y: 0.8669363, z: -0.02}
 --- !u!114 &230758003929159258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -666,32 +692,6 @@ MonoBehaviour:
   DamagePerBackstab: 110
   Owner: {fileID: 1629128876681204445}
   Hit: {fileID: 0}
---- !u!65 &3178355712079447694
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3807586565289585913}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 0.22399999, y: 1.7358632, z: 0.33}
-  m_Center: {x: 0.00020603836, y: 0.8669363, z: -0.02}
---- !u!65 &210897215973057443
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3807586565289585913}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 0.22399999, y: 0.29, z: 1.1989762}
-  m_Center: {x: 0.00020603836, y: 1.62, z: -0.081088275}
 --- !u!114 &6262804102668129273
 MonoBehaviour:
   m_ObjectHideFlags: 0
