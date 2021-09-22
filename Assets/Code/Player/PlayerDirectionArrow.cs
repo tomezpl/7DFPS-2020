@@ -54,10 +54,15 @@ public class PlayerDirectionArrow : MonoBehaviour
         // The indicator pointer's direction.
         Vector3 indicatorDir = transform.forward;
 
-        float t = Vector3.Dot(indicatorDir, cameraDir) - 0.66f;
-        t = Mathf.Max(0f, t) * (1f/0.66f);
+        float direction = Vector3.Dot(indicatorDir, cameraDir) - 0.66f;
+        direction = Mathf.Max(0f, direction) * (1f / 0.66f);
 
-        transform.localPosition = Vector3.Lerp(initialPosition, initialPosition + Vector3.up * MaxYOffset - Vector3.forward * MaxYOffset * 1f, t);
-        transform.localScale = Vector3.Lerp(initialScale, initialScale * 0.4f, t);
+        float maxCamDist = owner.InitialCameraOffset.magnitude;
+
+        float t = 1f - Mathf.InverseLerp(owner.MinCameraDistance, maxCamDist, (PlayerCamera.transform.position - owner.transform.position).magnitude);
+        float yPos = Mathf.Lerp(0.25f, -0.25f, Mathf.InverseLerp(-maxCamDist, maxCamDist, PlayerCamera.transform.localPosition.y));
+
+        transform.localPosition = Vector3.Lerp(initialPosition, initialPosition + Vector3.up * MaxYOffset * (0.7f + yPos) - Vector3.forward * MaxYOffset * 1f, t);
+        transform.localScale = Vector3.Lerp(initialScale, initialScale * Mathf.Lerp(0.4f, 0.85f, 1f - direction * 2f), direction + t / 2f);
     }
 }
