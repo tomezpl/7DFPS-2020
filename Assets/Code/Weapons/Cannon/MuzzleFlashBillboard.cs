@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// A <see cref="SimpleBillboard"/> that will display a muzzle flash shader placed around a gun barrel.
+/// </summary>
 public class MuzzleFlashBillboard : SimpleBillboard
 {
     float muzzleFlashZOffset = 0f;
