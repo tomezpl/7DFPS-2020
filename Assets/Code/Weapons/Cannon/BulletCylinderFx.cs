@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// An <see cref="FxController"/> meant to rotate the bullet cylinder bone of the turret to act as a reload animation.
+/// </summary>
 public class BulletCylinderFx : FxController
 {
     /// <summary>
@@ -43,12 +46,14 @@ public class BulletCylinderFx : FxController
 
     public override void Trigger()
     {
+        // Queue a rotation to the next bullet in the cylinder.
         stackedRot = initOrientation * Quaternion.AngleAxis(TurnAngle, RotationAxis);
         stackedTime = TurnTime;
     }
 
     private void Update()
     {
+        // Interpolate rotation over time.
         if (stackedTime > 0f)
         {
             transform.localRotation = Quaternion.Lerp(initOrientation, stackedRot, elapsedTime / stackedTime);
@@ -56,6 +61,7 @@ public class BulletCylinderFx : FxController
             elapsedTime += Time.deltaTime;
         }
 
+        // Reset the values if a rotation finished.
         if(elapsedTime > stackedTime)
         {
             stackedRot = initOrientation;
