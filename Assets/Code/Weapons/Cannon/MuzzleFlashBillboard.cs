@@ -57,7 +57,5 @@ public class MuzzleFlashBillboard : SimpleBillboard
         {
             billboard.transform.position = transform.position + Pivot.forward * muzzleFlashZOffset;
         }
-        Debug.DrawLine(ray.origin, ray.origin + Pivot.forward * muzzleFlashZOffset, Color.blue);
-        Debug.DrawLine(ray.origin, ray.origin + ray.direction.normalized * hit.distance, Color.cyan);
     }
 }
