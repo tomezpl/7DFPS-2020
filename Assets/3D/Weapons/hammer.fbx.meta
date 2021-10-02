@@ -1,12 +1,19 @@
 fileFormatVersion: 2
-guid: 982f7cd398b4b2b4397e4fd1f49d988a
+guid: 14db168944535454994e23ef26771456
 ModelImporter:
-  serializedVersion: 19300
-  internalIDToNameTable:
+  serializedVersion: 20101
+  internalIDToNameTable: []
+  externalObjects:
   - first:
-      74: -623603649343465320
-    second: Scene
-  externalObjects: {}
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Hammer
+    second: {fileID: 2100000, guid: 240b3ee99ce333842baaf48b2068b3e5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: HammerPivot
+    second: {fileID: 2100000, guid: a4b332136b569cf48bdc99bc99d4e089, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0
@@ -46,11 +53,13 @@ ModelImporter:
     importBlendShapes: 1
     importCameras: 1
     importLights: 1
+    fileIdsGeneration: 2
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
     skinWeightsMode: 0
     maxBonesPerVertex: 4
@@ -60,6 +69,9 @@ ModelImporter:
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
   tangentSpace:

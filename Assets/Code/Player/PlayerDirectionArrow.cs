@@ -54,10 +54,22 @@ public class PlayerDirectionArrow : MonoBehaviour
         // The indicator pointer's direction.
         Vector3 indicatorDir = transform.forward;
 
-        float t = Vector3.Dot(indicatorDir, cameraDir) - 0.66f;
-        t = Mathf.Max(0f, t) * (1f/0.66f);
+        // Scalar used to determine whether we're looking back (>0f) and how much.
+        // This will be used to scale the player direction indicator down to indicate change in camera direction.
+        float direction = Vector3.Dot(indicatorDir, cameraDir) - 0.66f;
+        direction = Mathf.Max(0f, direction) * (1f / 0.66f);
 
-        transform.localPosition = Vector3.Lerp(initialPosition, initialPosition + Vector3.up * MaxYOffset - Vector3.forward * MaxYOffset * 1f, t);
-        transform.localScale = Vector3.Lerp(initialScale, initialScale * 0.4f, t);
+        // Maximum distance the the camera can be from the player.
+        float maxCamDist = owner.InitialCameraOffset.magnitude;
+
+        // Interpolant for scaling/moving the indicator away from camera based on camera distance from player.
+        float t = 1f - Mathf.InverseLerp(owner.MinCameraDistance, maxCamDist, (PlayerCamera.transform.position - owner.transform.position).magnitude);
+
+        // Scalar for determining whether Y-offset should be applied with positive/negative sign,
+        // based on whether the camera is looking from above or from below.
+        float yPos = Mathf.Lerp(0.25f, -0.25f, Mathf.InverseLerp(-maxCamDist, maxCamDist, PlayerCamera.transform.localPosition.y));
+
+        transform.localPosition = Vector3.Lerp(initialPosition, initialPosition + Vector3.up * MaxYOffset * (0.7f + yPos) - Vector3.forward * MaxYOffset * 1f, t);
+        transform.localScale = Vector3.Lerp(initialScale, initialScale * Mathf.Lerp(0.4f, 0.85f, 1f - direction * 2f), direction + t / 2f);
     }
 }

@@ -196,7 +196,7 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// Initial camera local position - this will be set during <see cref="Start"/>
     /// </summary>
-    Vector3 initialCameraOffset = Vector3.zero;
+    public Vector3 InitialCameraOffset = Vector3.zero;
 
     /// <summary>
     /// Initial camera local orientation - this will be set during <see cref="Start"/>
@@ -415,7 +415,7 @@ public class RoombaControl : NetworkBehaviour
         }
 
         Vector3 localEuler = Cam.transform.localEulerAngles * Mathf.Deg2Rad;
-        float cameraDistance = initialCameraOffset.magnitude;
+        float cameraDistance = InitialCameraOffset.magnitude;
 
         // Apply orbit offset.
         Cam.transform.localPosition = cameraDistance * new Vector3(-Mathf.Sin(localEuler.y) * Mathf.Cos(localEuler.x), Mathf.Sin(localEuler.x), -Mathf.Cos(localEuler.y) * Mathf.Cos(localEuler.x));
@@ -423,7 +423,7 @@ public class RoombaControl : NetworkBehaviour
 
         // Springarm camera: prevent objects from obstructing the player from the camera.
         float camRaycastHitDistance = cameraDistance;
-        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~(1 << LayerMask.NameToLayer("LocalPlayer")));
+        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~LayerMask.GetMask("LocalPlayer", "SmallProjectile"));
         RaycastHit closestHit = default;
         for (int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
         {
@@ -610,7 +610,7 @@ public class RoombaControl : NetworkBehaviour
         // Store the camera's initial transform.
         if (Cam)
         {
-            initialCameraOffset = Cam.transform.localPosition;
+            InitialCameraOffset = Cam.transform.localPosition;
             initialCameraOrientation = Cam.transform.localRotation;
         }
 
@@ -630,6 +630,8 @@ public class RoombaControl : NetworkBehaviour
         }
         else
         {
+            // Set the local player object instance in GameManager so it can be referenced by other scripts.
+            GameManager.Singleton.SpawnedPlayer = this;
         }
     }
 

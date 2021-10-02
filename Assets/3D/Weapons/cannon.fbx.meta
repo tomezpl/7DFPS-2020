@@ -1,14 +1,74 @@
 fileFormatVersion: 2
 guid: df52de522867cc745ba4613db6109dad
 ModelImporter:
-  serializedVersion: 19300
+  serializedVersion: 20101
   internalIDToNameTable: []
   externalObjects:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Barrel
+    second: {fileID: 2100000, guid: 7cf9613254948184e8d5662ebcb1ee2b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Bullet
+    second: {fileID: 2100000, guid: 9d15e9f376aaf884dbb7a8c9a3a84df9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BulletTip
+    second: {fileID: 2100000, guid: fa3880aaab8b0dd42b92e49aa8cb989b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ControllerBox
+    second: {fileID: 2100000, guid: d6614095a28a03a4d8eb8dbd21effd71, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cylinder
+    second: {fileID: 2100000, guid: a9965d1d0eb9930408fe543c7150caa0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GunMainChassis
+    second: {fileID: 2100000, guid: ad8fd2661e469524ebac1044453aea27, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: GunStock
+    second: {fileID: 2100000, guid: 54ca52cde6622e44aa9785c0b5fbdcd6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mag
+    second: {fileID: 2100000, guid: 8617c093ee27d0747b1610dbdba8e3ba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: No Name
-    second: {fileID: 2100000, guid: 88254bc975967594bba4f6003a4fd1cc, type: 2}
+    second: {fileID: 2100000, guid: dab2f6e48f04ad04089255e4c54b0286, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RedCable
+    second: {fileID: 2100000, guid: 877387f45b6db1a42bcf576c8eaaf52f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TripodAnchor
+    second: {fileID: 2100000, guid: 0ad7ffe53714b43408403d207582910b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TripodLegs
+    second: {fileID: 2100000, guid: 43751b2466678a848887586e28425b58, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: YellowCable
+    second: {fileID: 2100000, guid: 76bc8a3e1d5817647a8e0d4ed154941b, type: 2}
   materials:
     materialImportMode: 1
     materialName: 0
@@ -28,7 +88,7 @@ ModelImporter:
     animationDoRetargetingWarnings: 0
     importAnimatedCustomProperties: 0
     importConstraints: 0
-    animationCompression: 1
+    animationCompression: 3
     animationRotationError: 0.5
     animationPositionError: 0.5
     animationScaleError: 0.5
@@ -39,7 +99,7 @@ ModelImporter:
     isReadable: 0
   meshes:
     lODScreenPercentages: []
-    globalScale: 1
+    globalScale: 0.55
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
@@ -48,11 +108,13 @@ ModelImporter:
     importBlendShapes: 1
     importCameras: 1
     importLights: 1
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
     skinWeightsMode: 0
     maxBonesPerVertex: 4
@@ -62,6 +124,9 @@ ModelImporter:
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
   tangentSpace:
@@ -85,10 +150,10 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    globalScale: 1
+    globalScale: 0.55
     rootMotionBoneName: 
     hasTranslationDoF: 0
-    hasExtraRoot: 0
+    hasExtraRoot: 1
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
   autoGenerateAvatarMappingIfUnspecified: 1

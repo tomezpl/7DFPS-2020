@@ -17,6 +17,11 @@ public class Cannon : Weapon
     public Transform BarrelEnd;
 
     /// <summary>
+    /// Bone to control rotation.
+    /// </summary>
+    public Transform YawBone, PitchBone;
+
+    /// <summary>
     /// Player this weapon belongs to.
     /// </summary>
     public RoombaControl Owner;
@@ -31,12 +36,12 @@ public class Cannon : Weapon
     /// <para>The duration of the flash animation.</para>
     /// <para>The shorter, the more sudden it appears.</para>
     /// </summary>
-    public float FlashTime = 1f;
+    public float FlashTime = 0.09f;
 
     /// <summary>
     /// The time it takes for a single shot to complete (essentially a cooldown).
     /// </summary>
-    public float FireTime = 1.5f;
+    public float FireTime = 0.1f;
 
     /// <summary>
     /// Bullet projectile prefab to spawn. Used for hitreg (no hitscan here folks).
@@ -44,14 +49,50 @@ public class Cannon : Weapon
     public GameObject CannonShellPrefab;
 
     /// <summary>
-    /// Initial aiming orientation of the gun.
+    /// Limit on the X-axis rotation of the PitchBone.
     /// </summary>
-    Quaternion initRotation;
+    public const float PitchLimit = 0.4f;
 
     /// <summary>
-    /// Initial aiming orientation of the barrel - this will mainly be used to correct the barrel's pitch.
+    /// FxController scripts to activate on <see cref="Fire"/>.
     /// </summary>
-    Quaternion initBarrelRotation;
+    public FxController[] FxObjects = new FxController[0];
+
+    /// <summary>
+    /// Firing modes supported by the Cannon.
+    /// </summary>
+    public enum FiringMode
+    {
+        /// <summary>
+        /// Single tap fire (semi-automatic).
+        /// </summary>
+        Single = 0,
+
+        /// <summary>
+        /// Short round burst.
+        /// </summary>
+        Burst,
+
+        /// <summary>
+        /// Fully automatic (hold to continuously fire).
+        /// </summary>
+        FullAuto
+    }
+
+    /// <summary>
+    /// Currently active firing mode.
+    /// </summary>
+    public FiringMode CurrentFiringMode = FiringMode.FullAuto;
+
+    /// <summary>
+    /// Initial orientation of the <see cref="YawBone"/>.
+    /// </summary>
+    Quaternion initYawBoneRotation;
+
+    /// <summary>
+    /// Initial orientation of the <see cref="PitchBone"/>.
+    /// </summary>
+    Quaternion initPitchBoneRotation;
 
     /// <summary>
     /// <para>Is the gun being fired currently?</para>
@@ -60,19 +101,9 @@ public class Cannon : Weapon
     bool isFiring = false;
 
     /// <summary>
-    /// Time remaining on the muzzle flash animation.
-    /// </summary>
-    float muzzleTimer = 0f;
-
-    /// <summary>
     /// Time remaining on the fire cooldown.
     /// </summary>
     float fireTimer = 0f;
-
-    /// <summary>
-    /// Lights mapped to their peak intensities.
-    /// </summary>
-    Dictionary<Light, float> lights;
 
     /// <summary>
     /// Last fired shell - we keep track of this to despawn it after it hits a target.
@@ -82,13 +113,16 @@ public class Cannon : Weapon
     // Start is called before the first frame update
     void Start()
     {
-        // Store the intial orientation of the cannon, as per the prefab.
-        initRotation = transform.localRotation;
-
-        // Store the initial orientation of the barrel.
-        if (BarrelEnd)
+        // Store the intial orientation of the yaw bone.
+        if (YawBone)
         {
-            initBarrelRotation = BarrelEnd.parent.transform.localRotation;
+            initYawBoneRotation = YawBone.localRotation;
+        }
+
+        // Store the initial orientation of the pitch bone.
+        if (PitchBone)
+        {
+            initPitchBoneRotation = PitchBone.localRotation;
         }
 
         // Find the owner if not assigned before runtime.
@@ -102,42 +136,70 @@ public class Cannon : Weapon
         {
             Cam = Owner.GetComponentInChildren<Camera>();
         }
+    }
 
-        // Store all provided lights and their peak intensities in a Dictionary.
-        lights = new Dictionary<Light, float>();
-        if (Lights?.Length > 0)
+    /// <summary>
+    /// Performs Quaternion rotations to align the gun with the camera direction.
+    /// </summary>
+    void AlignGunWithCam()
+    {
+        // Align the gun orientation with the camera.
+        float camAngleY = Cam.transform.localEulerAngles.y;
+        YawBone.localRotation = initYawBoneRotation;
+
+        YawBone.localRotation *= Quaternion.AngleAxis(camAngleY, Vector3.up);
+
+        // Align the barrel with the camera pitch.
+        float camAngleX = Cam.transform.localEulerAngles.x;
+        float pitchSin = Mathf.Sin(Mathf.Deg2Rad * camAngleX);
+        Quaternion newPitch = (YawBone == PitchBone ? YawBone.localRotation : initPitchBoneRotation) * Quaternion.AngleAxis(camAngleX, Vector3.right);
+
+        // Clamp pitch.
+        if (Mathf.Abs(pitchSin) > PitchLimit)
         {
-            foreach (Light light in Lights)
+            newPitch *= Quaternion.AngleAxis(-Mathf.Asin(Mathf.Sign(pitchSin) * (Mathf.Abs(pitchSin) - PitchLimit)) * Mathf.Rad2Deg, Vector3.right);
+        }
+
+        PitchBone.transform.localRotation = newPitch * GunRecoil();
+    }
+
+    /// <summary>
+    /// Applies recoil effect. A <see cref="RecoilFx"/> needs to be defined in <see cref="FxObjects"/>.
+    /// </summary>
+    /// <returns>A <see cref="Quaternion"/> to apply in <see cref="AlignGunWithCam"/>.</returns>
+    Quaternion GunRecoil()
+    {
+        RecoilFx recoilFx = null;
+
+        foreach(FxController fx in FxObjects)
+        {
+            if(fx is RecoilFx)
             {
-                lights.Add(light, light.intensity);
-                light.intensity = 0f;
-                light.enabled = false;
+                recoilFx = (RecoilFx)fx;
+                break;
             }
+        }
+
+        if(recoilFx != null)
+        {
+            return recoilFx.RecoilPitchExternal;
+        }
+        else
+        {
+            return Quaternion.identity;
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        // Align the gun orientation with the camera.
-        float camAngleY = Cam.transform.localEulerAngles.y;
-        transform.localRotation = initRotation * Quaternion.AngleAxis(camAngleY, Vector3.up);
+        AlignGunWithCam();
 
-        // Align the barrel with the camera pitch.
-        float camAngleX = Cam.transform.localEulerAngles.x;
-        Quaternion newBarrelRot = initBarrelRotation * Quaternion.AngleAxis(-camAngleX, Vector3.right) * Quaternion.AngleAxis(-camAngleX, Vector3.right);
-
-        float newBarrelPitch = Mathf.Deg2Rad * newBarrelRot.eulerAngles.x;
-
-        // Clamp the barrel pitch.
-        // TODO: Add tweakable parameters for these bounds.
-        if(newBarrelRot.x < -0.56f & newBarrelRot.x > -0.765f)
-        {
-            BarrelEnd.parent.transform.localRotation = newBarrelRot;
-        }
+        // Get the fire input based on the firing mode.
+        bool acceptFireInput = CurrentFiringMode == FiringMode.FullAuto ? Input.GetButton("Fire1") : Input.GetButtonDown("Fire1");
 
         // Listen for fire inputs from the local player.
-        if (Owner.PlayerControlled && Input.GetButtonDown("Fire1") && !isFiring)
+        if (Owner.PlayerControlled && acceptFireInput && !isFiring)
         {
             Fire();
 
@@ -145,8 +207,8 @@ public class Cannon : Weapon
             FireServerRpc();
         }
 
-        // Animate the muzzle flash if needed.
-        MuzzleFlash();
+        // Update values for fire rate cooldown.
+        ControlFireRate();
 
         // Check that a fired shell exists.
         if (firedShell)
@@ -177,12 +239,19 @@ public class Cannon : Weapon
     {
         isFiring = true;
 
-        // Start timers.
-        muzzleTimer = FlashTime;
         fireTimer = FireTime;
 
         // Spawn the cannon shell over network.
         firedShell = Instantiate(CannonShellPrefab, BarrelEnd.position, BarrelEnd.rotation * CannonShellPrefab.transform.rotation).GetComponent<CannonBullet>();
+
+        // Trigger any FxControllers.
+        if(FxObjects?.Length > 0)
+        {
+            foreach(FxController fxController in FxObjects)
+            {
+                fxController.Trigger();
+            }
+        }
 
         // TODO: This probably doesn't sync across clients, 
         // but might not need to as the damage event will be raised on the attacker's end anyway.
@@ -239,68 +308,20 @@ public class Cannon : Weapon
     }
 
     /// <summary>
-    /// <para>Animate the muzzle flash & update muzzle and cooldown timers.</para>
-    /// <para>In short:</para>
-    /// <para>at t=0, each light provided in <see cref="Lights"/> will have its intensity at 0.</para>
-    /// <para>at t=<see cref="FlashTime"/>*0.5f, each light will be set to the intensity they were assigned in the Inspector.</para>
-    /// <para>at t=<see cref="FlashTime"/>, each light will have its intensity at 0 again.</para>
+    /// Caps fire rate to the set interval.
     /// </summary>
-    void MuzzleFlash()
+    void ControlFireRate()
     {
-        if (muzzleTimer > 0f)
-        {
-            // Find the interpolant value based on the flash timer & duration.
-            float flashProgress = Mathf.InverseLerp(FlashTime, FlashTime * .5f, muzzleTimer);
-            float fadeProgress = Mathf.InverseLerp(FlashTime * .5f, 0f, muzzleTimer);
-
-            // Use flash progress if we've not reached t=FlashTime/2 yet.
-            if (muzzleTimer > FlashTime * .5f)
-            {
-                SetMuzzleFlashLights(flashProgress);
-            }
-            // Switch to the fade progress value if we're past the peak.
-            else
-            {
-                SetMuzzleFlashLights(1f - fadeProgress);
-            }
-
-            // Update the timer.
-            muzzleTimer -= Time.deltaTime;
-        }
-        else
-        {
-            // Limit the timer to avoid any unexpected results.
-            muzzleTimer = 0f;
-
-            // Disable all lights when they're not used.
-            foreach (Light light in lights.Keys)
-            {
-                light.enabled = false;
-            }
-        }
-
-        // Update the firing cooldown as well.
         if (fireTimer > 0f)
         {
+            // Update the firing cooldown (time between shots).
             fireTimer -= Time.deltaTime;
         }
         else
         {
+            // If cooldown was reached, reset state to allow next shot.
             isFiring = false;
             fireTimer = 0f;
-        }
-    }
-
-    /// <summary>
-    /// Scale the intensity of all <see cref="Lights"/>.
-    /// </summary>
-    /// <param name="scale">Scale for the lights' peak intensities.</param>
-    void SetMuzzleFlashLights(float scale)
-    {
-        foreach (Light light in lights.Keys)
-        {
-            light.enabled = true;
-            light.intensity = lights[light] * scale;
         }
     }
 }
