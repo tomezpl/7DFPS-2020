@@ -250,6 +250,11 @@ public class LobbyManager : MonoBehaviour
     public bool CanSpawn { get { return NetworkManager.Singleton.IsConnectedClient; } }
 
     /// <summary>
+    /// Current gamemode instance.
+    /// </summary>
+    public MultiplayerGameMode CurrentGameMode = null;
+
+    /// <summary>
     /// Server/Host only: Spawns a player prefab for a client and assigns it ownership.
     /// </summary>
     /// <param name="position"></param>
@@ -295,6 +300,7 @@ public class LobbyManager : MonoBehaviour
 
         // Add an event handler for clients connecting.
         NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += ClientDisconnected;
 
         // Display the preselected class image.
         UpdateClassImage(SelectedClass);
@@ -314,7 +320,12 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log($"Server: A client with id {clientId} just connected. Spawning a GameManager and player instance for them.");
 
-            Instantiate(GameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
+            GameObject instantiatedGameManager = Instantiate(GameManagerPrefab);
+
+            // Add player to the gamemode.
+            CurrentGameMode?.AddPlayer(instantiatedGameManager.GetComponent<GameManager>());
+
+            instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
 
             (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
             SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId);
@@ -326,6 +337,15 @@ public class LobbyManager : MonoBehaviour
             // Set the spawn flag off as the server will be spawning us immediately.
             // This avoids UI being displayed after spawning.
             DoesRequireSpawn = false;
+        }
+    }
+
+    private void ClientDisconnected(ulong clientId)
+    {
+        if (NetworkManager.Singleton.IsServer)
+        {
+            // Remove the player from the gamemode.
+            CurrentGameMode?.RemovePlayer(clientId);
         }
     }
 
@@ -367,11 +387,29 @@ public class LobbyManager : MonoBehaviour
 
         NetworkManager.Singleton.StartHost();
 
+        // Set the gamemode.
+        SetGameMode<DeathMatchGameMode>();
+
         // Spawn a GameManager & player prefab instance for the Host player.
         Instantiate(GameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.ServerClientId);
 
         (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
         SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, NetworkManager.Singleton.LocalClientId);
+    }
+
+    private void SetGameMode<GameModeType>(GameModeType gameModeInstance) where GameModeType : MultiplayerGameMode
+    {
+        if(CurrentGameMode != null)
+        {
+            Destroy(CurrentGameMode);
+        }
+
+        CurrentGameMode = gameModeInstance;
+    }
+
+    private void SetGameMode<GameModeType>() where GameModeType : MultiplayerGameMode
+    {
+        SetGameMode(Activator.CreateInstance<GameModeType>());
     }
 
     /// <summary>
