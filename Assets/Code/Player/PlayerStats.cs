@@ -79,30 +79,7 @@ public class PlayerStats : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Text[] hudTextComponents = GameObject.Find("HUD")?.GetComponentsInChildren<Text>();
-        if (hudTextComponents != null)
-        {
-            foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
-            {
-                switch (text.name)
-                {
-                    case "Health":
-                        healthText = text;
-                        break;
-                    case "KDP":
-                        kdpText = text;
-                        break;
-                    case "Winner":
-                        winnerText = text;
-                        break;
-                }
 
-                if (healthText && kdpText && winnerText)
-                {
-                    break;
-                }
-            }
-        }
     }
 
     public override void NetworkStart()
@@ -122,27 +99,6 @@ public class PlayerStats : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (GetComponent<RoombaControl>().PlayerControlled)
-        {
-            if (health <= 0)
-            {
-                healthText.text = "";
-                Die();
-            }
-
-            if (healthText != null)
-            {
-                healthText.enabled = true;
-                if (health <= 0)
-                {
-                    healthText.text = "";
-                }
-                else
-                {
-                    healthText.text = $"Health: {health}";
-                }
-            }
-        }
     }
 
     /// <summary>

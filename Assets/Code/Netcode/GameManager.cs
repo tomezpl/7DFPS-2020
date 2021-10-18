@@ -4,6 +4,7 @@ using MLAPI.NetworkVariable;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -81,14 +82,11 @@ public partial class GameManager : NetworkBehaviour
     public bool CanRequestSpawn = true;
 
     /// <summary>
-    /// UI text objects.
-    /// </summary>
-    public Text healthText, kdpText, winnerText;
-
-    /// <summary>
     /// Local player instance.
     /// </summary>
     public RoombaControl SpawnedPlayer = null;
+
+    public GameModeGameManagerExtension GameModeExtensions;
 
     /// <summary>
     /// Searches for a specified client's <see cref="GameManager"/> instance.
@@ -111,34 +109,23 @@ public partial class GameManager : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // Find the UI text objects in the scene.
-        foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
-        {
-            switch (text.name)
-            {
-                case "Health":
-                    healthText = text;
-                    break;
-                case "KDP":
-                    kdpText = text;
-                    break;
-                case "Winner":
-                    winnerText = text;
-                    break;
-            }
-
-            if (healthText && kdpText && winnerText)
-            {
-                break;
-            }
-        }
     }
 
-    public override void NetworkStart()
+    public override void NetworkStart(Stream stream)
     {
         if (IsOwner)
         {
             PlayerName.Value = LobbyManager.Singleton.PlayerName;
+
+            if (stream != null && stream.CanRead)
+            {
+                // Initialise client-side gamemode extensions.
+                string gameMode = NetcodeHelpers.StreamHelper.ReadGameMode(stream);
+                if (!string.IsNullOrWhiteSpace(gameMode))
+                {
+                    ((MultiplayerGameMode)Activator.CreateInstance(Type.GetType(gameMode))).CreateExtensionsForPlayer(this);
+                }
+            }
         }
 
         SerializedScore.OnValueChanged += (_, newScore) =>
@@ -166,34 +153,6 @@ public partial class GameManager : NetworkBehaviour
                 CanRequestSpawn = false;
                 RequestPlayerSpawnServerRpc();
             }
-        }
-
-        UpdateStatsHud();
-    }
-
-    /// <summary>
-    /// Updates the values of the stats text.
-    /// </summary>
-    void UpdateStatsHud()
-    {
-        // Update local player's stats text.
-        PlayerScore score = Score;
-        kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
-
-        // Find currently winning player to display their name and points.
-        Dictionary<string, PlayerScore> players = LobbyManager.Singleton.PlayerScores;
-        string winner = players.Keys.FirstOrDefault(name => !players.Any(p => p.Key != name && p.Value.TotalPoints > players[name].TotalPoints));
-        if (players.Count == 1)
-        {
-            winner = players.Keys.FirstOrDefault();
-        }
-        if (winner != default)
-        {
-            winnerText.text = $"1st place: {winner} ({players[winner].TotalPoints} points)";
-        }
-        else
-        {
-            winnerText.text = "";
         }
     }
 
@@ -294,7 +253,7 @@ public partial class GameManager : NetworkBehaviour
 
         if (!string.IsNullOrWhiteSpace(PlayerName.Value))
         {
-            LobbyManager.Singleton.PlayerScores[PlayerName.Value] = score;
+            GameManager.Singleton.GameModeExtensions.PlayerScores[PlayerName.Value] = score;
         }
     }
 }

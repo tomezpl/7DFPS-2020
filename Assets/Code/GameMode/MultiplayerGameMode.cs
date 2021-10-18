@@ -1,14 +1,13 @@
 ﻿using MLAPI;
-using MLAPI.NetworkVariable;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using UnityEngine;
 
-public abstract class MultiplayerGameMode : NetworkBehaviour
+public abstract class MultiplayerGameMode
 {
     protected Dictionary<ulong, GameManager> players = new Dictionary<ulong, GameManager>();
+
+    protected Queue<GameModeEvent> events = new Queue<GameModeEvent>();
 
     public abstract string Name { get; }
 
@@ -23,5 +22,21 @@ public abstract class MultiplayerGameMode : NetworkBehaviour
         {
             players.Remove(playerClientId);
         }
+    }
+
+    public virtual void HandleEvents()
+    {
+
+    }
+
+    protected abstract Type GetExtensionsType();
+
+    /// <summary>
+    /// Sets up the gamemode for the client.
+    /// </summary>
+    /// <param name="gameManager"></param>
+    public void CreateExtensionsForPlayer(GameManager gameManager)
+    {
+        GameModeGameManagerExtension.Create(GetExtensionsType(), gameManager);
     }
 }

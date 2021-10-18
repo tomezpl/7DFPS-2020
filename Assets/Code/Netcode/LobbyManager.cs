@@ -239,12 +239,6 @@ public class LobbyManager : MonoBehaviour
     public Color MyColour;
 
     /// <summary>
-    /// <para>A copy of all player's most up-to-date scores.</para>
-    /// <para>These are not synchronised automatically in <see cref="LobbyManager"/>, but rather the sync is triggered by each player's script.</para>
-    /// </summary>
-    public Dictionary<string, PlayerScore> PlayerScores;
-
-    /// <summary>
     /// Can the local player spawn?
     /// </summary>
     public bool CanSpawn { get { return NetworkManager.Singleton.IsConnectedClient; } }
@@ -295,8 +289,6 @@ public class LobbyManager : MonoBehaviour
         // TODO: Change this to NetworkVariableColour in order for it to sync.
         MyColour = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
 
-        // Initialise a Dictionary for keeping track of player scores.
-        PlayerScores = new Dictionary<string, PlayerScore>();
 
         // Add an event handler for clients connecting.
         NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
@@ -320,13 +312,10 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log($"Server: A client with id {clientId} just connected. Spawning a GameManager and player instance for them.");
 
-            GameObject instantiatedGameManager = Instantiate(GameManagerPrefab);
+            // Spawn a GameManager instance for the Client player.
+            SpawnGameManager(clientId);
 
-            // Add player to the gamemode.
-            CurrentGameMode?.AddPlayer(instantiatedGameManager.GetComponent<GameManager>());
-
-            instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
-
+            // Spawn the initial PlayerPrefab instance for the Client player.
             (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
             SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId);
         }
@@ -390,20 +379,30 @@ public class LobbyManager : MonoBehaviour
         // Set the gamemode.
         SetGameMode<DeathMatchGameMode>();
 
-        // Spawn a GameManager & player prefab instance for the Host player.
-        Instantiate(GameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.ServerClientId);
+        // Spawn a GameManager instance for the Host player.
+        SpawnGameManager(NetworkManager.Singleton.ServerClientId);
 
+        // Spawn the initial PlayerPrefab instance for the Host player.
         (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
         SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, NetworkManager.Singleton.LocalClientId);
     }
 
-    private void SetGameMode<GameModeType>(GameModeType gameModeInstance) where GameModeType : MultiplayerGameMode
+    private void SpawnGameManager(ulong clientId)
     {
-        if(CurrentGameMode != null)
+        GameObject instantiatedGameManager = Instantiate(GameManagerPrefab);
+        using (MemoryStream gameManagerStream = new MemoryStream())
         {
-            Destroy(CurrentGameMode);
+            NetcodeHelpers.StreamHelper.WriteGameMode(gameManagerStream, CurrentGameMode?.GetType()?.Name);
+            gameManagerStream.Flush();
+
+            instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId, gameManagerStream);
         }
 
+        CurrentGameMode?.AddPlayer(instantiatedGameManager.GetComponent<GameManager>());
+    }
+
+    private void SetGameMode<GameModeType>(GameModeType gameModeInstance) where GameModeType : MultiplayerGameMode
+    {
         CurrentGameMode = gameModeInstance;
     }
 

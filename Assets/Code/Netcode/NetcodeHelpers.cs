@@ -101,5 +101,31 @@ public static class NetcodeHelpers
 
             return output;
         }
+
+        public static void WriteGameMode(MemoryStream ms, string name)
+        {
+            StreamWriter writer = new StreamWriter(ms);
+            writer.Write(name ?? "");
+            writer.Flush();
+        }
+
+        /// <summary>
+        /// Reads a <see cref="string"/> from the current stream offest. Make sure to seek the stream to the right offset prior to calling.
+        /// </summary>
+        /// <param name="inputStream">The <see cref="Stream"/> containing the <see cref="string"/>.</param>
+        /// <returns>A <see cref="string"/> constructed from the bytes at this stream offset.</returns>
+        public static string ReadGameMode(Stream inputStream)
+        {
+            string output = "";
+            if (inputStream.CanRead)
+            {
+                using (StreamReader reader = new StreamReader(inputStream))
+                {
+                    output = reader.ReadToEnd();
+                }
+            }
+
+            return output;
+        }
     }
 }

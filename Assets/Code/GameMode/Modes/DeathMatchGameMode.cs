@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-public class DeathMatchGameMode : MultiplayerGameMode
+public partial class DeathMatchGameMode : MultiplayerGameMode
 {
     public override string Name { get => "Deathmatch"; }
 
@@ -12,4 +12,6 @@ public class DeathMatchGameMode : MultiplayerGameMode
     {
         
     }
+
+    protected override Type GetExtensionsType() => typeof(DeathMatchGameManagerExtensions);
 }

@@ -2890,7 +2890,7 @@ GameObject:
   - component: {fileID: 1465602031}
   - component: {fileID: 1465602030}
   m_Layer: 5
-  m_Name: Winner
+  m_Name: DM_Winner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3230,7 +3230,7 @@ GameObject:
   - component: {fileID: 1611591472}
   - component: {fileID: 1611591471}
   m_Layer: 5
-  m_Name: KDP
+  m_Name: DM_KDP
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
