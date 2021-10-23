@@ -1,15 +1,20 @@
-﻿using MLAPI;
+﻿using Unity.Netcode;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class MultiplayerGameMode
+public abstract class MultiplayerGameMode : NetworkBehaviour
 {
     protected Dictionary<ulong, GameManager> players = new Dictionary<ulong, GameManager>();
 
     protected Queue<GameModeEvent> events = new Queue<GameModeEvent>();
 
     public abstract string Name { get; }
+
+    public void EmitEvent(GameModeEvent gameModeEvent)
+    {
+        events.Enqueue(gameModeEvent);
+    }
 
     public void AddPlayer(GameManager player)
     {
@@ -24,19 +29,20 @@ public abstract class MultiplayerGameMode
         }
     }
 
-    public virtual void HandleEvents()
+    private void HandleEvents()
     {
-
+        while(events.Count > 0)
+        {
+            HandleEvent(events.Dequeue());
+        }
     }
 
-    protected abstract Type GetExtensionsType();
+    protected abstract void HandleEvent(GameModeEvent gmEvent);
 
-    /// <summary>
-    /// Sets up the gamemode for the client.
-    /// </summary>
-    /// <param name="gameManager"></param>
-    public void CreateExtensionsForPlayer(GameManager gameManager)
+    public virtual void Update()
     {
-        GameModeGameManagerExtension.Create(GetExtensionsType(), gameManager);
+        HandleEvents();
     }
+
+    public abstract Type GetExtensionsType();
 }

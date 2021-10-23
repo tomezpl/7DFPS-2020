@@ -102,7 +102,7 @@ public static class NetcodeHelpers
             return output;
         }
 
-        public static void WriteGameMode(MemoryStream ms, string name)
+        public static void WriteGameModeExtensions(MemoryStream ms, string name)
         {
             StreamWriter writer = new StreamWriter(ms);
             writer.Write(name ?? "");
@@ -114,7 +114,7 @@ public static class NetcodeHelpers
         /// </summary>
         /// <param name="inputStream">The <see cref="Stream"/> containing the <see cref="string"/>.</param>
         /// <returns>A <see cref="string"/> constructed from the bytes at this stream offset.</returns>
-        public static string ReadGameMode(Stream inputStream)
+        public static string ReadGameModeExtensions(Stream inputStream)
         {
             string output = "";
             if (inputStream.CanRead)

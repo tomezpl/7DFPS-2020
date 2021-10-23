@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Unity.Netcode;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,12 @@ public partial class DeathMatchGameMode
         /// <summary>
         /// UI text objects.
         /// </summary>
-        public Text kdpText, winnerText;
+        public Text kdpText, winnerText, killFeedText;
+
+        private string KillLog = "";
+        public int MaxKillLogLines = 5;
+
+        public const string KillFeedMessageHandlerName = "DM_killFeedUpdate";
 
         public override void InitialiseUI()
         {
@@ -30,9 +36,12 @@ public partial class DeathMatchGameMode
                     case "DM_Winner":
                         winnerText = text;
                         break;
+                    case "DM_KillFeedLog":
+                        killFeedText = text;
+                        break;
                 }
 
-                if (kdpText && winnerText)
+                if (kdpText && winnerText && killFeedText)
                 {
                     break;
                 }
@@ -43,6 +52,38 @@ public partial class DeathMatchGameMode
         {
             base.Start();
             InitialiseUI();
+
+            if (IsOwner)
+            {
+                NetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(KillFeedMessageHandlerName, KillFeedMessageHandler);
+            }
+        }
+
+        private void KillFeedMessageHandler(ulong senderClientId, FastBufferReader messagePayload)
+        {
+            Debug.Log("Begin KillFeedUpdate");
+
+            messagePayload.ReadValueSafe(out ulong victimId);
+            messagePayload.ReadValueSafe(out ulong killerId);
+
+            UpdateKillFeed(victimId, killerId);
+        }
+
+        public void UpdateKillFeed(ulong victimId, ulong killerId)
+        {
+            Debug.Log($"Received UpdateKillLogClientRpc with params ({victimId}, {killerId})");
+
+            string victimName = victimId == killerId ? "themselves" : GameManager.FromId(victimId)?.PlayerName?.Value.ToString() ?? "UNKNOWN_PLAYER";
+            string killerName = GameManager.FromId(killerId)?.PlayerName?.Value.ToString() ?? "UNKNOWN_PLAYER";
+
+            string killMessage = $"{killerName} destroyed {victimName}!";
+
+            KillLog = !string.IsNullOrWhiteSpace(KillLog) ? $"{KillLog}\n{killMessage}" : killMessage;
+
+            if (KillLog.Count(c => c == '\n') > MaxKillLogLines)
+            {
+                KillLog = KillLog.Substring(KillLog.IndexOf('\n') + 1);
+            }
         }
 
 
@@ -71,6 +112,8 @@ public partial class DeathMatchGameMode
             {
                 winnerText.text = "";
             }
+
+            killFeedText.text = KillLog;
         }
 
         protected override void UpdateHud()

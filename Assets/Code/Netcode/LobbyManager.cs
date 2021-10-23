@@ -1,5 +1,5 @@
-﻿using MLAPI;
-using MLAPI.Transports.UNET;
+﻿using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -264,7 +264,7 @@ public class LobbyManager : MonoBehaviour
             NetcodeHelpers.StreamHelper.WriteOrientation(ms, orientation);
             ms.Flush();
 
-            instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, ms);
+            instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
         }
     }
 
@@ -374,17 +374,17 @@ public class LobbyManager : MonoBehaviour
             }
         }
 
-        NetworkManager.Singleton.StartHost();
-
         // Set the gamemode.
         SetGameMode<DeathMatchGameMode>();
 
+        NetworkManager.Singleton.StartHost();
+
         // Spawn a GameManager instance for the Host player.
-        SpawnGameManager(NetworkManager.Singleton.ServerClientId);
+        //SpawnGameManager(NetworkManager.Singleton.ServerClientId);
 
         // Spawn the initial PlayerPrefab instance for the Host player.
-        (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
-        SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, NetworkManager.Singleton.LocalClientId);
+        //(Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
+        //SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, NetworkManager.Singleton.LocalClientId);
     }
 
     private void SpawnGameManager(ulong clientId)
@@ -392,10 +392,11 @@ public class LobbyManager : MonoBehaviour
         GameObject instantiatedGameManager = Instantiate(GameManagerPrefab);
         using (MemoryStream gameManagerStream = new MemoryStream())
         {
-            NetcodeHelpers.StreamHelper.WriteGameMode(gameManagerStream, CurrentGameMode?.GetType()?.Name);
+            NetcodeHelpers.StreamHelper.WriteGameModeExtensions(gameManagerStream, CurrentGameMode?.GetExtensionsType()?.Name);
             gameManagerStream.Flush();
 
-            instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId, gameManagerStream);
+            instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
+            
         }
 
         CurrentGameMode?.AddPlayer(instantiatedGameManager.GetComponent<GameManager>());
@@ -403,12 +404,17 @@ public class LobbyManager : MonoBehaviour
 
     private void SetGameMode<GameModeType>(GameModeType gameModeInstance) where GameModeType : MultiplayerGameMode
     {
+        if (CurrentGameMode)
+        {
+            Destroy(CurrentGameMode);
+        }
+
         CurrentGameMode = gameModeInstance;
     }
 
     private void SetGameMode<GameModeType>() where GameModeType : MultiplayerGameMode
     {
-        SetGameMode(Activator.CreateInstance<GameModeType>());
+        SetGameMode(gameObject.AddComponent<GameModeType>());
     }
 
     /// <summary>

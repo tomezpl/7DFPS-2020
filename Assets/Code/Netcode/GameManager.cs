@@ -1,11 +1,10 @@
-﻿using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -45,12 +44,7 @@ public partial class GameManager : NetworkBehaviour
     /// <summary>
     /// This player's score, stored as a string for network transport.
     /// </summary>
-    public NetworkVariableString SerializedScore = new NetworkVariableString(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }
-    , "");
+    public NetworkVariable<FixedString32Bytes> SerializedScore = new NetworkVariable<FixedString32Bytes>(NetworkVariableReadPermission.Everyone, "");
 
     /// <summary>
     /// <para>Deserialized object based on <see cref="SerializedScore"/>.</para>
@@ -60,7 +54,7 @@ public partial class GameManager : NetworkBehaviour
     {
         get
         {
-            return PlayerScore.FromString(SerializedScore.Value);
+            return PlayerScore.FromString(SerializedScore.Value.ToString());
         }
     }
 
@@ -68,11 +62,7 @@ public partial class GameManager : NetworkBehaviour
     /// <para>Network-synchronised name string for this player.</para>
     /// <para>This will be assigned from the player's lobby UI where they can set their name.</para>
     /// </summary>
-    public NetworkVariableString PlayerName = new NetworkVariableString(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.OwnerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, "");
+    public NetworkVariable<FixedString128Bytes> PlayerName = new NetworkVariable<FixedString128Bytes>(NetworkVariableReadPermission.Everyone, string.Empty);
 
     /// <summary>
     /// <para>A flag indicating whether the manager should send a respawn request RPC when triggered by the player.</para>
@@ -111,21 +101,12 @@ public partial class GameManager : NetworkBehaviour
     {
     }
 
-    public override void NetworkStart(Stream stream)
+    public override void OnNetworkSpawn()
     {
         if (IsOwner)
         {
-            PlayerName.Value = LobbyManager.Singleton.PlayerName;
-
-            if (stream != null && stream.CanRead)
-            {
-                // Initialise client-side gamemode extensions.
-                string gameMode = NetcodeHelpers.StreamHelper.ReadGameMode(stream);
-                if (!string.IsNullOrWhiteSpace(gameMode))
-                {
-                    ((MultiplayerGameMode)Activator.CreateInstance(Type.GetType(gameMode))).CreateExtensionsForPlayer(this);
-                }
-            }
+            SyncPlayerNameServerRpc(LobbyManager.Singleton.PlayerName);
+            RequestGameModeExtensionsServerRpc();
         }
 
         SerializedScore.OnValueChanged += (_, newScore) =>
@@ -133,6 +114,24 @@ public partial class GameManager : NetworkBehaviour
             Debug.Log($"Score changed. New score string:\n{newScore}");
             SyncScoreWithLobby();
         };
+    }
+
+    [ServerRpc]
+    public void SyncPlayerNameServerRpc(string playerName, ServerRpcParams rpcParams = default)
+    {
+        PlayerName.Value = playerName;
+    }
+
+    [ServerRpc]
+    public void RequestGameModeExtensionsServerRpc(ServerRpcParams rpcParams = default)
+    {
+        AssignGameModeExtensionsClientRpc(LobbyManager.Singleton.CurrentGameMode.GetExtensionsType().FullName);
+    }
+
+    [ClientRpc]
+    public void AssignGameModeExtensionsClientRpc(string extensionsTypeName, ClientRpcParams rpcParams = default)
+    {
+        GameModeExtensionsFactory.CreateExtensionsForPlayer(this, extensionsTypeName);
     }
 
     // Update is called once per frame
@@ -199,7 +198,7 @@ public partial class GameManager : NetworkBehaviour
 
                 foreach (RoombaControl player in players)
                 {
-                    float distance = Vector3.Distance(spawnPoints[i].transform.position, player.transform.position);
+                    float distance = Vector3.Distance(spawnPoints[i].transform.position, player.gameObject.transform.position);
                     if (closestPlayer < 0f)
                     {
                         closestPlayer = distance;
@@ -251,9 +250,9 @@ public partial class GameManager : NetworkBehaviour
             score = Score;
         }
 
-        if (!string.IsNullOrWhiteSpace(PlayerName.Value))
+        if (!string.IsNullOrWhiteSpace(PlayerName.Value.ToString()))
         {
-            GameManager.Singleton.GameModeExtensions.PlayerScores[PlayerName.Value] = score;
+            GameManager.Singleton.GameModeExtensions.PlayerScores[PlayerName.Value.ToString()] = score;
         }
     }
 }

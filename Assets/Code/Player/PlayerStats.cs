@@ -1,12 +1,11 @@
-﻿using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
+﻿using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Collections;
 
 public class PlayerStats : NetworkBehaviour
 {
@@ -39,11 +38,7 @@ public class PlayerStats : NetworkBehaviour
     /// <summary>
     /// Network-synchronised health value for this player.
     /// </summary>
-    public NetworkVariableInt Health = new NetworkVariableInt(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, 100);
+    public NetworkVariable<int> Health = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone, 100);
 
     public int health = 100;
 
@@ -51,18 +46,14 @@ public class PlayerStats : NetworkBehaviour
     /// <para>Network-synchronised ID of the most recent attacker to this player.</para>
     /// <para>Don't use this outside of server RPCs; use the <see cref="LastAttackerId"/> cast instead.</para>
     /// </summary>
-    public NetworkVariableString LastAttacker = new NetworkVariableString(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, "");
+    public NetworkVariable<FixedString32Bytes> LastAttacker = new NetworkVariable<FixedString32Bytes>(NetworkVariableReadPermission.Everyone, "");
 
     /// <summary>
     /// A ulong parser for <see cref="LastAttacker"/> ID.
     /// </summary>
     public ulong? LastAttackerId
     {
-        get => !string.IsNullOrWhiteSpace(LastAttacker.Value) ? (ulong?)ulong.Parse(LastAttacker.Value) : null;
+        get => !string.IsNullOrWhiteSpace(LastAttacker.Value.ToString()) ? (ulong?)ulong.Parse(LastAttacker.Value.ToString()) : null;
     }
 
     /// <summary>
@@ -82,7 +73,7 @@ public class PlayerStats : NetworkBehaviour
 
     }
 
-    public override void NetworkStart()
+    public override void OnNetworkSpawn()
     {
         health = Health.Value;
 
@@ -92,8 +83,8 @@ public class PlayerStats : NetworkBehaviour
             health = newHealth;
         };
 
-        SetPlayerNameOverheadDisplay(GameManager.FromId(OwnerClientId).PlayerName.Value);
-        GameManager.FromId(OwnerClientId).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName);
+        SetPlayerNameOverheadDisplay(GameManager.FromId(OwnerClientId).PlayerName.Value.ToString());
+        GameManager.FromId(OwnerClientId).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName.ToString());
     }
 
     // Update is called once per frame
@@ -121,10 +112,10 @@ public class PlayerStats : NetworkBehaviour
         // If another player killed us, call the server RPC to give them a kill.
         Debug.Log($"Last attacker was {LastAttackerId}");
 
-        // Make sure we can find a GameManager for this ID and that it doesn't belong to us (self-kills shouldn't count as kill points).
-        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null && LastAttackerId != OwnerClientId)
+        // Make sure we can find a GameManager for this ID.
+        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null)
         {
-            GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value);
+            GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value, OwnerClientId);
         }
 
         // Call the server RPC to count a death for us.

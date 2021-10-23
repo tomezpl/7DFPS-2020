@@ -1,4 +1,4 @@
-﻿using MLAPI;
+﻿using Unity.Netcode;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -79,19 +79,25 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
 
     protected virtual void Start()
     {
-        InitialiseUI();
-
         PlayerScores = new Dictionary<string, PlayerScore>();
+
+        if (IsOwner)
+        {
+            InitialiseUI();
+        }
     }
 
     protected virtual void Update()
     {
-        UpdateHud();
+        if (IsOwner)
+        {
+            UpdateHud();
+        }
     }
 
     protected virtual void UpdateHud()
     {
-        if (Owner?.SpawnedPlayer && Owner.SpawnedPlayer.PlayerControlled && PlayerStats.Local)
+        if (Owner?.SpawnedPlayer != null && Owner.SpawnedPlayer.PlayerControlled && PlayerStats.Local != null)
         {
             int health = PlayerStats.Local.health;
 
@@ -112,6 +118,10 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
                 {
                     healthText.text = $"Health: {health}";
                 }
+            }
+            else
+            {
+                Debug.Log("healthText was null!");
             }
         }
     }
