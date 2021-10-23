@@ -16,6 +16,26 @@ public abstract class MultiplayerGameMode : NetworkBehaviour
         events.Enqueue(gameModeEvent);
     }
 
+    /// <summary>
+    /// Sends an event as a named message to all clients + server.
+    /// </summary>
+    /// <param name="eventName"></param>
+    /// <param name="writer"></param>
+    public void InvokeGlobalEvent(string eventName, FastBufferWriter writer)
+    {
+        NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll(eventName, writer);
+
+        // Also invoke on host.
+        GameModeGameManagerExtension serverGmExt = GameManager.FromId(NetworkManager.Singleton.ServerClientId)?.GameModeExtensions;
+        if (serverGmExt) 
+        {
+            using (FastBufferReader reader = new FastBufferReader(writer, Unity.Collections.Allocator.Temp))
+            {
+                serverGmExt.EventHandlers[eventName](NetworkManager.Singleton.ServerClientId, reader);
+            }
+        }
+    }
+
     public void AddPlayer(GameManager player)
     {
         players[player.OwnerClientId] = player;

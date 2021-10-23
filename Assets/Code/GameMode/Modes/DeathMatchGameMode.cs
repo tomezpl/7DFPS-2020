@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Netcode;
+using UnityEngine;
 
 public partial class DeathMatchGameMode : MultiplayerGameMode
 {
@@ -23,13 +24,7 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
                 writer.WriteValueSafe(playerKilledEvent.KillerId);
 
                 // Send the update as a named message to all clients.
-                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessageToAll(DeathMatchGameManagerExtensions.KillFeedMessageHandlerName, writer);
-            }
-
-            GameModeGameManagerExtension serverGmExt = GameManager.FromId(NetworkManager.Singleton.ServerClientId)?.GameModeExtensions;
-            if(serverGmExt && serverGmExt is DeathMatchGameManagerExtensions)
-            {
-                (serverGmExt as DeathMatchGameManagerExtensions).UpdateKillFeed(playerKilledEvent.VictimId, playerKilledEvent.KillerId);
+                InvokeGlobalEvent(DeathMatchGameManagerExtensions.KillFeedMessageHandlerName, writer);
             }
         }
     }

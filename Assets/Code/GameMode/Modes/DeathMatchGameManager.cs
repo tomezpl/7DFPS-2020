@@ -55,7 +55,8 @@ public partial class DeathMatchGameMode
 
             if (IsOwner)
             {
-                NetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(KillFeedMessageHandlerName, KillFeedMessageHandler);
+                Debug.Log("REGISTERING MESSAGE HANDLER");
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(KillFeedMessageHandlerName, KillFeedMessageHandler);
             }
         }
 
@@ -121,6 +122,11 @@ public partial class DeathMatchGameMode
             base.UpdateHud();
 
             UpdateStatsHud();
+        }
+
+        protected override void AssignEventHandlers()
+        {
+            EventHandlers[KillFeedMessageHandlerName] = KillFeedMessageHandler;
         }
     }
 }

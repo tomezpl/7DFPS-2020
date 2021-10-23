@@ -14,6 +14,8 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
     /// </summary>
     public Dictionary<string, PlayerScore> PlayerScores;
 
+    public Dictionary<string, CustomMessagingManager.HandleNamedMessageDelegate> EventHandlers = new Dictionary<string, CustomMessagingManager.HandleNamedMessageDelegate>();
+
     /// <summary>
     /// UI text object for health display.
     /// </summary>
@@ -77,6 +79,16 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
         }
     }
 
+    protected abstract void AssignEventHandlers();
+
+    private void RegisterEventHandlers()
+    {
+        foreach(KeyValuePair<string, CustomMessagingManager.HandleNamedMessageDelegate> eventHandler in EventHandlers)
+        {
+            NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(eventHandler.Key, eventHandler.Value);
+        }
+    }
+
     protected virtual void Start()
     {
         PlayerScores = new Dictionary<string, PlayerScore>();
@@ -84,6 +96,8 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
         if (IsOwner)
         {
             InitialiseUI();
+            AssignEventHandlers();
+            RegisterEventHandlers();
         }
     }
 
