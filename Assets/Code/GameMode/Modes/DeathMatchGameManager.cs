@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Globalization;
 
 public partial class DeathMatchGameMode
 {
@@ -14,16 +15,19 @@ public partial class DeathMatchGameMode
         /// <summary>
         /// UI text objects.
         /// </summary>
-        public Text kdpText, winnerText, killFeedText;
+        public Text kdpText, winnerText, killFeedText, timerText;
 
         private string KillLog = "";
         public int MaxKillLogLines = 5;
 
         public const string KillFeedMessageHandlerName = "DM_killFeedUpdate";
         public const string GameOverMessageHandlerName = "DM_gameOver";
+        public const string TimerUpdateMessageName = "DM_timerTick";
 
         public bool IsInProgress = true;
         public bool IsGameOver = false;
+
+        private string TimeRemainingString = "";
 
         public override void InitialiseUI()
         {
@@ -43,9 +47,12 @@ public partial class DeathMatchGameMode
                     case "DM_KillFeedLog":
                         killFeedText = text;
                         break;
+                    case "TimerText":
+                        timerText = text;
+                        break;
                 }
 
-                if (kdpText && winnerText && killFeedText)
+                if (kdpText && winnerText && killFeedText && timerText)
                 {
                     break;
                 }
@@ -151,6 +158,7 @@ public partial class DeathMatchGameMode
                 winnerText.text = "";
                 killFeedText.text = "";
                 healthText.text = "";
+                timerText.text = "";
 
                 return;
             }
@@ -175,6 +183,8 @@ public partial class DeathMatchGameMode
                 winnerText.text = "";
             }
 
+            timerText.text = TimeRemainingString;
+
             killFeedText.text = KillLog;
         }
 
@@ -186,10 +196,20 @@ public partial class DeathMatchGameMode
             UpdateStatsHud(IsGameOver);
         }
 
+        private void TimerUpdateMessageHandler(ulong senderClientId, FastBufferReader messagePayload)
+        {
+            messagePayload.ReadValueSafe(out long ticks);
+            TimeSpan remaining = TimeSpan.FromTicks(ticks);
+            int seconds = remaining.Seconds;
+            int minutes = remaining.Minutes;
+            TimeRemainingString = $"{(minutes < 10 ? $"0{minutes}" : $"{minutes}")}:{(seconds < 10 ? $"0{seconds}" : $"{seconds}")}";
+        }
+
         protected override void AssignEventHandlers()
         {
             EventHandlers[KillFeedMessageHandlerName] = KillFeedMessageHandler;
             EventHandlers[GameOverMessageHandlerName] = GameOverMessageHandler;
+            EventHandlers[TimerUpdateMessageName] = TimerUpdateMessageHandler;
         }
     }
 }

@@ -18,6 +18,8 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
 
     public bool IsInProgress = true;
 
+    private float secondCounter = 0f;
+
     protected override void HandleEvent(GameModeEvent gmEvent)
     {
         if (gmEvent is DeathMatchEvents.PlayerKilledEvent)
@@ -49,9 +51,17 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
     {
         base.Update();
 
+        secondCounter += Time.deltaTime;
+
         if (IsInProgress)
         {
             CheckGameOver();
+
+            if(secondCounter >= 1f)
+            {
+                UpdateTimerForPlayers();
+                secondCounter = 0f;
+            }
         }
     }
 
@@ -103,5 +113,14 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
         }
 
         return (scoreReached, leader);
+    }
+
+    private void UpdateTimerForPlayers()
+    {
+        using (FastBufferWriter writer = new FastBufferWriter(sizeof(long), Unity.Collections.Allocator.Temp))
+        {
+            writer.WriteValueSafe((MatchOverTime - DateTime.UtcNow).Value.Ticks);
+            InvokeGlobalEvent(DeathMatchGameManagerExtensions.TimerUpdateMessageName, writer);
+        }
     }
 }
