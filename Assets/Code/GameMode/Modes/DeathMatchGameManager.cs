@@ -20,6 +20,10 @@ public partial class DeathMatchGameMode
         public int MaxKillLogLines = 5;
 
         public const string KillFeedMessageHandlerName = "DM_killFeedUpdate";
+        public const string GameOverMessageHandlerName = "DM_gameOver";
+
+        public bool IsInProgress = true;
+        public bool IsGameOver = false;
 
         public override void InitialiseUI()
         {
@@ -53,11 +57,58 @@ public partial class DeathMatchGameMode
             base.Start();
             InitialiseUI();
 
+            IsInProgress = true;
+            IsGameOver = false;
+
             if (IsOwner)
             {
-                Debug.Log("REGISTERING MESSAGE HANDLER");
-                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(KillFeedMessageHandlerName, KillFeedMessageHandler);
             }
+        }
+
+        private void GameOverMessageHandler(ulong senderClientId, FastBufferReader messagePayload)
+        {
+            if (!IsOwner)
+            {
+                return;
+            }
+
+            messagePayload.ReadValueSafe(out bool scoreReached);
+            messagePayload.ReadValueSafe(out bool hasWinnerId);
+            ulong winnerId = ulong.MaxValue;
+            if(hasWinnerId)
+            {
+                messagePayload.ReadValueSafe(out winnerId);
+            }
+
+            IsInProgress = false;
+            IsGameOver = true;
+
+            RequestGameOverScreen(scoreReached, hasWinnerId ? winnerId : new ulong?());
+
+            if (Owner.SpawnedPlayer)
+            {
+                Owner.SpawnedPlayer.LockInput = true;
+            }
+        }
+
+        private void RequestGameOverScreen(bool scoreReached, ulong? winnerId)
+        {
+            string subText = scoreReached ? "Target score reached. " : "Ran out of time. ";
+            if (winnerId != null)
+            {
+                GameManager winnerGm = GameManager.FromId(winnerId.Value);
+                if (winnerGm)
+                {
+                    subText += $"{winnerGm.PlayerName.Value} wins with {winnerGm.Score.TotalPoints} points!";
+                }
+            }
+            GameOverAlert = ("GAME OVER!", subText);
+        }
+
+        private void DisplayGameOverScreen(bool hide = false)
+        {
+            gameOverMainText.text = hide ? "" : GameOverAlert.MainText;
+            gameOverSubText.text = hide ? "" : GameOverAlert.SubText;
         }
 
         private void KillFeedMessageHandler(ulong senderClientId, FastBufferReader messagePayload)
@@ -92,8 +143,18 @@ public partial class DeathMatchGameMode
         /// <summary>
         /// Updates the values of the stats text.
         /// </summary>
-        protected virtual void UpdateStatsHud()
+        protected virtual void UpdateStatsHud(bool hide = false)
         {
+            if(hide)
+            {
+                kdpText.text = "";
+                winnerText.text = "";
+                killFeedText.text = "";
+                healthText.text = "";
+
+                return;
+            }
+
             // Update local player's stats text.
             PlayerScore score = Owner.Score;
             kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
@@ -121,12 +182,14 @@ public partial class DeathMatchGameMode
         {
             base.UpdateHud();
 
-            UpdateStatsHud();
+            DisplayGameOverScreen(IsInProgress);
+            UpdateStatsHud(IsGameOver);
         }
 
         protected override void AssignEventHandlers()
         {
             EventHandlers[KillFeedMessageHandlerName] = KillFeedMessageHandler;
+            EventHandlers[GameOverMessageHandlerName] = GameOverMessageHandler;
         }
     }
 }

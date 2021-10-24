@@ -21,6 +21,10 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
     /// </summary>
     public Text healthText;
 
+    public Text gameOverMainText, gameOverSubText;
+
+    protected (string MainText, string SubText) GameOverAlert = ("", "");
+
     /// <summary>
     /// Initiates a gamemode in the client's gamemanager.
     /// </summary>
@@ -70,9 +74,15 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
                 case "Health":
                     healthText = text;
                     break;
+                case "GameOverAlert_Main":
+                    gameOverMainText = text;
+                    break;
+                case "GameOverAlert_Sub":
+                    gameOverSubText = text;
+                    break;
             }
 
-            if (healthText)
+            if (healthText && gameOverMainText && gameOverSubText)
             {
                 break;
             }

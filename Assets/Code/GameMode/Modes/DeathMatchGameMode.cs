@@ -10,6 +10,14 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
 {
     public override string Name { get => "Deathmatch"; }
 
+    private DateTime? MatchOverTime = null;
+
+    public int MatchSeconds = 60 * 5;
+
+    public int MaxScore = 50;
+
+    public bool IsInProgress = true;
+
     protected override void HandleEvent(GameModeEvent gmEvent)
     {
         if (gmEvent is DeathMatchEvents.PlayerKilledEvent)
@@ -30,4 +38,70 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
     }
 
     public override Type GetExtensionsType() => typeof(DeathMatchGameManagerExtensions);
+
+    public void Start()
+    {
+        MatchOverTime = DateTime.UtcNow + TimeSpan.FromSeconds(MatchSeconds);
+        IsInProgress = true;
+    }
+
+    public override void Update()
+    {
+        base.Update();
+
+        if (IsInProgress)
+        {
+            CheckGameOver();
+        }
+    }
+
+    private void CheckGameOver()
+    {
+        bool outOfTime = CheckOutOfTime();
+        (bool scoreReached, GameManager winner) = CheckScoreReached();
+
+        if(outOfTime || scoreReached)
+        {
+            IsInProgress = false;
+
+            using (FastBufferWriter writer = new FastBufferWriter(sizeof(bool) * 2 + sizeof(ulong), Unity.Collections.Allocator.Temp))
+            {
+                writer.WriteValueSafe(scoreReached);
+                writer.WriteValueSafe(winner != null);
+                if (winner != null)
+                {
+                    writer.WriteValueSafe(winner.OwnerClientId);
+                }
+
+                InvokeGlobalEvent(DeathMatchGameManagerExtensions.GameOverMessageHandlerName, writer);
+            }
+        }
+    }
+
+    private bool CheckOutOfTime()
+    {
+        return DateTime.UtcNow >= MatchOverTime;
+    }
+
+    private (bool scoreReached, GameManager winner) CheckScoreReached()
+    {
+        GameManager leader = null;
+        bool scoreReached = false;
+
+        foreach(GameManager player in players.Values)
+        {
+            if(player.Score.TotalPoints >= MaxScore)
+            {
+                scoreReached = true;
+            }
+
+            // Find player with most points.
+            if (leader == null || player.Score.TotalPoints > leader.Score.TotalPoints)
+            {
+                leader = player;
+            }
+        }
+
+        return (scoreReached, leader);
+    }
 }
