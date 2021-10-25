@@ -1,4 +1,4 @@
-﻿using MLAPI.Messaging;
+﻿using Unity.Netcode;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -155,10 +155,6 @@ public class Phone : Weapon
     [ServerRpc]
     public void DetonateLithiumBombServerRpc(ServerRpcParams serverRpcParams = default)
     {
-        // Find all connected clients that this RPC would be sent to.
-        ulong[] allClients = new ulong[NetworkManagerSingleton.ConnectedClientsList.Count];
-        NetworkManagerSingleton.ConnectedClients.Keys.CopyTo(allClients, 0);
-
         // Send RPC to all connected clients.
         DetonateLithiumBombClientRpc(serverRpcParams.Receive.SenderClientId);
     }

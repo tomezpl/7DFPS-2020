@@ -1,5 +1,5 @@
-﻿using MLAPI;
-using MLAPI.Transports.UNET;
+﻿using Unity.Netcode;
+using Unity.Netcode.Transports.UNET;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -239,15 +239,14 @@ public class LobbyManager : MonoBehaviour
     public Color MyColour;
 
     /// <summary>
-    /// <para>A copy of all player's most up-to-date scores.</para>
-    /// <para>These are not synchronised automatically in <see cref="LobbyManager"/>, but rather the sync is triggered by each player's script.</para>
-    /// </summary>
-    public Dictionary<string, PlayerScore> PlayerScores;
-
-    /// <summary>
     /// Can the local player spawn?
     /// </summary>
     public bool CanSpawn { get { return NetworkManager.Singleton.IsConnectedClient; } }
+
+    /// <summary>
+    /// Current gamemode instance.
+    /// </summary>
+    public MultiplayerGameMode CurrentGameMode = null;
 
     /// <summary>
     /// Server/Host only: Spawns a player prefab for a client and assigns it ownership.
@@ -258,15 +257,8 @@ public class LobbyManager : MonoBehaviour
     public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId)
     {
         GameObject instance = Instantiate(PlayerPrefab, position, orientation);
-        using (MemoryStream ms = new MemoryStream())
-        {
-            // Write the spawnpoint's position and orientation bytes to the stream.
-            NetcodeHelpers.StreamHelper.WritePosition(ms, position);
-            NetcodeHelpers.StreamHelper.WriteOrientation(ms, orientation);
-            ms.Flush();
 
-            instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, ms);
-        }
+        instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
     }
 
     // Start is called before the first frame update
@@ -290,11 +282,10 @@ public class LobbyManager : MonoBehaviour
         // TODO: Change this to NetworkVariableColour in order for it to sync.
         MyColour = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
 
-        // Initialise a Dictionary for keeping track of player scores.
-        PlayerScores = new Dictionary<string, PlayerScore>();
 
-        // Add an event handler for clients connecting.
+        // Add an event handler for clients connecting & disconnecting.
         NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback += ClientDisconnected;
 
         // Display the preselected class image.
         UpdateClassImage(SelectedClass);
@@ -314,8 +305,10 @@ public class LobbyManager : MonoBehaviour
         {
             Debug.Log($"Server: A client with id {clientId} just connected. Spawning a GameManager and player instance for them.");
 
-            Instantiate(GameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
+            // Spawn a GameManager instance for the Client player.
+            SpawnGameManager(clientId);
 
+            // Spawn the initial PlayerPrefab instance for the Client player.
             (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
             SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId);
         }
@@ -326,6 +319,19 @@ public class LobbyManager : MonoBehaviour
             // Set the spawn flag off as the server will be spawning us immediately.
             // This avoids UI being displayed after spawning.
             DoesRequireSpawn = false;
+        }
+    }
+
+    /// <summary>
+    /// Event handler for clients disconnecting from the server.
+    /// </summary>
+    /// <param name="clientId">The ID of the disconnecting client.</param>
+    private void ClientDisconnected(ulong clientId)
+    {
+        if (NetworkManager.Singleton.IsServer)
+        {
+            // Remove the player from the gamemode.
+            CurrentGameMode?.RemovePlayer(clientId);
         }
     }
 
@@ -365,13 +371,48 @@ public class LobbyManager : MonoBehaviour
             }
         }
 
+        // Set the gamemode.
+        SetGameMode<DeathMatchGameMode>();
+
         NetworkManager.Singleton.StartHost();
+    }
 
-        // Spawn a GameManager & player prefab instance for the Host player.
-        Instantiate(GameManagerPrefab).GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.ServerClientId);
+    /// <summary>
+    /// Spawn a <see cref="GameManager"/> object for a newly connected client. This is only spawned once per player connection.
+    /// </summary>
+    /// <param name="clientId"></param>
+    private void SpawnGameManager(ulong clientId)
+    {
+        GameObject instantiatedGameManager = Instantiate(GameManagerPrefab);
 
-        (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
-        SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, NetworkManager.Singleton.LocalClientId);
+        instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
+
+        // Add to the gamemode if needed.
+        CurrentGameMode?.AddPlayer(instantiatedGameManager.GetComponent<GameManager>());
+    }
+
+    /// <summary>
+    /// Set the current server-side gamemode.
+    /// </summary>
+    /// <typeparam name="GameModeType"></typeparam>
+    /// <param name="gameModeInstance">A <see cref="MultiplayerGameMode"/> instance to set as the current gamemode.</param>
+    private void SetGameMode<GameModeType>(GameModeType gameModeInstance) where GameModeType : MultiplayerGameMode
+    {
+        if (CurrentGameMode)
+        {
+            Destroy(CurrentGameMode);
+        }
+
+        CurrentGameMode = gameModeInstance;
+    }
+
+    /// <summary>
+    /// Sets the current server-side gamemode.
+    /// </summary>
+    /// <typeparam name="GameModeType">A <see cref="MultiplayerGameMode"/> implementation to instantiate & set as current gamemode.</typeparam>
+    private void SetGameMode<GameModeType>() where GameModeType : MultiplayerGameMode
+    {
+        SetGameMode(gameObject.AddComponent<GameModeType>());
     }
 
     /// <summary>
