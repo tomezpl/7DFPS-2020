@@ -4,8 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Client-side gameplay logic for this gamemode. Should implement any networked events required by the gamemode.
+/// </summary>
 public abstract class GameModeGameManagerExtension : NetworkBehaviour
 {
+    /// <summary>
+    /// The <see cref="GameManager"/> this script is part of.
+    /// </summary>
     public GameManager Owner;
 
     /// <summary>
@@ -14,6 +20,9 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
     /// </summary>
     public Dictionary<string, PlayerScore> PlayerScores;
 
+    /// <summary>
+    /// Networked event handlers.
+    /// </summary>
     public Dictionary<string, CustomMessagingManager.HandleNamedMessageDelegate> EventHandlers = new Dictionary<string, CustomMessagingManager.HandleNamedMessageDelegate>();
 
     /// <summary>
@@ -21,8 +30,14 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
     /// </summary>
     public Text healthText;
 
+    /// <summary>
+    /// UI text objects for the game over screen.
+    /// </summary>
     public Text gameOverMainText, gameOverSubText;
 
+    /// <summary>
+    /// Values to fill the Game Over screen with.
+    /// </summary>
     protected (string MainText, string SubText) GameOverAlert = ("", "");
 
     /// <summary>
@@ -54,16 +69,26 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
         return extension;
     }
 
+    /// <summary>
+    /// Removes the extension.
+    /// </summary>
+    /// <param name="existingExtension">Extension to be removed.</param>
     public static void Terminate(GameModeGameManagerExtension existingExtension)
     {
         Destroy(existingExtension);
     }
 
+    /// <summary>
+    /// Removes the extension.
+    /// </summary>
     public void Terminate()
     {
         Destroy(this);
     }
 
+    /// <summary>
+    /// Carries out any UI initialisation steps (finding UI objects in the scene etc.)
+    /// </summary>
     public virtual void InitialiseUI()
     {
         // Find the UI text objects in the scene.
@@ -89,8 +114,14 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Assigns any networked event handlers.
+    /// </summary>
     protected abstract void AssignEventHandlers();
 
+    /// <summary>
+    /// Registers networked event handlers from <see cref="AssignEventHandlers"/> with the Netcode API.
+    /// </summary>
     private void RegisterEventHandlers()
     {
         foreach(KeyValuePair<string, CustomMessagingManager.HandleNamedMessageDelegate> eventHandler in EventHandlers)
@@ -119,6 +150,9 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Updates the HUD logic/values every frame.
+    /// </summary>
     protected virtual void UpdateHud()
     {
         if (Owner?.SpawnedPlayer != null && Owner.SpawnedPlayer.PlayerControlled && PlayerStats.Local != null)

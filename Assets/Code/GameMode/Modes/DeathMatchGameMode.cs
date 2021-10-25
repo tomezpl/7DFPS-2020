@@ -6,18 +6,36 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 
+/// <summary>
+/// Server-side logic for the Deathmatch gamemode.
+/// </summary>
 public partial class DeathMatchGameMode : MultiplayerGameMode
 {
     public override string Name { get => "Deathmatch"; }
 
+    /// <summary>
+    /// When should the game end?
+    /// </summary>
     private DateTime? MatchOverTime = null;
 
+    /// <summary>
+    /// How long (in seconds) should the match take?
+    /// </summary>
     public int MatchSeconds = 60 * 5;
 
+    /// <summary>
+    /// How many points should a player have to reach to win the game?
+    /// </summary>
     public int MaxScore = 50;
 
+    /// <summary>
+    /// Is the match still in progress?
+    /// </summary>
     public bool IsInProgress = true;
 
+    /// <summary>
+    /// Timer updated with deltaTime to emit timer updates to clients approx. every second.
+    /// </summary>
     private float secondCounter = 0f;
 
     protected override void HandleEvent(GameModeEvent gmEvent)
@@ -57,6 +75,7 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
         {
             CheckGameOver();
 
+            // Update the time on all clients every second.
             if(secondCounter >= 1f)
             {
                 UpdateTimerForPlayers();
@@ -65,13 +84,19 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
         }
     }
 
+    /// <summary>
+    /// Stops the game if a gameover/win condition has been reached.
+    /// </summary>
     private void CheckGameOver()
     {
+        // Check time first.
         bool outOfTime = CheckOutOfTime();
+        // Check if any of the players reached max score.
         (bool scoreReached, GameManager winner) = CheckScoreReached();
 
         if(outOfTime || scoreReached)
         {
+            // Stop the game.
             IsInProgress = false;
 
             using (FastBufferWriter writer = new FastBufferWriter(sizeof(bool) * 2 + sizeof(ulong), Unity.Collections.Allocator.Temp))
@@ -83,16 +108,25 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
                     writer.WriteValueSafe(winner.OwnerClientId);
                 }
 
+                // Notify all players.
                 InvokeGlobalEvent(DeathMatchGameManagerExtensions.GameOverMessageHandlerName, writer);
             }
         }
     }
 
+    /// <summary>
+    /// Checks if max match duration has passed.
+    /// </summary>
+    /// <returns>true if current time is past <see cref="MatchOverTime"/>.</returns>
     private bool CheckOutOfTime()
     {
         return DateTime.UtcNow >= MatchOverTime;
     }
 
+    /// <summary>
+    /// Checks if max score has been reached.
+    /// </summary>
+    /// <returns>scoreReached is true if max score reached, otherwise false. winner is the player with most points (regardless of scoreReached).</returns>
     private (bool scoreReached, GameManager winner) CheckScoreReached()
     {
         GameManager leader = null;
@@ -115,6 +149,9 @@ public partial class DeathMatchGameMode : MultiplayerGameMode
         return (scoreReached, leader);
     }
 
+    /// <summary>
+    /// Sync current remaining time for all players.
+    /// </summary>
     private void UpdateTimerForPlayers()
     {
         using (FastBufferWriter writer = new FastBufferWriter(sizeof(long), Unity.Collections.Allocator.Temp))

@@ -10,6 +10,9 @@ using System.Globalization;
 
 public partial class DeathMatchGameMode
 {
+    /// <summary>
+    /// Client-side extensions for the deathmatch gamemode.
+    /// </summary>
     public class DeathMatchGameManagerExtensions : GameModeGameManagerExtension
     {
         /// <summary>
@@ -17,16 +20,32 @@ public partial class DeathMatchGameMode
         /// </summary>
         public Text kdpText, winnerText, killFeedText, timerText;
 
+        /// <summary>
+        /// String containing lines in the kill feed.
+        /// </summary>
         private string KillLog = "";
+
+        /// <summary>
+        /// Maximum number of lines shown at once in the kill feed.
+        /// </summary>
         public int MaxKillLogLines = 5;
 
-        public const string KillFeedMessageHandlerName = "DM_killFeedUpdate";
-        public const string GameOverMessageHandlerName = "DM_gameOver";
-        public const string TimerUpdateMessageName = "DM_timerTick";
+        /// <summary>
+        /// Netcode message handler names.
+        /// </summary>
+        public const string KillFeedMessageHandlerName = "DM_killFeedUpdate",
+                            GameOverMessageHandlerName = "DM_gameOver",
+                            TimerUpdateMessageName = "DM_timerTick";
 
-        public bool IsInProgress = true;
-        public bool IsGameOver = false;
+        /// <summary>
+        /// Match state.
+        /// </summary>
+        public bool IsInProgress = true,
+                    IsGameOver = false;
 
+        /// <summary>
+        /// String with mm:ss formatted time.
+        /// </summary>
         private string TimeRemainingString = "";
 
         public override void InitialiseUI()
@@ -64,12 +83,9 @@ public partial class DeathMatchGameMode
             base.Start();
             InitialiseUI();
 
+            // Initialise match state.
             IsInProgress = true;
             IsGameOver = false;
-
-            if (IsOwner)
-            {
-            }
         }
 
         private void GameOverMessageHandler(ulong senderClientId, FastBufferReader messagePayload)
@@ -98,6 +114,11 @@ public partial class DeathMatchGameMode
             }
         }
 
+        /// <summary>
+        /// Prepare the "game over" screen.
+        /// </summary>
+        /// <param name="scoreReached">Did the game end because the score was reached? If false, out of time is assumed.</param>
+        /// <param name="winnerId">ID of the winning player (highest score)</param>
         private void RequestGameOverScreen(bool scoreReached, ulong? winnerId)
         {
             string subText = scoreReached ? "Target score reached. " : "Ran out of time. ";
@@ -112,6 +133,10 @@ public partial class DeathMatchGameMode
             GameOverAlert = ("GAME OVER!", subText);
         }
 
+        /// <summary>
+        /// Update the UI to display or hide the "game over" screen.
+        /// </summary>
+        /// <param name="hide">Should the game over screen be hidden?</param>
         private void DisplayGameOverScreen(bool hide = false)
         {
             gameOverMainText.text = hide ? "" : GameOverAlert.MainText;
@@ -128,6 +153,11 @@ public partial class DeathMatchGameMode
             UpdateKillFeed(victimId, killerId);
         }
 
+        /// <summary>
+        /// Update the kill feed upon a <see cref="DeathMatchEvents.PlayerKilledEvent"/>.
+        /// </summary>
+        /// <param name="victimId">Victim client ID from the event.</param>
+        /// <param name="killerId">Killer client ID from the event. Can be the same as the victim, in which case it's considered a suicide.</param>
         public void UpdateKillFeed(ulong victimId, ulong killerId)
         {
             Debug.Log($"Received UpdateKillLogClientRpc with params ({victimId}, {killerId})");
@@ -148,8 +178,9 @@ public partial class DeathMatchGameMode
 
 
         /// <summary>
-        /// Updates the values of the stats text.
+        /// Updates the values of the stats text or hides it.
         /// </summary>
+        /// <param name="hide">Should the stats HUD be hidden?</param>
         protected virtual void UpdateStatsHud(bool hide = false)
         {
             if(hide)

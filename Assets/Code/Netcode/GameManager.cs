@@ -76,6 +76,9 @@ public partial class GameManager : NetworkBehaviour
     /// </summary>
     public RoombaControl SpawnedPlayer = null;
 
+    /// <summary>
+    /// Client-side extension script for the gamemode logic.
+    /// </summary>
     public GameModeGameManagerExtension GameModeExtensions;
 
     /// <summary>
@@ -116,18 +119,32 @@ public partial class GameManager : NetworkBehaviour
         };
     }
 
+    /// <summary>
+    /// Updates the player name on the server.
+    /// </summary>
+    /// <param name="playerName"></param>
+    /// <param name="rpcParams"></param>
     [ServerRpc]
     public void SyncPlayerNameServerRpc(string playerName, ServerRpcParams rpcParams = default)
     {
         PlayerName.Value = playerName;
     }
 
+    /// <summary>
+    /// Requests a client-side extension script for gamemode logic.
+    /// </summary>
+    /// <param name="rpcParams"></param>
     [ServerRpc]
     public void RequestGameModeExtensionsServerRpc(ServerRpcParams rpcParams = default)
     {
         AssignGameModeExtensionsClientRpc(LobbyManager.Singleton.CurrentGameMode.GetExtensionsType().FullName);
     }
 
+    /// <summary>
+    /// Creates the client-side gamemode logic extension script having received the script class type name from the server.
+    /// </summary>
+    /// <param name="extensionsTypeName"></param>
+    /// <param name="rpcParams"></param>
     [ClientRpc]
     public void AssignGameModeExtensionsClientRpc(string extensionsTypeName, ClientRpcParams rpcParams = default)
     {
@@ -198,7 +215,7 @@ public partial class GameManager : NetworkBehaviour
 
                 foreach (RoombaControl player in players)
                 {
-                    float distance = Vector3.Distance(spawnPoints[i].transform.position, player.gameObject.transform.position);
+                    float distance = Vector3.Distance(spawnPoints[i].transform.position, player.transform.position);
                     if (closestPlayer < 0f)
                     {
                         closestPlayer = distance;

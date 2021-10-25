@@ -618,28 +618,6 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     public override void OnNetworkSpawn()
     {
-        /*if(stream != null && stream.CanRead)
-        {
-            // Extract the spawnpoint from the stream.
-            Vector3 position = NetcodeHelpers.StreamHelper.ReadPosition(stream);
-            Quaternion orientation = NetcodeHelpers.StreamHelper.ReadOrientation(stream);
-
-            Debug.Log($"Spawnpoint was P {position}, O {orientation}");
-
-            // This prevents the player object spawning at (0, 0, 0) for a few frames.
-            transform.position = position;
-            transform.rotation = orientation;
-            if (IsServer)
-            {
-                Position.Value = position;
-                Rotation.Value = orientation;
-            }
-        }
-        else
-        {
-            Debug.LogWarning("Couldn't read stream");
-        }*/
-
         if (PlayerControlled)
         {
             // Update our weapons on the server.
@@ -811,6 +789,12 @@ public class RoombaControl : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Client-to-Server transform sync RPC as Netcode is fully server-authoritative.
+    /// <para>TODO: There may be better ways of doing it.</para>
+    /// </summary>
+    /// <param name="camRotation"></param>
+    /// <param name="rpcParams"></param>
     [ServerRpc]
     public void SyncVariablesServerRpc(Quaternion camRotation, ServerRpcParams rpcParams = default)
     {

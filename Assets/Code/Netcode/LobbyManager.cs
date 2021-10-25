@@ -257,15 +257,8 @@ public class LobbyManager : MonoBehaviour
     public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId)
     {
         GameObject instance = Instantiate(PlayerPrefab, position, orientation);
-        using (MemoryStream ms = new MemoryStream())
-        {
-            // Write the spawnpoint's position and orientation bytes to the stream.
-            NetcodeHelpers.StreamHelper.WritePosition(ms, position);
-            NetcodeHelpers.StreamHelper.WriteOrientation(ms, orientation);
-            ms.Flush();
 
-            instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
-        }
+        instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
     }
 
     // Start is called before the first frame update
@@ -290,7 +283,7 @@ public class LobbyManager : MonoBehaviour
         MyColour = new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
 
 
-        // Add an event handler for clients connecting.
+        // Add an event handler for clients connecting & disconnecting.
         NetworkManager.Singleton.OnClientConnectedCallback += ClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += ClientDisconnected;
 
@@ -329,6 +322,10 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Event handler for clients disconnecting from the server.
+    /// </summary>
+    /// <param name="clientId">The ID of the disconnecting client.</param>
     private void ClientDisconnected(ulong clientId)
     {
         if (NetworkManager.Singleton.IsServer)
@@ -378,30 +375,27 @@ public class LobbyManager : MonoBehaviour
         SetGameMode<DeathMatchGameMode>();
 
         NetworkManager.Singleton.StartHost();
-
-        // Spawn a GameManager instance for the Host player.
-        //SpawnGameManager(NetworkManager.Singleton.ServerClientId);
-
-        // Spawn the initial PlayerPrefab instance for the Host player.
-        //(Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
-        //SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, NetworkManager.Singleton.LocalClientId);
     }
 
+    /// <summary>
+    /// Spawn a <see cref="GameManager"/> object for a newly connected client. This is only spawned once per player connection.
+    /// </summary>
+    /// <param name="clientId"></param>
     private void SpawnGameManager(ulong clientId)
     {
         GameObject instantiatedGameManager = Instantiate(GameManagerPrefab);
-        using (MemoryStream gameManagerStream = new MemoryStream())
-        {
-            NetcodeHelpers.StreamHelper.WriteGameModeExtensions(gameManagerStream, CurrentGameMode?.GetExtensionsType()?.Name);
-            gameManagerStream.Flush();
 
-            instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
-            
-        }
+        instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
 
+        // Add to the gamemode if needed.
         CurrentGameMode?.AddPlayer(instantiatedGameManager.GetComponent<GameManager>());
     }
 
+    /// <summary>
+    /// Set the current server-side gamemode.
+    /// </summary>
+    /// <typeparam name="GameModeType"></typeparam>
+    /// <param name="gameModeInstance">A <see cref="MultiplayerGameMode"/> instance to set as the current gamemode.</param>
     private void SetGameMode<GameModeType>(GameModeType gameModeInstance) where GameModeType : MultiplayerGameMode
     {
         if (CurrentGameMode)
@@ -412,6 +406,10 @@ public class LobbyManager : MonoBehaviour
         CurrentGameMode = gameModeInstance;
     }
 
+    /// <summary>
+    /// Sets the current server-side gamemode.
+    /// </summary>
+    /// <typeparam name="GameModeType">A <see cref="MultiplayerGameMode"/> implementation to instantiate & set as current gamemode.</typeparam>
     private void SetGameMode<GameModeType>() where GameModeType : MultiplayerGameMode
     {
         SetGameMode(gameObject.AddComponent<GameModeType>());

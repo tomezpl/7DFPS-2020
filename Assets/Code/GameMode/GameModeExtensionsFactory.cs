@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/// <summary>
+/// Helper class for creating client-side gamemode extensions.
+/// </summary>
 public static class GameModeExtensionsFactory
 {
     /// <summary>
