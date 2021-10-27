@@ -609,7 +609,16 @@ public class RoombaControl : NetworkBehaviour
         else
         {
             // Set the local player object instance in GameManager so it can be referenced by other scripts.
-            GameManager.Singleton.SpawnedPlayer = this;
+            if (GameManager.Singleton)
+            {
+                GameManager.Singleton.SpawnedPlayer = this;
+            }
+        }
+
+        // For testing/offline play purposes, call any startup methods that would normally be invoked on OnNetworkSpawn.
+        if(NetworkManager.Singleton?.IsConnectedClient != true && NetworkManager.Singleton?.IsHost != true)
+        {
+            SetWeapons();
         }
     }
 
