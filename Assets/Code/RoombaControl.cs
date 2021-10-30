@@ -199,6 +199,36 @@ public class RoombaControl : NetworkBehaviour
     bool canMoveAhead = true;
 
     /// <summary>
+    /// The radius of the explosion point light(s).
+    /// </summary>
+    public float ExplosionLightRadius = 1.5f;
+
+    /// <summary>
+    /// The explosion point light(s).
+    /// </summary>
+    public Light[] ExplosionLights;
+
+    /// <summary>
+    /// Explosion point lights' base intensities.
+    /// </summary>
+    public float[] ExplosionLightIntensities;
+
+    /// <summary>
+    /// The duration of the explosion effect (in seconds).
+    /// </summary>
+    public float ExplosionFxTime = 1f;
+
+    /// <summary>
+    /// Is the phone currently in process of detonation?
+    /// </summary>
+    public bool IsExploding = false;
+
+    /// <summary>
+    /// Timer that will count until <see cref="ExplosionFxTime"/>.
+    /// </summary>
+    public float ExplosionFxTimer = 0f;
+
+    /// <summary>
     /// Should the crosshair be shown?
     /// </summary>
     public bool ShowCrosshair = true;
@@ -579,6 +609,19 @@ public class RoombaControl : NetworkBehaviour
         // Initialise collision state.
         isColliding = false;
 
+        // Initialise lights.
+        if (ExplosionLights != null)
+        {
+            ExplosionLightIntensities = new float[ExplosionLights.Length];
+            for (int i = 0; i < ExplosionLights.Length; i++)
+            {
+                Light light = ExplosionLights[i];
+                ExplosionLightIntensities[i] = light.intensity;
+                light.range *= ExplosionLightRadius;
+                light.enabled = false;
+            }
+        }
+
         // Find the camera object if not assigned.
         if (!Cam)
         {
@@ -788,7 +831,7 @@ public class RoombaControl : NetworkBehaviour
             // Suicide key.
             if (Input.GetKeyDown(KeyCode.F4))
             {
-                GetComponent<PlayerStats>().Die();
+                GetComponent<PlayerStats>().BeginDieServerRpc();
             }
         }
         else
@@ -796,6 +839,8 @@ public class RoombaControl : NetworkBehaviour
             // If this is not a local player, update the movement from the server.
             ReplicateServerMovement();
         }
+
+        RunFxAndAnimations();
     }
 
     /// <summary>
@@ -927,6 +972,34 @@ public class RoombaControl : NetworkBehaviour
         if (collision.transform.CompareTag("Floor"))
         {
             isColliding = false;
+        }
+    }
+
+    private void RunFxAndAnimations()
+    {
+        if (IsExploding)
+        {
+            // Update the explosion effect timer.
+            ExplosionFxTimer -= Time.deltaTime;
+
+            float inv = Mathf.InverseLerp(ExplosionFxTime, 0f, ExplosionFxTimer);
+
+            // Activate the light (or step through multiple lights) using the interpolant value.
+            int numLights = ExplosionLights.Length;
+            float lightPeakUnit = 1f / (numLights + 1);
+            for (int i = 0; i < numLights; i++)
+            {
+                float lightPeak = lightPeakUnit * (i + 1);
+                float lightStart = i == 0 ? 0f : lightPeak - (lightPeakUnit * 1.5f);
+                float progress = Mathf.InverseLerp(lightStart, lightPeak, inv);
+                ExplosionLights[i].enabled = true;
+                ExplosionLights[i].intensity = ExplosionLightIntensities[i] * progress;
+            }
+
+            if (ExplosionFxTimer <= 0f)
+            {
+                IsExploding = false;
+            }
         }
     }
 }

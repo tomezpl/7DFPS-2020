@@ -57,7 +57,7 @@ public class PlayerStats : NetworkBehaviour
     }
 
     /// <summary>
-    /// A flag preventing the <see cref="Die"/> event being called multiple times on the server.
+    /// A flag preventing the <see cref="BeginDieServerRpc"/> event being called multiple times on the server.
     /// </summary>
     public bool IsDying = false;
 
@@ -66,6 +66,8 @@ public class PlayerStats : NetworkBehaviour
     /// UI text object.
     /// </summary>
     public Text healthText = null, kdpText = null, winnerText = null;
+
+    bool wasExplodingLastFrame = false;
 
     // Start is called before the first frame update
     void Start()
@@ -90,13 +92,27 @@ public class PlayerStats : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
+        RoombaControl roombaControl = GetComponent<RoombaControl>();
+        if (wasExplodingLastFrame && !roombaControl.IsExploding && IsOwner)
+        {
+            EndDie();
+        }
+
+        wasExplodingLastFrame = roombaControl.IsExploding;
+    }
+
+    [ServerRpc]
+    public void BeginDieServerRpc(ServerRpcParams rpcParams = default)
+    {
+        BeginDieClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsIds } });
     }
 
     /// <summary>
     /// <para>Kills the player and awards the kill to the last attacker.</para>
     /// <para>Also increments this player's death counter and switches to class selection/respawn state.</para>
     /// </summary>
-    public void Die()
+    [ClientRpc]
+    public void BeginDieClientRpc(ClientRpcParams rpcParams = default)
     {
         // Should only be called once per death.
         if(IsDying)
@@ -106,12 +122,23 @@ public class PlayerStats : NetworkBehaviour
 
         IsDying = true;
 
+        RoombaControl owner = GetComponent<RoombaControl>();
+        if (!owner.IsExploding)
+        {
+            owner.IsExploding = true;
+            owner.ExplosionFxTimer = owner.ExplosionFxTime;
+        }
+
         // Make sure the health is kept below 0. Technically unnecessary, but I'm paranoid...
         health = -1;
 
         // If another player killed us, call the server RPC to give them a kill.
         Debug.Log($"Last attacker was {LastAttackerId}");
 
+    }
+
+    public void EndDie()
+    {
         // Make sure we can find a GameManager for this ID.
         if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null)
         {
