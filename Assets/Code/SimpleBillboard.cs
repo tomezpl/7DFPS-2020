@@ -11,6 +11,7 @@ public class SimpleBillboard : MonoBehaviour
     protected MeshRenderer billboard = null;
     protected Material billboardMaterial = null;
     protected Vector3 initPos = Vector3.zero;
+    public Vector3 UpVector = Vector3.up;
 
     /// <summary>
     /// Offset to be applied towards the camera when it aligns with the billboard's X-axis.
@@ -44,7 +45,7 @@ public class SimpleBillboard : MonoBehaviour
 
     protected virtual void BillboardRotation(Camera currentCam)
     {
-        transform.LookAt(currentCam.transform, Vector3.up);
+        transform.LookAt(currentCam.transform, UpVector);
     }
 
     /// <summary>

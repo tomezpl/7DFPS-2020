@@ -50,7 +50,7 @@ public class Phone : Weapon
     /// <summary>
     /// Timer that will count until <see cref="ExplosionFxTime"/>.
     /// </summary>
-    public float explosionFxTimer = 0f;
+    public float detonationTimer = 0f;
 
     /// <summary>
     /// <para>Time before battery detonation.</para>
@@ -66,13 +66,6 @@ public class Phone : Weapon
     // Start is called before the first frame update
     void Start()
     {
-        // Initialise lights.
-        foreach (Light light in ExplosionLights)
-        {
-            light.range *= ExplosionLightRadius;
-            light.enabled = false;
-        }
-
         // Set the bomb timer.
         detonationTime = DateTime.Now + TimeSpan.FromSeconds(TimerLength);
     }
@@ -103,21 +96,12 @@ public class Phone : Weapon
 
         if (isExploding)
         {
-            // Update the explosion effect timer.
-            explosionFxTimer -= Time.deltaTime;
+            // Update the detonation timer.
+            detonationTimer -= Time.deltaTime;
 
-            float inv = 1f - Mathf.InverseLerp(ExplosionFxTime, 0f, explosionFxTimer);
-
-            // Activate the light (or step through multiple lights) using the interpolant value.
-            int numLights = ExplosionLights.Length;
-            for (int i = 0; i < numLights; i++)
-            {
-                ExplosionLights[i].enabled = inv >= (1f / numLights) * (numLights - i - 1);
-            }
-
-            // Check if explosion effect duration has passed.
+            // Check if detonation has finished.
             // TODO: DealDamage could be moved out of this to occur sooner than once the full effect has finished.
-            if (explosionFxTimer <= 0f)
+            if (detonationTimer <= 0f)
             {
                 isExploding = false;
 
@@ -171,7 +155,7 @@ public class Phone : Weapon
         {
             Owner.GetComponent<RoombaControl>().LockInput = true;
             isExploding = true;
-            explosionFxTimer = ExplosionFxTime;
+            detonationTimer = ExplosionFxTime;
         }
     }
 }

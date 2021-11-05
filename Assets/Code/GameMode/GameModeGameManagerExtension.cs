@@ -162,7 +162,7 @@ public abstract class GameModeGameManagerExtension : NetworkBehaviour
             if (health <= 0)
             {
                 healthText.text = "";
-                PlayerStats.Local.Die();
+                PlayerStats.Local.BeginDieServerRpc();
             }
 
             if (healthText != null)
