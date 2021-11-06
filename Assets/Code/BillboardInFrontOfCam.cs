@@ -25,7 +25,7 @@ public class BillboardInFrontOfCam : MonoBehaviour
         {
             float camDist = (camera.transform.position - transform.parent.position).magnitude;
 
-            Debug.Log($"{camDist}, {initDistanceFromParent}");
+            //Debug.Log($"{camDist}, {initDistanceFromParent}");
 
             transform.position = transform.parent.position + transform.up * Mathf.Min(camDist * 0.9f, initDistanceFromParent);
         }
