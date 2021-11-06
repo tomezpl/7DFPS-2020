@@ -137,6 +137,7 @@ MonoBehaviour:
   - {fileID: 7096778665631648938}
   RoombaHidden: 0
   HideRoombaAt: 0.2
+  TimeElapsed: 0
 --- !u!114 &4617509575584208525
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1132,7 +1133,7 @@ MonoBehaviour:
     m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
   CameraRotation:
     m_InternalValue: {x: 0, y: 0, z: 0, w: 0}
-  RoombaCollider: {fileID: 0}
+  RoombaCollider: {fileID: 4737263487796514037}
   Cam: {fileID: 4951206815986635299}
   CamVerticalOffset: 1.1
   MoveSpeed: 3

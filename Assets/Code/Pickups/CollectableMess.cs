@@ -56,7 +56,7 @@ public class CollectableMess : NetworkBehaviour
     {
         if (IsServer && CanBePickedUp.Value)
         {
-            RoombaControl roomba = other.GetComponentInParent<RoombaControl>();
+            RoombaControl roomba = other.GetComponent<RoombaControl>();
 
             if (roomba)
             {

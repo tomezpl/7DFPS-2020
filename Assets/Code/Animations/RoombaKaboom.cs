@@ -15,7 +15,7 @@ public class RoombaKaboom : MonoBehaviour
 
     public float HideRoombaAt = 0.2f;
 
-    float timeElapsed = 0f;
+    public float TimeElapsed = 0f;
 
     // Start is called before the first frame update
     void Start()
@@ -33,7 +33,7 @@ public class RoombaKaboom : MonoBehaviour
 
         if(!RoombaHidden && FadeIn.Started && ZoomIn.Started)
         {
-            if(HideRoombaAt <= timeElapsed)
+            if(HideRoombaAt <= TimeElapsed)
             {
                 RoombaHidden = true;
 
@@ -47,7 +47,7 @@ public class RoombaKaboom : MonoBehaviour
             }
             else
             {
-                timeElapsed += Time.deltaTime;
+                TimeElapsed += Time.deltaTime;
             }
         }
     }

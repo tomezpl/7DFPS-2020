@@ -13,6 +13,8 @@ public class PlayerStats : NetworkBehaviour
 
     public GameObject PlayerRemainsPrefab;
 
+    bool remainsSpawned = false;
+
     /// <summary>
     /// The local player's <see cref="PlayerStats"/>. null if not found.
     /// </summary>
@@ -95,6 +97,14 @@ public class PlayerStats : NetworkBehaviour
     void Update()
     {
         RoombaControl roombaControl = GetComponent<RoombaControl>();
+        RoombaKaboom roombaKaboom = GetComponentInChildren<RoombaKaboom>();
+
+        if(IsOwner && !remainsSpawned && roombaControl.IsExploding && roombaKaboom.TimeElapsed >= roombaKaboom.HideRoombaAt)
+        {
+            remainsSpawned = true;
+            SpawnPlayerRemainsServerRpc();
+        }
+
         if (wasExplodingLastFrame && !roombaControl.IsExploding && IsOwner)
         {
             EndDie();
@@ -160,6 +170,21 @@ public class PlayerStats : NetworkBehaviour
         RequestDestroyPlayerServerRpc();
     }
 
+    [ServerRpc]
+    public void SpawnPlayerRemainsServerRpc(ServerRpcParams rpcParams = default)
+    {
+        if (PlayerRemainsPrefab)
+        {
+            GameObject remains = Instantiate(PlayerRemainsPrefab, transform.position, transform.rotation);
+            CollectableMess messScript = remains.GetComponent<CollectableMess>();
+            messScript.IsPlayerCorpse = true;
+            messScript.DestroyedRoombaId = OwnerClientId;
+
+            Physics.IgnoreCollision(GetComponent<RoombaControl>().RoombaCollider, remains.GetComponent<Collider>(), true);
+            remains.GetComponent<NetworkObject>().Spawn();
+        }
+    }
+
     /// <summary>
     /// Despawns this object on the server and notifies this player's LobbyManager to enter respawn state.
     /// </summary>
@@ -167,19 +192,7 @@ public class PlayerStats : NetworkBehaviour
     [ServerRpc]
     public void RequestDestroyPlayerServerRpc(ServerRpcParams serverRpcParams = default)
     {
-        ulong ownerId = OwnerClientId;
-
         NetworkObject.Despawn(true);
-
-        if(PlayerRemainsPrefab)
-        {
-            GameObject remains = Instantiate(PlayerRemainsPrefab, transform.position, transform.rotation);
-            CollectableMess messScript = remains.GetComponent<CollectableMess>();
-            messScript.IsPlayerCorpse = true;
-            messScript.DestroyedRoombaId = ownerId;
-
-            remains.GetComponent<NetworkObject>().Spawn();
-        }
 
         // Notify the player that they should switch to class selection/respawn state.
         GameManager.Singleton.FinishDestroyPlayerClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { serverRpcParams.Receive.SenderClientId } } });
