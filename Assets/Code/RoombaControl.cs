@@ -935,7 +935,10 @@ public class RoombaControl : NetworkBehaviour
 
         if (Physics.Raycast(new Ray(transform.position, transform.forward), out RaycastHit wallHit, 0.5f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
         {
-            canMoveAhead = false;
+            if (LayerMask.LayerToName(wallHit.collider.gameObject.layer) != "Ignore Raycast")
+            {
+                canMoveAhead = false;
+            }
         }
         else
         {

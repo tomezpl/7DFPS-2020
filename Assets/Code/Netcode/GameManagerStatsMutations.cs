@@ -40,4 +40,12 @@ public partial class GameManager
         score.Deaths += deathsToGive;
         SerializedScore.Value = score.ToString();
     }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void GiveScoreCleanupsServerRpc(int cleanupsToGive = 1, ServerRpcParams rpcParams = default)
+    {
+        PlayerScore score = Score;
+        score.Cleanups += cleanupsToGive;
+        SerializedScore.Value = score.ToString();
+    }
 }
