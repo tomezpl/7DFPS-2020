@@ -15,6 +15,9 @@ public class CollectableMess : NetworkBehaviour
     bool startDisappearing = false;
     float disappearTime = 3f;
 
+    public bool IsPlayerCorpse = false;
+    public ulong DestroyedRoombaId = 0;
+
     [ServerRpc]
     public void CollectServerRpc(ulong collectorId, ServerRpcParams rpcParams = default)
     {
@@ -57,11 +60,23 @@ public class CollectableMess : NetworkBehaviour
 
             if (roomba)
             {
-                LobbyManager.Singleton.CurrentGameMode.EmitEvent(new CleanupJobEvents.MessCleanupEvent
+                if (!IsPlayerCorpse)
                 {
-                    CollectorId = roomba.OwnerClientId,
-                    MessRef = new NetworkBehaviourReference(this)
-                });
+                    LobbyManager.Singleton.CurrentGameMode.EmitEvent(new CleanupJobEvents.MessCleanupEvent
+                    {
+                        CollectorId = roomba.OwnerClientId,
+                        MessRef = new NetworkBehaviourReference(this)
+                    });
+                }
+                else
+                {
+                    LobbyManager.Singleton.CurrentGameMode.EmitEvent(new CleanupJobEvents.PlayerCleanupEvent
+                    {
+                        CollectorId = roomba.OwnerClientId,
+                        DestroyedRoombaId = DestroyedRoombaId,
+                        MessRef = new NetworkBehaviourReference(this)
+                    });
+                }
             }
         }
     }

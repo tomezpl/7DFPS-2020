@@ -6,5 +6,4 @@ using System.Threading.Tasks;
 
 public class CleanupJobGameManager : DeathMatchGameMode.DeathMatchGameManagerExtensions
 {
-    public const string PlayerCleanupMessageHandlerName = "CJ_PlayerCorpseCleanedUp";
 }

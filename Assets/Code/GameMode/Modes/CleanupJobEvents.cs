@@ -7,11 +7,10 @@ using Unity.Netcode;
 
 public class CleanupJobEvents : DeathMatchEvents
 {
-    public class PlayerCleanupEvent : GameModeEvent
+    public class PlayerCleanupEvent : MessCleanupEvent
     {
         public override Type EventType { get => typeof(PlayerCleanupEvent); }
 
-        public ulong CollectorId { get; set; }
         public ulong DestroyedRoombaId { get; set; }
     }
 

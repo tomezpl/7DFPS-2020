@@ -17,12 +17,9 @@ public class CleanupJobGameMode : DeathMatchGameMode
         {
             CleanupJobEvents.PlayerCleanupEvent playerCleanupEvent = gmEvent as CleanupJobEvents.PlayerCleanupEvent;
 
-            using(FastBufferWriter writer = new FastBufferWriter(sizeof(ulong) * 2, Unity.Collections.Allocator.Temp))
+            if (playerCleanupEvent.MessRef.TryGet(out CollectableMess mess))
             {
-                writer.WriteValueSafe(playerCleanupEvent.CollectorId);
-                writer.WriteValueSafe(playerCleanupEvent.DestroyedRoombaId);
-
-                InvokeGlobalEvent(CleanupJobGameManager.PlayerCleanupMessageHandlerName, writer);
+                mess.CollectServerRpc(playerCleanupEvent.CollectorId);
             }
         }
         else if(gmEvent is CleanupJobEvents.MessCleanupEvent)

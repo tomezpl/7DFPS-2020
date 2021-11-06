@@ -1139,6 +1139,12 @@ MonoBehaviour:
       SourcePrefabToOverride: {fileID: 0}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
+    - Override: 0
+      Prefab: {fileID: 6668465509355947216, guid: 4cc7d02bee1c89a4eaf67a43d469077b,
+        type: 3}
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
     TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
@@ -2069,6 +2075,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 688cd30b41bf386468791075dbf75e24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsPlayerCorpse: 0
+  DestroyedRoombaId: 0
 --- !u!65 &1249296254
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3533,6 +3541,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 688cd30b41bf386468791075dbf75e24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsPlayerCorpse: 0
+  DestroyedRoombaId: 0
 --- !u!65 &1598762203
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4606,6 +4616,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 688cd30b41bf386468791075dbf75e24, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsPlayerCorpse: 0
+  DestroyedRoombaId: 0
 --- !u!65 &2000320686
 BoxCollider:
   m_ObjectHideFlags: 0

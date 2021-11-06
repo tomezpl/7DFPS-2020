@@ -11,6 +11,8 @@ public class PlayerStats : NetworkBehaviour
 {
     private static PlayerStats _local;
 
+    public GameObject PlayerRemainsPrefab;
+
     /// <summary>
     /// The local player's <see cref="PlayerStats"/>. null if not found.
     /// </summary>
@@ -165,7 +167,19 @@ public class PlayerStats : NetworkBehaviour
     [ServerRpc]
     public void RequestDestroyPlayerServerRpc(ServerRpcParams serverRpcParams = default)
     {
+        ulong ownerId = OwnerClientId;
+
         NetworkObject.Despawn(true);
+
+        if(PlayerRemainsPrefab)
+        {
+            GameObject remains = Instantiate(PlayerRemainsPrefab, transform.position, transform.rotation);
+            CollectableMess messScript = remains.GetComponent<CollectableMess>();
+            messScript.IsPlayerCorpse = true;
+            messScript.DestroyedRoombaId = ownerId;
+
+            remains.GetComponent<NetworkObject>().Spawn();
+        }
 
         // Notify the player that they should switch to class selection/respawn state.
         GameManager.Singleton.FinishDestroyPlayerClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { serverRpcParams.Receive.SenderClientId } } });
