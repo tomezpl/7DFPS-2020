@@ -170,6 +170,10 @@ public class PlayerStats : NetworkBehaviour
         RequestDestroyPlayerServerRpc();
     }
 
+    /// <summary>
+    /// Spawns a "remains" object for a killed player.
+    /// </summary>
+    /// <param name="rpcParams"></param>
     [ServerRpc]
     public void SpawnPlayerRemainsServerRpc(ServerRpcParams rpcParams = default)
     {

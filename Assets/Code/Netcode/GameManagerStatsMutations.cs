@@ -41,6 +41,11 @@ public partial class GameManager
         SerializedScore.Value = score.ToString();
     }
 
+    /// <summary>
+    /// Adds cleanup(s) to the player score.
+    /// </summary>
+    /// <param name="cleanupsToGive">Number of cleanups to add. 1 by default.</param>
+    /// <param name="rpcParams"></param>
     [ServerRpc(RequireOwnership = false)]
     public void GiveScoreCleanupsServerRpc(int cleanupsToGive = 1, ServerRpcParams rpcParams = default)
     {
