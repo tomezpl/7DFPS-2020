@@ -304,7 +304,7 @@ public class RoombaControl : NetworkBehaviour
     /// Walk input getter.
     /// </summary>
     /// <returns></returns>
-    float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
+    public float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
 
     /// <summary>
     /// Yaw rotation input getter.
