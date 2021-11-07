@@ -9,14 +9,25 @@ using UnityEngine;
 public class CollectableMess : NetworkBehaviour
 {
     NetworkVariable<bool> CanBePickedUp = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, true);
+    NetworkVariable<NetworkBehaviourReference> Collector = new NetworkVariable<NetworkBehaviourReference>(NetworkVariableReadPermission.Everyone, new NetworkBehaviourReference());
+    NetworkVariable<bool> AlreadyPickedUp = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, false);
+    NetworkVariable<Vector3> SuckOrigin = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone, Vector3.zero);
 
     bool couldBePickedUpLastFrame = true;
     float disappearTimer = 0f;
     bool startDisappearing = false;
-    float disappearTime = 3f;
+    float disappearTime = 1.5f;
 
     public bool IsPlayerCorpse = false;
     public ulong DestroyedRoombaId = 0;
+    public float MaxDistanceFromCollector = 0.75f;
+
+    Vector3 initScale = Vector3.one;
+
+    private void Start()
+    {
+        initScale = transform.localScale;
+    }
 
     [ServerRpc]
     public void CollectServerRpc(ulong collectorId, ServerRpcParams rpcParams = default)
@@ -47,9 +58,34 @@ public class CollectableMess : NetworkBehaviour
             }
         }
 
+        SuckMessIntoCollector();
+
         disappearTimer += startDisappearing ? Time.deltaTime : 0f;
 
         couldBePickedUpLastFrame = CanBePickedUp.Value;
+    }
+
+    void SuckMessIntoCollector()
+    {
+        if(AlreadyPickedUp.Value && Collector.Value.TryGet(out RoombaControl roomba))
+        {
+            float progress = Mathf.InverseLerp(0f, disappearTime, disappearTimer);
+            transform.position = Vector3.Slerp(SuckOrigin.Value, roomba.transform.position, progress * progress);
+            if((transform.position - roomba.transform.position).sqrMagnitude >= MaxDistanceFromCollector*MaxDistanceFromCollector)
+            {
+                Vector3 dir = (roomba.transform.position - transform.position).normalized;
+                transform.position = roomba.transform.position - dir * MaxDistanceFromCollector;
+            }
+            transform.localScale = Vector3.Slerp(initScale, initScale / 2f, progress);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void SetCollectorServerRpc(NetworkBehaviourReference collector, Vector3 suckOrigin, ServerRpcParams rpcParams = default)
+    {
+        Collector.Value = collector;
+        AlreadyPickedUp.Value = true;
+        SuckOrigin.Value = suckOrigin;
     }
 
     public void OnTriggerEnter(Collider other)
@@ -77,6 +113,8 @@ public class CollectableMess : NetworkBehaviour
                         MessRef = new NetworkBehaviourReference(this)
                     });
                 }
+
+                SetCollectorServerRpc(new NetworkBehaviourReference(roomba), transform.position);
             }
         }
     }

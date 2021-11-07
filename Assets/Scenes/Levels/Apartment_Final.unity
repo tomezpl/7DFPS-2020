@@ -2077,6 +2077,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsPlayerCorpse: 0
   DestroyedRoombaId: 0
+  MaxDistanceFromCollector: 0.75
 --- !u!65 &1249296254
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3543,6 +3544,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsPlayerCorpse: 0
   DestroyedRoombaId: 0
+  MaxDistanceFromCollector: 0.75
 --- !u!65 &1598762203
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4618,6 +4620,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsPlayerCorpse: 0
   DestroyedRoombaId: 0
+  MaxDistanceFromCollector: 0.75
 --- !u!65 &2000320686
 BoxCollider:
   m_ObjectHideFlags: 0

@@ -9737,6 +9737,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsPlayerCorpse: 0
   DestroyedRoombaId: 0
+  MaxDistanceFromCollector: 0.75
 --- !u!114 &-5707048938033647265
 MonoBehaviour:
   m_ObjectHideFlags: 0
