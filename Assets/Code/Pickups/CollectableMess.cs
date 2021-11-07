@@ -21,6 +21,7 @@ public class CollectableMess : NetworkBehaviour
     public bool IsPlayerCorpse = false;
     public ulong DestroyedRoombaId = 0;
     public float MaxDistanceFromCollector = 0.75f;
+    public bool FullSuck = false;
 
     Vector3 initScale = Vector3.one;
 
@@ -76,7 +77,7 @@ public class CollectableMess : NetworkBehaviour
                 Vector3 dir = (roomba.transform.position - transform.position).normalized;
                 transform.position = roomba.transform.position - dir * MaxDistanceFromCollector;
             }
-            transform.localScale = Vector3.Slerp(initScale, initScale / 2f, progress);
+            transform.localScale = Vector3.Slerp(initScale, FullSuck ? Vector3.zero : initScale / 2f, progress);
         }
     }
 
