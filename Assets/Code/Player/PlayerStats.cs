@@ -11,6 +11,10 @@ public class PlayerStats : NetworkBehaviour
 {
     private static PlayerStats _local;
 
+    public GameObject PlayerRemainsPrefab;
+
+    bool remainsSpawned = false;
+
     /// <summary>
     /// The local player's <see cref="PlayerStats"/>. null if not found.
     /// </summary>
@@ -93,6 +97,14 @@ public class PlayerStats : NetworkBehaviour
     void Update()
     {
         RoombaControl roombaControl = GetComponent<RoombaControl>();
+        RoombaKaboom roombaKaboom = GetComponentInChildren<RoombaKaboom>();
+
+        if(IsOwner && !remainsSpawned && roombaControl.IsExploding && roombaKaboom.TimeElapsed >= roombaKaboom.HideRoombaAt)
+        {
+            remainsSpawned = true;
+            SpawnPlayerRemainsServerRpc();
+        }
+
         if (wasExplodingLastFrame && !roombaControl.IsExploding && IsOwner)
         {
             EndDie();
@@ -156,6 +168,25 @@ public class PlayerStats : NetworkBehaviour
 
         // Call a server RPC to destroy the player.
         RequestDestroyPlayerServerRpc();
+    }
+
+    /// <summary>
+    /// Spawns a "remains" object for a killed player.
+    /// </summary>
+    /// <param name="rpcParams"></param>
+    [ServerRpc]
+    public void SpawnPlayerRemainsServerRpc(ServerRpcParams rpcParams = default)
+    {
+        if (PlayerRemainsPrefab)
+        {
+            GameObject remains = Instantiate(PlayerRemainsPrefab, transform.position, transform.rotation);
+            CollectableMess messScript = remains.GetComponent<CollectableMess>();
+            messScript.IsPlayerCorpse = true;
+            messScript.DestroyedRoombaId = OwnerClientId;
+
+            Physics.IgnoreCollision(GetComponent<RoombaControl>().RoombaCollider, remains.GetComponent<Collider>(), true);
+            remains.GetComponent<NetworkObject>().Spawn();
+        }
     }
 
     /// <summary>

@@ -372,7 +372,7 @@ public class LobbyManager : MonoBehaviour
         }
 
         // Set the gamemode.
-        SetGameMode<DeathMatchGameMode>();
+        SetGameMode<CleanupJobGameMode>();
 
         NetworkManager.Singleton.StartHost();
     }

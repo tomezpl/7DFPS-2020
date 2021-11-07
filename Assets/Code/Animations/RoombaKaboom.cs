@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Animation script for controlling the Roomba explosion effect.
+/// </summary>
 public class RoombaKaboom : MonoBehaviour
 {
     public FadeIn FadeIn;
@@ -9,13 +12,22 @@ public class RoombaKaboom : MonoBehaviour
 
     public RoombaControl RoombaControl;
 
+    /// <summary>
+    /// Objects to hide when the timer reaches <see cref="HideRoombaAt"/>. These objects need to have Renderer components.
+    /// </summary>
     public GameObject[] ObjectsToHide;
 
+    /// <summary>
+    /// Have <see cref="ObjectsToHide"/> been hidden?
+    /// </summary>
     public bool RoombaHidden = false;
 
+    /// <summary>
+    /// Offset from <see cref="TimeElapsed"/> when <see cref="ObjectsToHide"/> should be made invisible.
+    /// </summary>
     public float HideRoombaAt = 0.2f;
 
-    float timeElapsed = 0f;
+    public float TimeElapsed = 0f;
 
     // Start is called before the first frame update
     void Start()
@@ -33,7 +45,7 @@ public class RoombaKaboom : MonoBehaviour
 
         if(!RoombaHidden && FadeIn.Started && ZoomIn.Started)
         {
-            if(HideRoombaAt <= timeElapsed)
+            if(HideRoombaAt <= TimeElapsed)
             {
                 RoombaHidden = true;
 
@@ -47,7 +59,7 @@ public class RoombaKaboom : MonoBehaviour
             }
             else
             {
-                timeElapsed += Time.deltaTime;
+                TimeElapsed += Time.deltaTime;
             }
         }
     }

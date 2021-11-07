@@ -2,8 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// A "Fade In" animation, gradually lowering the attached renderer's opacity (alpha value).
+/// </summary>
 public class FadeIn : MonoBehaviour
 {
+    /// <summary>
+    /// Opacity to start with.
+    /// </summary>
     float startOpacity = 1f;
 
     /// <summary>
@@ -11,14 +17,26 @@ public class FadeIn : MonoBehaviour
     /// </summary>
     public float FadeTime = 0.2f;
 
+    /// <summary>
+    /// Delay.
+    /// </summary>
     public float StartFadingAt = 0.05f;
 
     float timeElapsed = 0f;
 
+    /// <summary>
+    /// Has the opacity fully faded in?
+    /// </summary>
     bool finished = false;
 
+    /// <summary>
+    /// Should the effect be running?
+    /// </summary>
     public bool Started = false;
 
+    /// <summary>
+    /// The attached renderer.
+    /// </summary>
     Renderer renderer;
 
     // Start is called before the first frame update
