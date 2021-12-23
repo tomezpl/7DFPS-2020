@@ -39,6 +39,8 @@ public class BulletCylinderFx : FxController
     /// </summary>
     Quaternion initOrientation = Quaternion.identity;
 
+    public bool IsRotating { get => stackedTime > 0f; }
+
     private void Start()
     {
         stackedRot = initOrientation = transform.localRotation;

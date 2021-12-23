@@ -3,9 +3,12 @@ using UnityEngine;
 public class CannonAudioController : NetworkBehaviour
 {
     public Cannon Cannon;
+    public BulletCylinderFx BulletCylinderFx;
     Transform ShotAudioOrigin;
 
     public AudioClip[] Shots = new AudioClip[0];
+    
+    public AudioSource ReloadAudioSrc;
 
     NetworkVariable<bool> IsFiring = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, false);
     bool _isFiring = false;
@@ -25,6 +28,7 @@ public class CannonAudioController : NetworkBehaviour
     void Start()
     {
         Cannon ??= GetComponent<Cannon>();
+        BulletCylinderFx ??= Cannon.GetComponentInChildren<BulletCylinderFx>();
         ShotAudioOrigin = (Cannon?.BarrelEnd?.transform ?? Cannon?.transform) ?? transform;
     }
 
@@ -66,6 +70,12 @@ public class CannonAudioController : NetworkBehaviour
                 ShotAudioClipIndex = ShotAudioClipIndex + 1 == Shots.Length ? 0 : ShotAudioClipIndex + 1;
                 TimeSinceLastShot = 0f;
             }
+        }
+
+        ReloadAudioSrc.mute = !(BulletCylinderFx?.IsRotating == true) && !IsFiring.Value;
+        if(!ReloadAudioSrc.isPlaying && !ReloadAudioSrc.mute)
+        {
+            ReloadAudioSrc.Play();
         }
     }
 
