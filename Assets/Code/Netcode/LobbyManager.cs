@@ -91,7 +91,7 @@ public class LobbyManager : MonoBehaviour
     /// </summary>
     public string PlayerName { get { return _enteredPlayerName; } }
 
-    private string _enteredIpAddress = "127.0.0.1:7777";
+    private string _enteredIpAddress = "0.0.0.0:7777";
 
     /// <summary>
     /// Server IP address read from the input field in the lobby UI.
