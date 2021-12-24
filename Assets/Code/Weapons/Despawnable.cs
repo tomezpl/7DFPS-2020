@@ -24,9 +24,11 @@ public class Despawnable : MonoBehaviour
     {
         timePassed += Time.deltaTime;
 
-        if(timePassed >= TimeToLive)
+        if(timePassed >= TimeToLive && CanDespawn())
         {
             Destroy(gameObject);
         }
     }
+
+    protected virtual bool CanDespawn() => true;
 }
