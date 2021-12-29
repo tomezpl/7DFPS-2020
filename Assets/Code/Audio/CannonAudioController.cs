@@ -25,11 +25,67 @@ public class CannonAudioController : NetworkBehaviour
 
     float TimeSinceLastShot = 0f;
 
+    struct ModulatedAudioConfig
+    {
+        public float MinPitch, MaxPitch;
+        public float BaseVolume;
+    }
+
+    ModulatedAudioConfig TurnXAudioConfig = new ModulatedAudioConfig { MinPitch = 0.75f, MaxPitch = 1.25f };
+    ModulatedAudioConfig TurnYAudioConfig = new ModulatedAudioConfig { MinPitch = 0.9f, MaxPitch = 1.05f };
+
+    public AudioSource TurnXAudioSrc, TurnYAudioSrc;
+
+    Quaternion lastFrameRotation = Quaternion.identity;
+
+    public float MinYawSpeed = 0.0005f;
+    public float MaxYawSpeed = 0.5f;
+
+    public float MinPitchSpeed = 0.0003f;
+    public float MaxPitchSpeed = 0.33f;
+
     void Start()
     {
         Cannon ??= GetComponent<Cannon>();
         BulletCylinderFx ??= Cannon.GetComponentInChildren<BulletCylinderFx>();
         ShotAudioOrigin = (Cannon?.BarrelEnd?.transform ?? Cannon?.transform) ?? transform;
+        lastFrameRotation = Cannon.YawBone.transform.localRotation;
+
+        TurnXAudioConfig.BaseVolume = TurnXAudioSrc.volume;
+        TurnYAudioConfig.BaseVolume = TurnYAudioSrc.volume;
+    }
+
+    private float GetCannonYawSpeed()
+    {
+        float lastYDeg = lastFrameRotation.eulerAngles.y;
+        float yDeg = Cannon.YawBone.transform.localEulerAngles.y;
+
+        return Mathf.Abs(Mathf.Deg2Rad * yDeg - Mathf.Deg2Rad * lastYDeg);
+    }
+
+    private float GetCannonPitchSpeed()
+    {
+        float lastXDeg = lastFrameRotation.eulerAngles.x;
+        float xDeg = Cannon.YawBone.transform.localEulerAngles.x;
+
+        return Mathf.Abs(Mathf.Deg2Rad * xDeg - Mathf.Deg2Rad * lastXDeg);
+    }
+
+    private void CannonTurningSounds()
+    {
+        float pitchSpeed = GetCannonPitchSpeed();
+        float yawSpeed = GetCannonYawSpeed();
+
+        float pitchT = Mathf.InverseLerp(MinPitchSpeed, MaxPitchSpeed, pitchSpeed);
+        float yawT = Mathf.InverseLerp(MinYawSpeed, MaxYawSpeed, yawSpeed);
+
+        TurnXAudioSrc.mute = pitchSpeed == 0f;
+        TurnXAudioSrc.volume = pitchT * TurnXAudioConfig.BaseVolume;
+        TurnXAudioSrc.pitch = Mathf.Lerp(TurnXAudioConfig.MinPitch, TurnXAudioConfig.MaxPitch, pitchT);
+
+        TurnYAudioSrc.mute = yawSpeed == 0f;
+        TurnYAudioSrc.pitch = Mathf.Lerp(TurnYAudioConfig.MinPitch, TurnYAudioConfig.MaxPitch, yawT);
+        TurnYAudioSrc.volume = yawT * TurnYAudioConfig.BaseVolume;
     }
 
     private void Update()
@@ -77,6 +133,11 @@ public class CannonAudioController : NetworkBehaviour
         {
             ReloadAudioSrc.Play();
         }
+
+        Debug.Log($"Cannon angular velocity: {GetCannonYawSpeed():F10}");
+        CannonTurningSounds();
+
+        lastFrameRotation = Cannon.YawBone.transform.localRotation;
     }
 
     [ServerRpc]
