@@ -288,6 +288,8 @@ public class RoombaControl : NetworkBehaviour
         }
     }
 
+    public RoombaAudioController RoombaAudioController;
+
     /// <summary>
     /// Look X axis getter.
     /// </summary>
@@ -641,6 +643,12 @@ public class RoombaControl : NetworkBehaviour
             Rigidbody = GetComponent<Rigidbody>();
         }
 
+        // Find the audio controller if not assigned.
+        if(!RoombaAudioController)
+        {
+            RoombaAudioController = GetComponent<RoombaAudioController>();
+        }
+
         if (!PlayerControlled)
         {
             // If this isn't our roomba, disable the camera audio listener so Unity doesn't complain.
@@ -937,6 +945,13 @@ public class RoombaControl : NetworkBehaviour
         {
             if (LayerMask.LayerToName(wallHit.collider.gameObject.layer) != "Ignore Raycast")
             {
+                // THIS CANMOVEAHEAD CHECK IS IMPORTANT. DON'T REMOVE IT UNLESS YOU WANT TO GO DEAF.
+                // DON'T SAY I DIDN'T WARN YOU.
+                if (canMoveAhead && RoombaAudioController)
+                {
+                    RoombaAudioController.BumpNoiseServerRpc(wallHit.normal, wallHit.point);
+                }
+
                 canMoveAhead = false;
             }
         }

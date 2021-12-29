@@ -30,6 +30,9 @@ public class RoombaAudioController : NetworkBehaviour
     public AudioSource RoombaExplosionAudioSrc;
     bool wasExplodingLastFrame = false;
 
+    public AudioSource RoombaBumpAudioSrc;
+    public float MinBumpDot = 0.66f;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -70,8 +73,6 @@ public class RoombaAudioController : NetworkBehaviour
         {
             RoombaExplosionAudioSrc.Play();
         }
-
-        Debug.Log(velocity.sqrMagnitude);
 
         // If we're continously driving, keep delaying the fade out.
         if (isDriving)
@@ -138,5 +139,38 @@ public class RoombaAudioController : NetworkBehaviour
         {
             driveAudioStartTime = Time.time + DriveAudioStartDelay;
         }
+    }
+
+    public void BumpNoise(Vector3 collisionNormal, Vector3 collisionPoint)
+    {
+        float absoluteCollisionDot = Mathf.Abs(Vector3.Dot(Roomba.transform.forward, collisionNormal));
+        float collisionT = Mathf.InverseLerp(MinBumpDot, 1f, absoluteCollisionDot);
+
+        AudioSource collisionAudioSrc = Instantiate(new GameObject("RoombaBumpAudioSource"), collisionPoint, Quaternion.identity).AddComponent<AudioSource>();
+        collisionAudioSrc.clip = RoombaBumpAudioSrc.clip;
+        collisionAudioSrc.volume = RoombaBumpAudioSrc.volume * collisionT;
+        collisionAudioSrc.pitch = 2f - collisionT;
+        collisionAudioSrc.Play();
+
+        Destroy(collisionAudioSrc, collisionAudioSrc.clip.length);
+    }
+    
+    [ClientRpc]
+    public void BumpNoiseClientRpc(Vector3 collisionNormal, Vector3 collisionPoint, ClientRpcParams rpcParams = default)
+    {
+        BumpNoise(collisionNormal, collisionPoint);
+    }
+
+    [ServerRpc]
+    public void BumpNoiseServerRpc(Vector3 collisionNormal, Vector3 collisionPoint, ServerRpcParams rpcParams = default)
+    {
+        BumpNoiseClientRpc(collisionNormal, collisionPoint, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.ConnectedClientsIds } });
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        ContactPoint contactPoint = collision.GetContact(0);
+
+        BumpNoise(contactPoint.normal, contactPoint.point);
     }
 }

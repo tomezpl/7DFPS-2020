@@ -134,7 +134,6 @@ public class CannonAudioController : NetworkBehaviour
             ReloadAudioSrc.Play();
         }
 
-        Debug.Log($"Cannon angular velocity: {GetCannonYawSpeed():F10}");
         CannonTurningSounds();
 
         lastFrameRotation = Cannon.YawBone.transform.localRotation;

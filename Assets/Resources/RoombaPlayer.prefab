@@ -1094,6 +1094,7 @@ GameObject:
   - component: {fileID: 2007100746454110170}
   - component: {fileID: 189860196889456627}
   - component: {fileID: 7716275053516778791}
+  - component: {fileID: 9103497753453610848}
   m_Layer: 8
   m_Name: RoombaPlayer
   m_TagString: Player
@@ -1298,6 +1299,8 @@ MonoBehaviour:
   FadeTime: 0.2
   Roomba: {fileID: 0}
   RoombaExplosionAudioSrc: {fileID: 7716275053516778791}
+  RoombaBumpAudioSrc: {fileID: 9103497753453610848}
+  MinBumpDot: 0.66
 --- !u!82 &7716275053516778791
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1319,6 +1322,102 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 2
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!82 &9103497753453610848
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4951206816429219196}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 6fad83991dc773944a075c5c1ea60bec, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 1
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
   MaxDistance: 500
   Pan2D: 0
   rolloffMode: 0
@@ -2502,7 +2601,7 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 4818515333701953292}
   m_PrefabAsset: {fileID: 0}
---- !u!82 &5857945565308389657
+--- !u!82 &2488031354816843748
 AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2512,12 +2611,12 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 913cfe266ded8d845a823006d765816b, type: 3}
-  m_PlayOnAwake: 0
-  m_Volume: 0.44
+  m_audioClip: {fileID: 8300000, guid: ec8fe8a9c4d0a994f8a313dcf1ffce2a, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 0.615
   m_Pitch: 1
   Loop: 1
-  Mute: 0
+  Mute: 1
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
@@ -2598,62 +2697,7 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &4530469396010511649
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3602636971620220421}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7dca72dcd920cb348941572aa773dced, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Cam: {fileID: 4951206815986635299}
-  BarrelEnd: {fileID: 5864288577690302338}
-  YawBone: {fileID: 8390064577587602020}
-  PitchBone: {fileID: 8390064577587602020}
-  Owner: {fileID: 4951206816429219197}
-  Lights:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  FlashTime: 0.09
-  FireTime: 0.1
-  CannonShellPrefab: {fileID: 6132847128430447258, guid: ba9e7bbce2e357341895c8b7d93650fa,
-    type: 3}
-  FxObjects:
-  - {fileID: 3146275083564288862}
-  - {fileID: 6262804102668129273}
-  - {fileID: 6858323790045797926}
-  CurrentFiringMode: 2
---- !u!114 &5474678497719486151
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3602636971620220421}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfbb24c960da04c49bbed9c44c457fb4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Cannon: {fileID: 0}
-  BulletCylinderFx: {fileID: 0}
-  Shots:
-  - {fileID: 8300000, guid: d7e25a0f40841b441bb3e6206e34e19c, type: 3}
-  - {fileID: 8300000, guid: abf33032d9b4fba4a8382beba20658ef, type: 3}
-  ReloadAudioSrc: {fileID: 5857945565308389657}
-  SingleFireCooldown: 0.15
-  TurnXAudioSrc: {fileID: 2488031354816843748}
-  TurnYAudioSrc: {fileID: 9194220884673026988}
-  MinYawSpeed: 0.0005
-  MaxYawSpeed: 0.5
-  MinPitchSpeed: 0.0003
-  MaxPitchSpeed: 0.33
---- !u!82 &2488031354816843748
+--- !u!82 &5857945565308389657
 AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2663,12 +2707,12 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: ec8fe8a9c4d0a994f8a313dcf1ffce2a, type: 3}
-  m_PlayOnAwake: 1
-  m_Volume: 0.615
+  m_audioClip: {fileID: 8300000, guid: 913cfe266ded8d845a823006d765816b, type: 3}
+  m_PlayOnAwake: 0
+  m_Volume: 0.44
   m_Pitch: 1
   Loop: 1
-  Mute: 1
+  Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
@@ -2845,6 +2889,61 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &4530469396010511649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3602636971620220421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dca72dcd920cb348941572aa773dced, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Cam: {fileID: 4951206815986635299}
+  BarrelEnd: {fileID: 5864288577690302338}
+  YawBone: {fileID: 8390064577587602020}
+  PitchBone: {fileID: 8390064577587602020}
+  Owner: {fileID: 4951206816429219197}
+  Lights:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  FlashTime: 0.09
+  FireTime: 0.1
+  CannonShellPrefab: {fileID: 6132847128430447258, guid: ba9e7bbce2e357341895c8b7d93650fa,
+    type: 3}
+  FxObjects:
+  - {fileID: 3146275083564288862}
+  - {fileID: 6262804102668129273}
+  - {fileID: 6858323790045797926}
+  CurrentFiringMode: 2
+--- !u!114 &5474678497719486151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3602636971620220421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfbb24c960da04c49bbed9c44c457fb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Cannon: {fileID: 0}
+  BulletCylinderFx: {fileID: 0}
+  Shots:
+  - {fileID: 8300000, guid: d7e25a0f40841b441bb3e6206e34e19c, type: 3}
+  - {fileID: 8300000, guid: abf33032d9b4fba4a8382beba20658ef, type: 3}
+  ReloadAudioSrc: {fileID: 5857945565308389657}
+  SingleFireCooldown: 0.15
+  TurnXAudioSrc: {fileID: 2488031354816843748}
+  TurnYAudioSrc: {fileID: 9194220884673026988}
+  MinYawSpeed: 0.0005
+  MaxYawSpeed: 0.5
+  MinPitchSpeed: 0.0003
+  MaxPitchSpeed: 0.33
 --- !u!1 &4082045367089424058 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8824971182474723766, guid: df52de522867cc745ba4613db6109dad,
