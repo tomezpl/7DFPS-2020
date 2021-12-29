@@ -27,6 +27,9 @@ public class RoombaAudioController : NetworkBehaviour
     Vector3 lastPos = Vector3.zero;
     Vector3 velocity = Vector3.zero;
 
+    public AudioSource RoombaExplosionAudioSrc;
+    bool wasExplodingLastFrame = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -63,6 +66,11 @@ public class RoombaAudioController : NetworkBehaviour
             wasAcceleratingLastFrame = accelerating;
         }
 
+        if(!wasExplodingLastFrame && Roomba.IsExploding)
+        {
+            RoombaExplosionAudioSrc.Play();
+        }
+
         Debug.Log(velocity.sqrMagnitude);
 
         // If we're continously driving, keep delaying the fade out.
@@ -72,6 +80,8 @@ public class RoombaAudioController : NetworkBehaviour
         }
 
         ApplyEffects();
+
+        wasExplodingLastFrame = Roomba.IsExploding;
     }
 
     void ApplyEffects()
