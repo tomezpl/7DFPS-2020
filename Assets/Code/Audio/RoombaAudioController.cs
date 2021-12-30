@@ -150,6 +150,8 @@ public class RoombaAudioController : NetworkBehaviour
         collisionAudioSrc.clip = RoombaBumpAudioSrc.clip;
         collisionAudioSrc.volume = RoombaBumpAudioSrc.volume * collisionT;
         collisionAudioSrc.pitch = 2f - collisionT;
+        collisionAudioSrc.SetCustomCurve(AudioSourceCurveType.CustomRolloff, RoombaBumpAudioSrc.GetCustomCurve(AudioSourceCurveType.CustomRolloff));
+        collisionAudioSrc.spatialBlend = 1f;
         collisionAudioSrc.Play();
 
         Destroy(collisionAudioSrc, collisionAudioSrc.clip.length);

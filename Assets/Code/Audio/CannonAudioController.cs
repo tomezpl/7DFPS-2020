@@ -120,7 +120,7 @@ public class CannonAudioController : NetworkBehaviour
             CooldownProgress = 0f;
             SingleFireCooldownPassed = false;
 
-            if (TimeSinceLastShot >= Cannon.FireTime)
+            if (TimeSinceLastShot >= Cannon.FireTime && Shots.Length != 0)
             {
                 AudioSource.PlayClipAtPoint(Shots[ShotAudioClipIndex], ShotAudioOrigin.position);
                 ShotAudioClipIndex = ShotAudioClipIndex + 1 == Shots.Length ? 0 : ShotAudioClipIndex + 1;
@@ -129,7 +129,8 @@ public class CannonAudioController : NetworkBehaviour
         }
 
         ReloadAudioSrc.mute = !(BulletCylinderFx?.IsRotating == true) && !IsFiring.Value;
-        if(!ReloadAudioSrc.isPlaying && !ReloadAudioSrc.mute)
+
+        if (!ReloadAudioSrc.isPlaying && !ReloadAudioSrc.mute)
         {
             ReloadAudioSrc.Play();
         }

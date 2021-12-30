@@ -293,6 +293,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3822532725888723525}
   - component: {fileID: 3965099605866390389}
+  - component: {fileID: 2914206991426636503}
   m_Layer: 0
   m_Name: ExplosionLight
   m_TagString: Untagged
@@ -378,6 +379,26 @@ Light:
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+--- !u!114 &2914206991426636503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1493773441081470622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 1
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
 --- !u!1 &2422087941974707458
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,6 +581,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3328126155322913675}
   - component: {fileID: 7648801256857130809}
+  - component: {fileID: 2037169611101886702}
   m_Layer: 0
   m_Name: ExplosionLight (1)
   m_TagString: Untagged
@@ -645,6 +667,26 @@ Light:
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+--- !u!114 &2037169611101886702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3483438907777325451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 1
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
 --- !u!1 &3603336788931957335
 GameObject:
   m_ObjectHideFlags: 0
@@ -1178,6 +1220,7 @@ MonoBehaviour:
   IsExploding: 0
   ExplosionFxTimer: 0
   ShowCrosshair: 1
+  RoombaAudioController: {fileID: 0}
 --- !u!54 &4951206816429219074
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1321,10 +1364,10 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 2
-  MaxDistance: 500
+  MinDistance: 1
+  MaxDistance: 75
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 2
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -1333,22 +1376,58 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
+      value: 1.1
+      inSlope: -1.4033225
+      outSlope: -1.4033225
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0.69305253
+    - serializedVersion: 3
+      time: 0.06458588
+      value: 1.0218582
+      inSlope: -2.5747867
+      outSlope: -2.5747867
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.19143866
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.20209351
+      value: 0.25001526
+      inSlope: -0.19529901
+      outSlope: -0.19529901
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.62925124
+      outWeight: 0.33811817
+    - serializedVersion: 3
+      time: 0.54653627
+      value: 0.06361389
+      inSlope: -0.08156001
+      outSlope: -0.08156001
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.4539982
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.8260104
+      value: 0.03039499
+      inSlope: -0.40177986
+      outSlope: -0.40177986
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.49524745
       outWeight: 0.33333334
     - serializedVersion: 3
       time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
+      value: 0.005126953
+      inSlope: 0.02946977
+      outSlope: 0.02946977
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0.9157018
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -1357,7 +1436,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -1417,10 +1496,10 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
+  MinDistance: 0.5
+  MaxDistance: 5
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 2
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -1428,23 +1507,50 @@ AudioSource:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0
+      time: 0.1
       value: 1
-      inSlope: 0
-      outSlope: 0
+      inSlope: -10.0039835
+      outSlope: -10.0039835
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
     - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
+      time: 0.19652863
+      value: 0.3311615
+      inSlope: -2.5009959
+      outSlope: -2.5009959
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.403479
+      value: 0.11186218
+      inSlope: -0.20945112
+      outSlope: -0.20945112
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.84229046
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.7479065
+      value: 0.017547607
+      inSlope: -0.06556833
+      outSlope: -0.06556833
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.4580997
+      outWeight: 0.7734233
+    - serializedVersion: 3
+      time: 0.993042
+      value: 0
+      inSlope: 0.17191815
+      outSlope: 0.17191815
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 1
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -1453,7 +1559,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -1503,6 +1609,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4769976713619031452}
   - component: {fileID: 140293188092748142}
+  - component: {fileID: 7647061585071642904}
   m_Layer: 0
   m_Name: ExplosionLight (2)
   m_TagString: Untagged
@@ -1588,6 +1695,26 @@ Light:
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+--- !u!114 &7647061585071642904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6829053756781280548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 1
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
 --- !u!1 &8324283749053290809
 GameObject:
   m_ObjectHideFlags: 0
@@ -1707,6 +1834,7 @@ GameObject:
   m_Component:
   - component: {fileID: 97961213445697619}
   - component: {fileID: 3161224411776009587}
+  - component: {fileID: 6817979356547498639}
   m_Layer: 0
   m_Name: ExplosionLight (3)
   m_TagString: Untagged
@@ -1791,6 +1919,26 @@ Light:
   m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
+--- !u!114 &6817979356547498639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8779343171204711727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 1
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
 --- !u!1001 &572421731988798105
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2006,9 +2154,9 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 50
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 2
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -2017,22 +2165,58 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 1
-      inSlope: 0
-      outSlope: 0
+      value: 0.98716736
+      inSlope: -12.004798
+      outSlope: -12.004798
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.015108749
+      value: 0.8054352
+      inSlope: -2.168128
+      outSlope: -2.168128
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.4999955
+    - serializedVersion: 3
+      time: 0.13589987
+      value: 0.27903748
+      inSlope: -0.37161854
+      outSlope: -0.37161854
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.79630893
+      outWeight: 0.57953805
+    - serializedVersion: 3
+      time: 0.33419293
+      value: 0.12936401
+      inSlope: -0.22185045
+      outSlope: -0.22185045
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.8555856
+      outWeight: 0.6295491
+    - serializedVersion: 3
+      time: 0.6013166
+      value: 0.043478385
+      inSlope: -0.090451
+      outSlope: -0.090451
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.63371915
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
+      time: 0.996521
+      value: 0.02558899
+      inSlope: -0.023023257
+      outSlope: -0.023023257
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0.76191807
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -2041,7 +2225,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -2093,7 +2277,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: d57811c8c7554c24eb3506fd2aa15bab, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 0.189
+  m_Volume: 0.56
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -2101,10 +2285,10 @@ AudioSource:
   SpatializePostEffects: 0
   Priority: 128
   DopplerLevel: 1
-  MinDistance: 1
-  MaxDistance: 500
+  MinDistance: 0.5
+  MaxDistance: 50
   Pan2D: 0
-  rolloffMode: 0
+  rolloffMode: 2
   BypassEffects: 0
   BypassListenerEffects: 0
   BypassReverbZones: 0
@@ -2112,23 +2296,59 @@ AudioSource:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: 0
+      time: 0.011807252
       value: 1
-      inSlope: 0
-      outSlope: 0
+      inSlope: -15.976498
+      outSlope: -15.976498
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 1
     - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
+      time: 0.025727838
+      value: 0.2880249
+      inSlope: -0.66644794
+      outSlope: -0.66644794
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 1
+      outWeight: 0.6447342
+    - serializedVersion: 3
+      time: 0.18957442
+      value: 0.17835999
+      inSlope: -0.034523897
+      outSlope: -0.034523897
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.95669293
+      outWeight: 0.5399068
+    - serializedVersion: 3
+      time: 0.4104065
+      value: 0.12501526
+      inSlope: 0.059232432
+      outSlope: 0.059232432
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 1
+    - serializedVersion: 3
+      time: 0.7444275
+      value: 0.067611694
+      inSlope: -0.07815612
+      outSlope: -0.07815612
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.996521
+      value: 0
+      inSlope: -0.05001994
+      outSlope: -0.05001994
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -2137,7 +2357,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -2622,7 +2842,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 2
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -2657,7 +2877,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -2718,7 +2938,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 3
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -2753,7 +2973,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -2814,7 +3034,7 @@ AudioSource:
   Priority: 128
   DopplerLevel: 1
   MinDistance: 1
-  MaxDistance: 500
+  MaxDistance: 2
   Pan2D: 0
   rolloffMode: 0
   BypassEffects: 0
@@ -2849,7 +3069,7 @@ AudioSource:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
