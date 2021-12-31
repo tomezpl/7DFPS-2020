@@ -1337,6 +1337,7 @@ MonoBehaviour:
   RoombaAccelerateAudioSrc: {fileID: 1488454311444778517}
   MinAcceleratePlayback: 0.4
   RoombaDriveLoopAudioSrc: {fileID: 2586646407625467588}
+  RoombaDriveLoopMinVolume: 0.2
   DriveAudioStartDelay: 0.25
   DriveAudioEndDelay: 0.2
   FadeTime: 0.2

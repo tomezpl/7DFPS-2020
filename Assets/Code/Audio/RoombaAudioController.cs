@@ -12,6 +12,7 @@ public class RoombaAudioController : NetworkBehaviour
     float accelerateAudioBaseVolume = 0f;
 
     public AudioSource RoombaDriveLoopAudioSrc;
+    public float RoombaDriveLoopMinVolume = 0.2f;
 
     public float DriveAudioStartDelay = 0.25f;
     public float DriveAudioEndDelay = 0.2f;
@@ -25,6 +26,7 @@ public class RoombaAudioController : NetworkBehaviour
     public RoombaControl Roomba;
 
     Vector3 lastPos = Vector3.zero;
+    NetworkVariable<Vector3> SyncedVelocity = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone);
     Vector3 velocity = Vector3.zero;
 
     public AudioSource RoombaExplosionAudioSrc;
@@ -32,6 +34,9 @@ public class RoombaAudioController : NetworkBehaviour
 
     public AudioSource RoombaBumpAudioSrc;
     public float MinBumpDot = 0.66f;
+
+    public float OwnerVelocityTickTime = 0.5f;
+    float TimeSinceLastVelocityTick = 0f;
 
     // Start is called before the first frame update
     void Start()
@@ -42,13 +47,24 @@ public class RoombaAudioController : NetworkBehaviour
         accelerateAudioBaseVolume = RoombaAccelerateAudioSrc.volume;
 
         lastPos = transform.position;
+
+        SyncedVelocity.OnValueChanged = new NetworkVariable<Vector3>.OnValueChangedDelegate((oldVal, newVal) =>
+        {
+            velocity = newVal;
+        });
     }
 
     private void FixedUpdate()
     {
-        velocity = transform.position - lastPos;
+        if (IsOwner)
+        {
+            velocity = transform.position - lastPos;
 
-        lastPos = transform.position;
+            lastPos = transform.position;
+
+            UpdateVelocityServerRpc(velocity);
+            TimeSinceLastVelocityTick += Time.fixedDeltaTime;
+        }
     }
 
     void Update()
@@ -90,15 +106,24 @@ public class RoombaAudioController : NetworkBehaviour
         // Fade out the drive loop audio source if needed
         if (Time.time <= driveAudioStartTime + FadeTime)
         {
-            RoombaDriveLoopAudioSrc.volume = Mathf.Lerp(0f, driveAudioBaseVolume, Mathf.InverseLerp(driveAudioStartTime, driveAudioStartTime + FadeTime, Time.time));
+            RoombaDriveLoopAudioSrc.volume = Mathf.Lerp(RoombaDriveLoopMinVolume * driveAudioBaseVolume, driveAudioBaseVolume, Mathf.InverseLerp(driveAudioStartTime, driveAudioStartTime + FadeTime, Time.time));
         }
         else
         {
-            RoombaDriveLoopAudioSrc.volume = Mathf.Lerp(driveAudioBaseVolume, 0f, Mathf.InverseLerp(driveAudioEndTime - FadeTime, driveAudioEndTime, Time.time));
+            RoombaDriveLoopAudioSrc.volume = Mathf.Lerp(driveAudioBaseVolume, driveAudioBaseVolume * RoombaDriveLoopMinVolume, Mathf.InverseLerp(driveAudioEndTime - FadeTime, driveAudioEndTime, Time.time));
         }
 
         // Tone down the acceleration sfx based on current speed.
-        RoombaAccelerateAudioSrc.volume = Mathf.Lerp(accelerateAudioBaseVolume, 0f, Mathf.InverseLerp(0f, 0.005f, velocity.sqrMagnitude));
+        float speedT = Mathf.InverseLerp(0f, 0.003f, velocity.sqrMagnitude);
+
+        RoombaAccelerateAudioSrc.volume = Mathf.Lerp(accelerateAudioBaseVolume, 0f, speedT);
+        RoombaDriveLoopAudioSrc.pitch = Mathf.Lerp(0.75f, 1f, speedT);
+    }
+
+    [ServerRpc]
+    public void UpdateVelocityServerRpc(Vector3 clientSideVelocity, ServerRpcParams rpcParams = default)
+    {
+        SyncedVelocity.Value = clientSideVelocity;
     }
 
     [ServerRpc]
@@ -156,7 +181,7 @@ public class RoombaAudioController : NetworkBehaviour
 
         Destroy(collisionAudioSrc, collisionAudioSrc.clip.length);
     }
-    
+
     [ClientRpc]
     public void BumpNoiseClientRpc(Vector3 collisionNormal, Vector3 collisionPoint, ClientRpcParams rpcParams = default)
     {
