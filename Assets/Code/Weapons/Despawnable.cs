@@ -24,9 +24,17 @@ public class Despawnable : MonoBehaviour
     {
         timePassed += Time.deltaTime;
 
-        if(timePassed >= TimeToLive)
+        if(timePassed >= TimeToLive && CanDespawn())
         {
             Destroy(gameObject);
         }
     }
+
+
+    /// <summary>
+    /// Checks if the <see cref="Despawnable"/>'s despawn condition has been passed.
+    /// </summary>
+    /// <returns>true if the object can be destroyed now, false otherwise.</returns>
+    /// <remarks>This method can (and often should) be overridden by child classes to implement custom conditions.</remarks>
+    protected virtual bool CanDespawn() => true;
 }

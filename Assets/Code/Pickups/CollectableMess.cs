@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Unity.Netcode;
+﻿using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -11,6 +6,11 @@ using UnityEngine;
 /// </summary>
 public class CollectableMess : NetworkBehaviour
 {
+    /// <summary>
+    /// Possible sound effects to play when the Roomba collects the mess.
+    /// </summary>
+    public AudioSource[] SuckNoises = new AudioSource[0];
+
     /// <summary>
     /// Should players be allowed to collect this object?
     /// </summary>
@@ -80,11 +80,25 @@ public class CollectableMess : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Plays a random sound effect from <see cref="SuckNoises"/>.
+    /// </summary>
+    private void PlaySuckAudio()
+    {
+        int numNoises = SuckNoises.Length;
+
+        if (numNoises != 0)
+        {
+            SuckNoises[Random.Range(0, numNoises)].Play();
+        }
+    }
+
     public void Update()
     {
         if(!CanBePickedUp.Value && couldBePickedUpLastFrame)
         {
             startDisappearing = true;
+            PlaySuckAudio();
         }
 
         if(disappearTimer >= disappearTime)

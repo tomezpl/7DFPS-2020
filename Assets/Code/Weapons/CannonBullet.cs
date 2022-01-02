@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class CannonBullet : Despawnable
@@ -51,11 +52,19 @@ public class CannonBullet : Despawnable
         }
     }
 
+    /// <summary>
+    /// Is the bullet currently resting on top of another collider?
+    /// </summary>
+    public bool IsResting = false;
+
+    CannonBulletAudioController CannonBulletAudioController;
+
     // Start is called before the first frame update
     void Start()
     {
         // Store the initial position.
         spawnPosition = transform.position;
+        CannonBulletAudioController = GetComponent<CannonBulletAudioController>();
     }
 
     // Update is called once per frame
@@ -78,6 +87,13 @@ public class CannonBullet : Despawnable
         {
             distanceTravelled += Vector3.Distance(collision.GetContact(0).point, spawnPosition);
         }
+
+        IsResting = true;
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        IsResting = false;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -85,7 +101,7 @@ public class CannonBullet : Despawnable
         RoombaControl otherRoomba = other.transform.root.GetComponent<RoombaControl>();
 
         // Return immediately if the triggered Roomba is ours.
-        if (otherRoomba?.IsOwner == true)
+        if (otherRoomba?.OwnerClientId == Owner.GetComponent<NetworkObject>()?.OwnerClientId)
         {
             return;
         }
@@ -103,5 +119,12 @@ public class CannonBullet : Despawnable
                 Owner.GetComponent<Cannon>().Owner.DealDamageServerRpc((int)Mathf.Round(DamageDealt), victimStats.OwnerClientId);
             }
         }
+    }
+
+    protected override bool CanDespawn()
+    {
+        return !(CannonBulletAudioController?.BulletCaseRollAudioSrc?.isPlaying == true) &&
+            !(CannonBulletAudioController?.BulletHitRoombaAudioSrc?.isPlaying == true) &&
+            base.CanDespawn();
     }
 }

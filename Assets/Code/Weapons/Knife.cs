@@ -50,6 +50,16 @@ public class Knife : Weapon
     /// </summary>
     Quaternion initLocalOrientation;
 
+    /// <summary>
+    /// Has a player been hit during an attack?
+    /// </summary>
+    public NetworkVariable<bool> HitAPlayer = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, false);
+
+    /// <summary>
+    /// Is the swinging (attack, pre-hit) animation currently playing?
+    /// </summary>
+    public bool IsSwinging = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -121,6 +131,12 @@ public class Knife : Weapon
         {
             Hit = null;
             stabbedAlready = false;
+
+            if (IsMine)
+            {
+                IndicateHitServerRpc(false);
+            }
+
             return;
         }
 
@@ -130,6 +146,8 @@ public class Knife : Weapon
         // Is the stab lunge complete now (and we're recovering to idle position)?
         bool stabbed = stabAnimTimer < StabAnimDuration * .5f;
 
+        IsSwinging = !stabbed;
+
         // Interpolate knife position.
         //transform.localPosition = Vector3.Lerp(initLocalPosition, initLocalPosition + Vector3.forward * .33f, stabbed ? 1f - idleProgress : stabProgress);
 
@@ -138,6 +156,17 @@ public class Knife : Weapon
 
         // Update timer.
         stabAnimTimer -= Time.deltaTime;
+    }
+
+    /// <summary>
+    /// Confirms whether or not a player was hit during this attack.
+    /// </summary>
+    /// <param name="hitState">Was a player hit?</param>
+    /// <param name="rpcParams"></param>
+    [ServerRpc]
+    public void IndicateHitServerRpc(bool hitState, ServerRpcParams rpcParams = default)
+    {
+        HitAPlayer.Value = hitState;
     }
 
     private void OnTriggerStay(Collider other)
@@ -157,6 +186,8 @@ public class Knife : Weapon
 
             // Calculate the damage for this stab. A perfect backstab should deal maximum damage (DamagePerBackstab).
             int stabDamage = Mathf.RoundToInt(DamagePerBackstab * Mathf.Max(0f, Vector3.Dot(Owner.GetComponent<RoombaControl>().transform.forward, otherPlayer.transform.forward)));
+
+            IndicateHitServerRpc(true);
 
             Owner.GetComponent<RoombaControl>().DealDamageServerRpc(stabDamage, otherPlayer.OwnerClientId);
         }
