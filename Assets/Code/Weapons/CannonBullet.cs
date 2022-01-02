@@ -101,7 +101,7 @@ public class CannonBullet : Despawnable
         RoombaControl otherRoomba = other.transform.root.GetComponent<RoombaControl>();
 
         // Return immediately if the triggered Roomba is ours.
-        if (otherRoomba?.OwnerClientId == Owner.GetComponent<NetworkObject>()?.OwnerClientId)
+        if (otherRoomba?.GetInstanceID() == Owner.transform.root.GetComponent<RoombaControl>()?.GetInstanceID())
         {
             return;
         }
