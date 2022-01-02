@@ -17,6 +17,7 @@ public class PlayerDirectionArrow : MonoBehaviour
     MeshRenderer renderer;
 
     RoombaControl owner;
+    GameObject ownerGameObject;
 
     // Start is called before the first frame update
     void Start()
@@ -33,7 +34,7 @@ public class PlayerDirectionArrow : MonoBehaviour
     {
         SlideIndicator();
 
-        if (owner && !owner.PlayerControlled)
+        if (owner != null && !owner.PlayerControlled)
         {
             renderer.enabled = false;
         }

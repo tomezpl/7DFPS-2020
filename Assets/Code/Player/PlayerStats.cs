@@ -1,16 +1,19 @@
-﻿using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
+﻿using Unity.Netcode;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Collections;
 
 public class PlayerStats : NetworkBehaviour
 {
     private static PlayerStats _local;
+
+    public GameObject PlayerRemainsPrefab;
+
+    bool remainsSpawned = false;
 
     /// <summary>
     /// The local player's <see cref="PlayerStats"/>. null if not found.
@@ -39,11 +42,7 @@ public class PlayerStats : NetworkBehaviour
     /// <summary>
     /// Network-synchronised health value for this player.
     /// </summary>
-    public NetworkVariableInt Health = new NetworkVariableInt(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, 100);
+    public NetworkVariable<int> Health = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone, 100);
 
     public int health = 100;
 
@@ -51,22 +50,18 @@ public class PlayerStats : NetworkBehaviour
     /// <para>Network-synchronised ID of the most recent attacker to this player.</para>
     /// <para>Don't use this outside of server RPCs; use the <see cref="LastAttackerId"/> cast instead.</para>
     /// </summary>
-    public NetworkVariableString LastAttacker = new NetworkVariableString(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, "");
+    public NetworkVariable<FixedString32Bytes> LastAttacker = new NetworkVariable<FixedString32Bytes>(NetworkVariableReadPermission.Everyone, "");
 
     /// <summary>
     /// A ulong parser for <see cref="LastAttacker"/> ID.
     /// </summary>
     public ulong? LastAttackerId
     {
-        get => !string.IsNullOrWhiteSpace(LastAttacker.Value) ? (ulong?)ulong.Parse(LastAttacker.Value) : null;
+        get => !string.IsNullOrWhiteSpace(LastAttacker.Value.ToString()) ? (ulong?)ulong.Parse(LastAttacker.Value.ToString()) : null;
     }
 
     /// <summary>
-    /// A flag preventing the <see cref="Die"/> event being called multiple times on the server.
+    /// A flag preventing the <see cref="BeginDieServerRpc"/> event being called multiple times on the server.
     /// </summary>
     public bool IsDying = false;
 
@@ -76,36 +71,15 @@ public class PlayerStats : NetworkBehaviour
     /// </summary>
     public Text healthText = null, kdpText = null, winnerText = null;
 
+    bool wasExplodingLastFrame = false;
+
     // Start is called before the first frame update
     void Start()
     {
-        Text[] hudTextComponents = GameObject.Find("HUD")?.GetComponentsInChildren<Text>();
-        if (hudTextComponents != null)
-        {
-            foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
-            {
-                switch (text.name)
-                {
-                    case "Health":
-                        healthText = text;
-                        break;
-                    case "KDP":
-                        kdpText = text;
-                        break;
-                    case "Winner":
-                        winnerText = text;
-                        break;
-                }
 
-                if (healthText && kdpText && winnerText)
-                {
-                    break;
-                }
-            }
-        }
     }
 
-    public override void NetworkStart()
+    public override void OnNetworkSpawn()
     {
         health = Health.Value;
 
@@ -115,41 +89,42 @@ public class PlayerStats : NetworkBehaviour
             health = newHealth;
         };
 
-        SetPlayerNameOverheadDisplay(GameManager.FromId(OwnerClientId).PlayerName.Value);
-        GameManager.FromId(OwnerClientId).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName);
+        SetPlayerNameOverheadDisplay(GameManager.FromId(OwnerClientId).PlayerName.Value.ToString());
+        GameManager.FromId(OwnerClientId).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName.ToString());
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (GetComponent<RoombaControl>().PlayerControlled)
-        {
-            if (health <= 0)
-            {
-                healthText.text = "";
-                Die();
-            }
+        RoombaControl roombaControl = GetComponent<RoombaControl>();
+        RoombaKaboom roombaKaboom = GetComponentInChildren<RoombaKaboom>();
 
-            if (healthText != null)
-            {
-                healthText.enabled = true;
-                if (health <= 0)
-                {
-                    healthText.text = "";
-                }
-                else
-                {
-                    healthText.text = $"Health: {health}";
-                }
-            }
+        if(IsOwner && !remainsSpawned && roombaControl.IsExploding && roombaKaboom.TimeElapsed >= roombaKaboom.HideRoombaAt)
+        {
+            remainsSpawned = true;
+            SpawnPlayerRemainsServerRpc();
         }
+
+        if (wasExplodingLastFrame && !roombaControl.IsExploding && IsOwner)
+        {
+            EndDie();
+        }
+
+        wasExplodingLastFrame = roombaControl.IsExploding;
+    }
+
+    [ServerRpc]
+    public void BeginDieServerRpc(ServerRpcParams rpcParams = default)
+    {
+        BeginDieClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsIds } });
     }
 
     /// <summary>
     /// <para>Kills the player and awards the kill to the last attacker.</para>
     /// <para>Also increments this player's death counter and switches to class selection/respawn state.</para>
     /// </summary>
-    public void Die()
+    [ClientRpc]
+    public void BeginDieClientRpc(ClientRpcParams rpcParams = default)
     {
         // Should only be called once per death.
         if(IsDying)
@@ -159,16 +134,27 @@ public class PlayerStats : NetworkBehaviour
 
         IsDying = true;
 
+        RoombaControl owner = GetComponent<RoombaControl>();
+        if (!owner.IsExploding)
+        {
+            owner.IsExploding = true;
+            owner.ExplosionFxTimer = owner.ExplosionFxTime;
+        }
+
         // Make sure the health is kept below 0. Technically unnecessary, but I'm paranoid...
         health = -1;
 
         // If another player killed us, call the server RPC to give them a kill.
         Debug.Log($"Last attacker was {LastAttackerId}");
 
-        // Make sure we can find a GameManager for this ID and that it doesn't belong to us (self-kills shouldn't count as kill points).
-        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null && LastAttackerId != OwnerClientId)
+    }
+
+    public void EndDie()
+    {
+        // Make sure we can find a GameManager for this ID.
+        if (LastAttackerId != null && GameManager.FromId(LastAttackerId.Value) != null)
         {
-            GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value);
+            GameManager.Singleton.GiveScoreKillsServerRpc(LastAttackerId.Value, OwnerClientId);
         }
 
         // Call the server RPC to count a death for us.
@@ -182,6 +168,25 @@ public class PlayerStats : NetworkBehaviour
 
         // Call a server RPC to destroy the player.
         RequestDestroyPlayerServerRpc();
+    }
+
+    /// <summary>
+    /// Spawns a "remains" object for a killed player.
+    /// </summary>
+    /// <param name="rpcParams"></param>
+    [ServerRpc]
+    public void SpawnPlayerRemainsServerRpc(ServerRpcParams rpcParams = default)
+    {
+        if (PlayerRemainsPrefab)
+        {
+            GameObject remains = Instantiate(PlayerRemainsPrefab, transform.position, transform.rotation);
+            CollectableMess messScript = remains.GetComponent<CollectableMess>();
+            messScript.IsPlayerCorpse = true;
+            messScript.DestroyedRoombaId = OwnerClientId;
+
+            Physics.IgnoreCollision(GetComponent<RoombaControl>().RoombaCollider, remains.GetComponent<Collider>(), true);
+            remains.GetComponent<NetworkObject>().Spawn();
+        }
     }
 
     /// <summary>

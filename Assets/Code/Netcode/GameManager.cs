@@ -1,10 +1,10 @@
-﻿using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Unity.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -44,12 +44,7 @@ public partial class GameManager : NetworkBehaviour
     /// <summary>
     /// This player's score, stored as a string for network transport.
     /// </summary>
-    public NetworkVariableString SerializedScore = new NetworkVariableString(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }
-    , "");
+    public NetworkVariable<FixedString32Bytes> SerializedScore = new NetworkVariable<FixedString32Bytes>(NetworkVariableReadPermission.Everyone, "");
 
     /// <summary>
     /// <para>Deserialized object based on <see cref="SerializedScore"/>.</para>
@@ -59,7 +54,7 @@ public partial class GameManager : NetworkBehaviour
     {
         get
         {
-            return PlayerScore.FromString(SerializedScore.Value);
+            return PlayerScore.FromString(SerializedScore.Value.ToString());
         }
     }
 
@@ -67,11 +62,7 @@ public partial class GameManager : NetworkBehaviour
     /// <para>Network-synchronised name string for this player.</para>
     /// <para>This will be assigned from the player's lobby UI where they can set their name.</para>
     /// </summary>
-    public NetworkVariableString PlayerName = new NetworkVariableString(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.OwnerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, "");
+    public NetworkVariable<FixedString128Bytes> PlayerName = new NetworkVariable<FixedString128Bytes>(NetworkVariableReadPermission.Everyone, string.Empty);
 
     /// <summary>
     /// <para>A flag indicating whether the manager should send a respawn request RPC when triggered by the player.</para>
@@ -81,14 +72,14 @@ public partial class GameManager : NetworkBehaviour
     public bool CanRequestSpawn = true;
 
     /// <summary>
-    /// UI text objects.
-    /// </summary>
-    public Text healthText, kdpText, winnerText;
-
-    /// <summary>
     /// Local player instance.
     /// </summary>
     public RoombaControl SpawnedPlayer = null;
+
+    /// <summary>
+    /// Client-side extension script for the gamemode logic.
+    /// </summary>
+    public GameModeGameManagerExtension GameModeExtensions;
 
     /// <summary>
     /// Searches for a specified client's <see cref="GameManager"/> instance.
@@ -111,34 +102,14 @@ public partial class GameManager : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // Find the UI text objects in the scene.
-        foreach (Text text in GameObject.Find("HUD").GetComponentsInChildren<Text>())
-        {
-            switch (text.name)
-            {
-                case "Health":
-                    healthText = text;
-                    break;
-                case "KDP":
-                    kdpText = text;
-                    break;
-                case "Winner":
-                    winnerText = text;
-                    break;
-            }
-
-            if (healthText && kdpText && winnerText)
-            {
-                break;
-            }
-        }
     }
 
-    public override void NetworkStart()
+    public override void OnNetworkSpawn()
     {
         if (IsOwner)
         {
-            PlayerName.Value = LobbyManager.Singleton.PlayerName;
+            SyncPlayerNameServerRpc(LobbyManager.Singleton.PlayerName);
+            RequestGameModeExtensionsServerRpc();
         }
 
         SerializedScore.OnValueChanged += (_, newScore) =>
@@ -146,6 +117,38 @@ public partial class GameManager : NetworkBehaviour
             Debug.Log($"Score changed. New score string:\n{newScore}");
             SyncScoreWithLobby();
         };
+    }
+
+    /// <summary>
+    /// Updates the player name on the server.
+    /// </summary>
+    /// <param name="playerName"></param>
+    /// <param name="rpcParams"></param>
+    [ServerRpc]
+    public void SyncPlayerNameServerRpc(string playerName, ServerRpcParams rpcParams = default)
+    {
+        PlayerName.Value = playerName;
+    }
+
+    /// <summary>
+    /// Requests a client-side extension script for gamemode logic.
+    /// </summary>
+    /// <param name="rpcParams"></param>
+    [ServerRpc]
+    public void RequestGameModeExtensionsServerRpc(ServerRpcParams rpcParams = default)
+    {
+        AssignGameModeExtensionsClientRpc(LobbyManager.Singleton.CurrentGameMode.GetExtensionsType().FullName);
+    }
+
+    /// <summary>
+    /// Creates the client-side gamemode logic extension script having received the script class type name from the server.
+    /// </summary>
+    /// <param name="extensionsTypeName"></param>
+    /// <param name="rpcParams"></param>
+    [ClientRpc]
+    public void AssignGameModeExtensionsClientRpc(string extensionsTypeName, ClientRpcParams rpcParams = default)
+    {
+        GameModeExtensionsFactory.CreateExtensionsForPlayer(this, extensionsTypeName);
     }
 
     // Update is called once per frame
@@ -166,34 +169,6 @@ public partial class GameManager : NetworkBehaviour
                 CanRequestSpawn = false;
                 RequestPlayerSpawnServerRpc();
             }
-        }
-
-        UpdateStatsHud();
-    }
-
-    /// <summary>
-    /// Updates the values of the stats text.
-    /// </summary>
-    void UpdateStatsHud()
-    {
-        // Update local player's stats text.
-        PlayerScore score = Score;
-        kdpText.text = $"{score.Kills} Kills, {score.Deaths} Deaths, {score.TotalPoints} Points";
-
-        // Find currently winning player to display their name and points.
-        Dictionary<string, PlayerScore> players = LobbyManager.Singleton.PlayerScores;
-        string winner = players.Keys.FirstOrDefault(name => !players.Any(p => p.Key != name && p.Value.TotalPoints > players[name].TotalPoints));
-        if (players.Count == 1)
-        {
-            winner = players.Keys.FirstOrDefault();
-        }
-        if (winner != default)
-        {
-            winnerText.text = $"1st place: {winner} ({players[winner].TotalPoints} points)";
-        }
-        else
-        {
-            winnerText.text = "";
         }
     }
 
@@ -292,9 +267,9 @@ public partial class GameManager : NetworkBehaviour
             score = Score;
         }
 
-        if (!string.IsNullOrWhiteSpace(PlayerName.Value))
+        if (!string.IsNullOrWhiteSpace(PlayerName.Value.ToString()))
         {
-            LobbyManager.Singleton.PlayerScores[PlayerName.Value] = score;
+            GameManager.Singleton.GameModeExtensions.PlayerScores[PlayerName.Value.ToString()] = score;
         }
     }
 }

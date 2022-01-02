@@ -1,6 +1,4 @@
-﻿using MLAPI;
-using MLAPI.Messaging;
-using MLAPI.NetworkVariable;
+﻿using Unity.Netcode;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,49 +13,29 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// The player's position synchronised with the server.
     /// </summary>
-    public NetworkVariableVector3 Position = new NetworkVariableVector3(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    });
+    public NetworkVariable<Vector3> Position = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone, Vector3.zero);
 
     /// <summary>
     /// The player's class.
     /// </summary>
-    public NetworkVariableInt SelectedClass = new NetworkVariableInt(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    });
+    public NetworkVariable<int> SelectedClass = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone, 0);
 
     /// <summary>
     /// <para>Indicates whether the player's class has already been activated.</para>
     /// <para>This notifies joining players that the local selectedClass variable should be read from SelectedClass NetworkVariable instead.</para>
     /// <para>TODO: This could potentially be removed if we just read straight from SelectedClass, or passed the class in NetworkStart. Needs to be investigated.</para>
     /// </summary>
-    public NetworkVariableBool SelectedClassAlreadySet = new NetworkVariableBool(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    });
+    public NetworkVariable<bool> SelectedClassAlreadySet = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, false);
 
     /// <summary>
     /// The player's orientation synced with the server.
     /// </summary>
-    public NetworkVariableQuaternion Rotation = new NetworkVariableQuaternion(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.ServerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    }, Quaternion.identity);
+    public NetworkVariable<Quaternion> Rotation = new NetworkVariable<Quaternion>(NetworkVariableReadPermission.Everyone, Quaternion.identity);
 
     /// <summary>
     /// The player's camera orientation (global) to replicate for other clients.
     /// </summary>
-    public NetworkVariableQuaternion CameraRotation = new NetworkVariableQuaternion(new NetworkVariableSettings
-    {
-        WritePermission = NetworkVariablePermission.OwnerOnly,
-        ReadPermission = NetworkVariablePermission.Everyone
-    });
+    public NetworkVariable<Quaternion> CameraRotation = new NetworkVariable<Quaternion>(NetworkVariableReadPermission.Everyone, Quaternion.identity);
 
     /// <summary>
     /// Available player classes.
@@ -221,6 +199,36 @@ public class RoombaControl : NetworkBehaviour
     bool canMoveAhead = true;
 
     /// <summary>
+    /// The radius of the explosion point light(s).
+    /// </summary>
+    public float ExplosionLightRadius = 1.5f;
+
+    /// <summary>
+    /// The explosion point light(s).
+    /// </summary>
+    public Light[] ExplosionLights;
+
+    /// <summary>
+    /// Explosion point lights' base intensities.
+    /// </summary>
+    public float[] ExplosionLightIntensities;
+
+    /// <summary>
+    /// The duration of the explosion effect (in seconds).
+    /// </summary>
+    public float ExplosionFxTime = 1f;
+
+    /// <summary>
+    /// Is the phone currently in process of detonation?
+    /// </summary>
+    public bool IsExploding = false;
+
+    /// <summary>
+    /// Timer that will count until <see cref="ExplosionFxTime"/>.
+    /// </summary>
+    public float ExplosionFxTimer = 0f;
+
+    /// <summary>
     /// Should the crosshair be shown?
     /// </summary>
     public bool ShowCrosshair = true;
@@ -280,6 +288,8 @@ public class RoombaControl : NetworkBehaviour
         }
     }
 
+    public RoombaAudioController RoombaAudioController;
+
     /// <summary>
     /// Look X axis getter.
     /// </summary>
@@ -295,12 +305,14 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// Walk input getter.
     /// </summary>
+    /// <param name="raw">Should the raw axis value be returned? (no gravity, sensitivity etc.)</param>
     /// <returns></returns>
-    float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
+    public float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
 
     /// <summary>
     /// Yaw rotation input getter.
     /// </summary>
+    /// <param name="raw">Should the raw axis value be returned? (no gravity, sensitivity etc.)</param>
     /// <returns></returns>
     float GetTurn(bool raw = false) => raw ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
 
@@ -423,7 +435,7 @@ public class RoombaControl : NetworkBehaviour
 
         // Springarm camera: prevent objects from obstructing the player from the camera.
         float camRaycastHitDistance = cameraDistance;
-        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~LayerMask.GetMask("LocalPlayer", "SmallProjectile"));
+        RaycastHit[] raycastResults = Physics.RaycastAll(transform.position, Cam.transform.position - transform.position, cameraDistance + SpringarmCameraRaycastMargin, ~LayerMask.GetMask("LocalPlayer", "SmallProjectile", "Ignore Raycast"));
         RaycastHit closestHit = default;
         for (int i = 0; i < raycastResults?.Length && i <= MaxCameraRaycastIterations; i++)
         {
@@ -601,6 +613,19 @@ public class RoombaControl : NetworkBehaviour
         // Initialise collision state.
         isColliding = false;
 
+        // Initialise lights.
+        if (ExplosionLights != null)
+        {
+            ExplosionLightIntensities = new float[ExplosionLights.Length];
+            for (int i = 0; i < ExplosionLights.Length; i++)
+            {
+                Light light = ExplosionLights[i];
+                ExplosionLightIntensities[i] = light.intensity;
+                light.range *= ExplosionLightRadius;
+                light.enabled = false;
+            }
+        }
+
         // Find the camera object if not assigned.
         if (!Cam)
         {
@@ -620,6 +645,12 @@ public class RoombaControl : NetworkBehaviour
             Rigidbody = GetComponent<Rigidbody>();
         }
 
+        // Find the audio controller if not assigned.
+        if(!RoombaAudioController)
+        {
+            RoombaAudioController = GetComponent<RoombaAudioController>();
+        }
+
         if (!PlayerControlled)
         {
             // If this isn't our roomba, disable the camera audio listener so Unity doesn't complain.
@@ -631,37 +662,24 @@ public class RoombaControl : NetworkBehaviour
         else
         {
             // Set the local player object instance in GameManager so it can be referenced by other scripts.
-            GameManager.Singleton.SpawnedPlayer = this;
+            if (GameManager.Singleton)
+            {
+                GameManager.Singleton.SpawnedPlayer = this;
+            }
+        }
+
+        // For testing/offline play purposes, call any startup methods that would normally be invoked on OnNetworkSpawn.
+        if(NetworkManager.Singleton?.IsConnectedClient != true && NetworkManager.Singleton?.IsHost != true)
+        {
+            SetWeapons();
         }
     }
 
     /// <summary>
     /// Occurs before <see cref="Start"/>
     /// </summary>
-    public override void NetworkStart(Stream stream)
+    public override void OnNetworkSpawn()
     {
-        if(stream != null && stream.CanRead)
-        {
-            // Extract the spawnpoint from the stream.
-            Vector3 position = NetcodeHelpers.StreamHelper.ReadPosition(stream);
-            Quaternion orientation = NetcodeHelpers.StreamHelper.ReadOrientation(stream);
-
-            Debug.Log($"Spawnpoint was P {position}, O {orientation}");
-
-            // This prevents the player object spawning at (0, 0, 0) for a few frames.
-            transform.position = position;
-            transform.rotation = orientation;
-            if (IsServer)
-            {
-                Position.Value = position;
-                Rotation.Value = orientation;
-            }
-        }
-        else
-        {
-            Debug.LogWarning("Couldn't read stream");
-        }
-
         if (PlayerControlled)
         {
             // Update our weapons on the server.
@@ -699,8 +717,7 @@ public class RoombaControl : NetworkBehaviour
     {
         // Make sure to invoke the client RPC on all connected clients.
         ClientRpcParams clientRpcParams = new ClientRpcParams();
-        clientRpcParams.Send.TargetClientIds = new ulong[NetworkManager.Singleton.ConnectedClients.Count];
-        NetworkManager.Singleton.ConnectedClients.Keys.CopyTo(clientRpcParams.Send.TargetClientIds, 0);
+        clientRpcParams.Send.TargetClientIds = NetworkManager.Singleton.ConnectedClientsIds;
 
         // Synchronise the selected class value.
         SelectedClass.Value = requestedClass;
@@ -816,13 +833,15 @@ public class RoombaControl : NetworkBehaviour
                 Movement();
             }
 
-            // Update the camera orientation for other clients.
-            CameraRotation.Value = Cam.transform.rotation;
+            if (IsOwner)
+            {
+                SyncVariablesServerRpc(Cam.transform.rotation);
+            }
 
             // Suicide key.
             if (Input.GetKeyDown(KeyCode.F4))
             {
-                GetComponent<PlayerStats>().Die();
+                GetComponent<PlayerStats>().BeginDieServerRpc();
             }
         }
         else
@@ -830,6 +849,21 @@ public class RoombaControl : NetworkBehaviour
             // If this is not a local player, update the movement from the server.
             ReplicateServerMovement();
         }
+
+        RunFxAndAnimations();
+    }
+
+    /// <summary>
+    /// Client-to-Server transform sync RPC as Netcode is fully server-authoritative.
+    /// <para>TODO: There may be better ways of doing it.</para>
+    /// </summary>
+    /// <param name="camRotation"></param>
+    /// <param name="rpcParams"></param>
+    [ServerRpc]
+    public void SyncVariablesServerRpc(Quaternion camRotation, ServerRpcParams rpcParams = default)
+    {
+        // Update the camera orientation for other clients.
+        CameraRotation.Value = camRotation;
     }
 
     /// <summary>
@@ -911,7 +945,17 @@ public class RoombaControl : NetworkBehaviour
 
         if (Physics.Raycast(new Ray(transform.position, transform.forward), out RaycastHit wallHit, 0.5f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
         {
-            canMoveAhead = false;
+            if (LayerMask.LayerToName(wallHit.collider.gameObject.layer) != "Ignore Raycast")
+            {
+                // THIS CANMOVEAHEAD CHECK IS IMPORTANT. DON'T REMOVE IT UNLESS YOU WANT TO GO DEAF.
+                // DON'T SAY I DIDN'T WARN YOU.
+                if (canMoveAhead && RoombaAudioController)
+                {
+                    RoombaAudioController.BumpNoiseServerRpc(wallHit.normal, wallHit.point);
+                }
+
+                canMoveAhead = false;
+            }
         }
         else
         {
@@ -948,6 +992,34 @@ public class RoombaControl : NetworkBehaviour
         if (collision.transform.CompareTag("Floor"))
         {
             isColliding = false;
+        }
+    }
+
+    private void RunFxAndAnimations()
+    {
+        if (IsExploding)
+        {
+            // Update the explosion effect timer.
+            ExplosionFxTimer -= Time.deltaTime;
+
+            float inv = Mathf.InverseLerp(ExplosionFxTime, 0f, ExplosionFxTimer);
+
+            // Activate the light (or step through multiple lights) using the interpolant value.
+            int numLights = ExplosionLights.Length;
+            float lightPeakUnit = 1f / (numLights + 1);
+            for (int i = 0; i < numLights; i++)
+            {
+                float lightPeak = lightPeakUnit * (i + 1);
+                float lightStart = i == 0 ? 0f : lightPeak - (lightPeakUnit * 1.5f);
+                float progress = Mathf.InverseLerp(lightStart, lightPeak, inv);
+                ExplosionLights[i].enabled = true;
+                ExplosionLights[i].intensity = ExplosionLightIntensities[i] * progress;
+            }
+
+            if (ExplosionFxTimer <= 0f)
+            {
+                IsExploding = false;
+            }
         }
     }
 }

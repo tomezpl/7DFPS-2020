@@ -56,6 +56,11 @@ public class TriggerBoxFx : FxController
     Light muzzleFlashLight = null;
 
     /// <summary>
+    /// Whether <see cref="muzzleFlashLight"/> should be active.
+    /// </summary>
+    bool illuminateMuzzleFlash = false;
+
+    /// <summary>
     /// True if timers should be updated.
     /// </summary>
     bool countTime = false;
@@ -78,12 +83,18 @@ public class TriggerBoxFx : FxController
         timeElapsedSinceTrigger = 0f;
 
         // Activate the muzzle flash light.
-        if (muzzleFlashLight == null)
+        if (!illuminateMuzzleFlash)
         {
-            muzzleFlashLight = Owner.BarrelEnd.gameObject.AddComponent<Light>();
-            muzzleFlashLight.color = MuzzleFlashColour;
-            muzzleFlashLight.range = MuzzleFlashRange;
-            muzzleFlashLight.intensity = MuzzleFlashIntensity;
+            if(muzzleFlashLight == null)
+            {
+                muzzleFlashLight = Owner.BarrelEnd.gameObject.AddComponent<Light>();
+                muzzleFlashLight.color = MuzzleFlashColour;
+                muzzleFlashLight.range = MuzzleFlashRange;
+                muzzleFlashLight.intensity = MuzzleFlashIntensity;
+            }
+
+            muzzleFlashLight.enabled = true;
+            illuminateMuzzleFlash = true;
         }
 
         // Activate the muzzle flash sprite.
@@ -129,10 +140,14 @@ public class TriggerBoxFx : FxController
         countTime = false;
         timeElapsedSinceTrigger = 0f;
 
-        if(muzzleFlashLight != null)
+        if(illuminateMuzzleFlash)
         {
-            Destroy(muzzleFlashLight);
-            muzzleFlashLight = null;
+            if (muzzleFlashLight)
+            {
+                muzzleFlashLight.enabled = false;
+            }
+
+            illuminateMuzzleFlash = false;
         }
 
         if (MuzzleFlashRenderer != null)

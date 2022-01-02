@@ -1,4 +1,4 @@
-﻿using MLAPI.Messaging;
+﻿using Unity.Netcode;
 using UnityEngine;
 
 public partial class GameManager
@@ -10,13 +10,20 @@ public partial class GameManager
     /// <param name="killsToGive">Number of kills to give. 1 by default.</param>
     /// <param name="serverRpcParams"></param>
     [ServerRpc]
-    public void GiveScoreKillsServerRpc(ulong clientId, int killsToGive = 1, ServerRpcParams serverRpcParams = default)
+    public void GiveScoreKillsServerRpc(ulong clientId, ulong victimId, int killsToGive = 1, ServerRpcParams serverRpcParams = default)
     {
-        GameManager killerManager = FromId(clientId);
-        Debug.Log($"Giving client {clientId} {killsToGive} kills");
-        PlayerScore score = killerManager.Score;
-        score.Kills += killsToGive;
-        killerManager.SerializedScore.Value = score.ToString();
+        // Make sure the kill wasn't a self-kill (self-kills shouldn't count as kill points)
+        if (clientId != victimId)
+        {
+            GameManager killerManager = FromId(clientId);
+            Debug.Log($"Giving client {clientId} {killsToGive} kills");
+            PlayerScore score = killerManager.Score;
+            score.Kills += killsToGive;
+            killerManager.SerializedScore.Value = score.ToString();
+        }
+
+        // Notify the gamemode with an event.
+        LobbyManager.Singleton.CurrentGameMode.EmitEvent(new DeathMatchEvents.PlayerKilledEvent { KillerId = clientId, VictimId = victimId });
     }
 
     /// <summary>
@@ -31,6 +38,19 @@ public partial class GameManager
         Debug.Log($"Giving client {clientId} {deathsToGive} deaths");
         PlayerScore score = Score;
         score.Deaths += deathsToGive;
+        SerializedScore.Value = score.ToString();
+    }
+
+    /// <summary>
+    /// Adds cleanup(s) to the player score.
+    /// </summary>
+    /// <param name="cleanupsToGive">Number of cleanups to add. 1 by default.</param>
+    /// <param name="rpcParams"></param>
+    [ServerRpc(RequireOwnership = false)]
+    public void GiveScoreCleanupsServerRpc(int cleanupsToGive = 1, ServerRpcParams rpcParams = default)
+    {
+        PlayerScore score = Score;
+        score.Cleanups += cleanupsToGive;
         SerializedScore.Value = score.ToString();
     }
 }
