@@ -6,6 +6,9 @@ using UnityEngine;
 /// </summary>
 public class CollectableMess : NetworkBehaviour
 {
+    /// <summary>
+    /// Possible sound effects to play when the Roomba collects the mess.
+    /// </summary>
     public AudioSource[] SuckNoises = new AudioSource[0];
 
     /// <summary>
@@ -77,6 +80,9 @@ public class CollectableMess : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Plays a random sound effect from <see cref="SuckNoises"/>.
+    /// </summary>
     private void PlaySuckAudio()
     {
         int numNoises = SuckNoises.Length;

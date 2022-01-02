@@ -305,12 +305,14 @@ public class RoombaControl : NetworkBehaviour
     /// <summary>
     /// Walk input getter.
     /// </summary>
+    /// <param name="raw">Should the raw axis value be returned? (no gravity, sensitivity etc.)</param>
     /// <returns></returns>
     public float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
 
     /// <summary>
     /// Yaw rotation input getter.
     /// </summary>
+    /// <param name="raw">Should the raw axis value be returned? (no gravity, sensitivity etc.)</param>
     /// <returns></returns>
     float GetTurn(bool raw = false) => raw ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
 

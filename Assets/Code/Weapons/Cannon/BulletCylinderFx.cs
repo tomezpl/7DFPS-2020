@@ -39,6 +39,9 @@ public class BulletCylinderFx : FxController
     /// </summary>
     Quaternion initOrientation = Quaternion.identity;
 
+    /// <summary>
+    /// Is the cylinder currently rotating?
+    /// </summary>
     public bool IsRotating { get => stackedTime > 0f; }
 
     private void Start()

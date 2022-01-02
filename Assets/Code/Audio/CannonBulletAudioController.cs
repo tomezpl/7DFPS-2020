@@ -3,8 +3,15 @@
 public class CannonBulletAudioController : MonoBehaviour
 {
     public CannonBullet CannonBullet;
+
+    /// <summary>
+    /// Was the bullet NOT colliding with anything new last frame?
+    /// </summary>
     bool WasRestingLastFrame = false;
 
+    /// <summary>
+    /// Was the bullet hitting a roomba last frame?
+    /// </summary>
     bool HitRoombaLastFrame = false;
 
     public AudioSource BulletCaseRollAudioSrc;

@@ -50,8 +50,14 @@ public class Knife : Weapon
     /// </summary>
     Quaternion initLocalOrientation;
 
+    /// <summary>
+    /// Has a player been hit during an attack?
+    /// </summary>
     public NetworkVariable<bool> HitAPlayer = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, false);
 
+    /// <summary>
+    /// Is the swinging (attack, pre-hit) animation currently playing?
+    /// </summary>
     public bool IsSwinging = false;
 
     // Start is called before the first frame update
@@ -152,6 +158,11 @@ public class Knife : Weapon
         stabAnimTimer -= Time.deltaTime;
     }
 
+    /// <summary>
+    /// Confirms whether or not a player was hit during this attack.
+    /// </summary>
+    /// <param name="hitState">Was a player hit?</param>
+    /// <param name="rpcParams"></param>
     [ServerRpc]
     public void IndicateHitServerRpc(bool hitState, ServerRpcParams rpcParams = default)
     {
