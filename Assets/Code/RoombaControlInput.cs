@@ -3,27 +3,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public partial class RoombaControl
 {
-    private NativeArray<int> InputDeviceIds { get; set; } = new NativeArray<int>();
+    public int[] InputDeviceIds = new int[0];
 
-    enum DebugDeviceIds
+    public enum DebugDeviceIds
     {
         Keyboard = 1,
         Mouse = 2,
         XboxController = 17
     }
 
+    private bool CheckIfInputIsOurs(int deviceId)
+    {
+        foreach(int inputDeviceId in InputDeviceIds)
+        {
+            if(inputDeviceId == deviceId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void OnForward(InputAction.CallbackContext context)
     {
-        if(InputDeviceIds.Contains(context.control.device.deviceId))
+        if(CheckIfInputIsOurs(context.control.device.deviceId))
         {
             Input.ForwardMovementRaw = Input.ForwardMovement = context.ReadValue<float>();
         }
+
+        Debug.Log($"Getting input from device {context.control.device.deviceId}");
     }
 
     public InputState Input { get; } = new InputState();

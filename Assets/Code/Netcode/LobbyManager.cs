@@ -260,7 +260,7 @@ public class LobbyManager : MonoBehaviour
     /// <param name="position"></param>
     /// <param name="orientation"></param>
     /// <param name="clientId"></param>
-    public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId, GameManager gameManager)
+    public RoombaControl SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId, GameManager gameManager)
     {
         GameObject instance = Instantiate(PlayerPrefab, position, orientation);
 
@@ -278,6 +278,8 @@ public class LobbyManager : MonoBehaviour
         RoombaControl.FromGuid(gameManager.SplitScreenOwner?.PlayerGuid ?? Guid.Empty)?.UpdateSplitScreenView();
 
         instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
+
+        return roombaControl;
     }
 
     // Start is called before the first frame update
@@ -334,13 +336,17 @@ public class LobbyManager : MonoBehaviour
 
             // Spawn the initial PlayerPrefab instance for the Client player.
             (Vector3 pos, Quaternion orientation) spawnPoint = gameManager.FindSafestSpawnPoint();
-            SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId, gameManager);
+            RoombaControl firstPlayer = SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId, gameManager);
+            firstPlayer.InputDeviceIds = new int[] { (int)RoombaControl.DebugDeviceIds.Keyboard, (int)RoombaControl.DebugDeviceIds.Mouse };
+
 
             // Repeat this for second split-screen player.
             // TODO
             GameManager secondGameManager = SpawnGameManager(clientId, gameManager);
             spawnPoint = secondGameManager.FindSafestSpawnPoint();
-            SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId, secondGameManager);
+            RoombaControl secondPlayer = SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId, secondGameManager);
+            secondPlayer.InputDeviceIds = new int[] { (int)RoombaControl.DebugDeviceIds.XboxController };
+
 
         }
         else
