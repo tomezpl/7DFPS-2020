@@ -74,14 +74,18 @@ public class PlayerStats : NetworkBehaviour
 
     bool wasExplodingLastFrame = false;
 
+    RoombaControl Owner;
+
     // Start is called before the first frame update
     void Start()
     {
-
+        Owner = GetComponentInParent<RoombaControl>();
     }
 
     public override void OnNetworkSpawn()
     {
+        Owner = GetComponentInParent<RoombaControl>();
+
         health = Health.Value;
 
         Health.OnValueChanged = (_, newHealth) =>
@@ -90,7 +94,7 @@ public class PlayerStats : NetworkBehaviour
             health = newHealth;
         };
 
-        Guid playerGuid = GetComponentInParent<RoombaControl>().PlayerGuid; 
+        Guid playerGuid = Owner.PlayerGuid; 
         SetPlayerNameOverheadDisplay(GameManager.FromGuid(playerGuid).PlayerName.Value.ToString());
         GameManager.FromGuid(playerGuid).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName.ToString());
     }
@@ -210,9 +214,10 @@ public class PlayerStats : NetworkBehaviour
     /// <param name="name">The name to display above the player.</param>
     public void SetPlayerNameOverheadDisplay(string name)
     {
-        if(IsOwner)
+        int localPlayerIndex = GameManager.FromGuid(Owner.PlayerGuid).SplitScreenIndex;
+        if (localPlayerIndex != 0)
         {
-            return;
+            name += $" ({localPlayerIndex + 1})";
         }
 
         Debug.Log($"Updating player {OwnerClientId}'s overhead display with name '{name}'");

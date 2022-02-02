@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PlayerDirectionArrow : MonoBehaviour
 {
@@ -27,20 +28,21 @@ public class PlayerDirectionArrow : MonoBehaviour
 
         renderer = GetComponent<MeshRenderer>();
         owner = GetComponentInParent<RoombaControl>();
+
+        RenderPipelineManager.beginCameraRendering += UpdateArrowRenderer;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        SlideIndicator();
 
-        if (owner != null && !owner.PlayerControlled)
+    void UpdateArrowRenderer(ScriptableRenderContext context, Camera camera)
+    {
+        if (owner != camera.GetComponentInParent<RoombaControl>())
         {
             renderer.enabled = false;
         }
         else
         {
             renderer.enabled = true;
+            SlideIndicator();
         }
     }
 
