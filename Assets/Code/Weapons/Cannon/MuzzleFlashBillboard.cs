@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// A <see cref="SimpleBillboard"/> that will display a muzzle flash shader placed around a gun barrel.
@@ -35,9 +36,9 @@ public class MuzzleFlashBillboard : SimpleBillboard
         transform.rotation = Quaternion.LookRotation((currentCam.transform.position - transform.position).normalized, Pivot.up);
     }
 
-    protected override void Update()
+    protected override void Align(ScriptableRenderContext context, Camera camera)
     {
-        base.Update();
+        base.Align(context, camera);
 
         SlideAlongBarrel();
     }

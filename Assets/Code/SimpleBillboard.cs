@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// Basic billboard script. Makes a sprite (rendered through a <see cref="MeshRenderer"/>) face towards the camera.
@@ -26,21 +27,17 @@ public class SimpleBillboard : MonoBehaviour
         billboardMaterial = billboard.material;
 
         initPos = transform.localPosition;
+
+        RenderPipelineManager.beginCameraRendering += Align;
     }
 
-    // Update is called once per frame
-    protected virtual void Update()
+    protected virtual void Align(ScriptableRenderContext context, Camera camera)
     {
-        Camera currentCam = GameManager.Singleton?.SpawnedPlayer?.Cam ?? Camera.current ?? Camera.main;
+        BillboardRotation(camera);
 
-        if(currentCam)
-        {
-            BillboardRotation(currentCam);
+        ApplyLocalOffsetX(camera);
 
-            ApplyLocalOffsetX(currentCam);
-
-            UpdateShader();
-        }
+        UpdateShader();
     }
 
     protected virtual void BillboardRotation(Camera currentCam)
