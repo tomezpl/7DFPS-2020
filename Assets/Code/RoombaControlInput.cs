@@ -36,8 +36,31 @@ public partial class RoombaControl
         {
             Input.ForwardMovementRaw = Input.ForwardMovement = context.ReadValue<float>();
         }
+    }
 
-        Debug.Log($"Getting input from device {context.control.device.deviceId}");
+    public void OnTurning(InputAction.CallbackContext context)
+    {
+        if (CheckIfInputIsOurs(context.control.device.deviceId))
+        {
+            Input.TurningRaw = Input.Turning = context.ReadValue<float>();
+        }
+    }
+
+    public void OnLook(InputAction.CallbackContext context)
+    {
+        if (CheckIfInputIsOurs(context.control.device.deviceId))
+        {
+            Input.Look = context.ReadValue<Vector2>();
+        }
+    }
+
+    public void OnFire(InputAction.CallbackContext context)
+    {
+        if (CheckIfInputIsOurs(context.control.device.deviceId))
+        {
+            Input.FiredJustNow = !Input.IsFiring && context.performed;
+            Input.IsFiring = context.performed;
+        }
     }
 
     public InputState Input { get; } = new InputState();

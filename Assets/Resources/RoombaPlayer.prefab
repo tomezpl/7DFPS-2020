@@ -1222,6 +1222,7 @@ MonoBehaviour:
   ExplosionFxTimer: 0
   ShowCrosshair: 1
   RoombaAudioController: {fileID: 0}
+  InputDeviceIds: 
 --- !u!54 &4951206816429219074
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1644,15 +1645,51 @@ MonoBehaviour:
     m_ActionId: 31b60ffb-2683-4418-a592-e598698574dd
     m_ActionName: Player/Forward[/Keyboard/w,/Keyboard/s,/XInputControllerWindows/leftTrigger,/XInputControllerWindows/rightTrigger]
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4951206816429219197}
+        m_TargetAssemblyTypeName: RoombaControl, Assembly-CSharp
+        m_MethodName: OnLook
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: e5c45369-be4c-49af-920a-d6edd8a17641
     m_ActionName: Player/Look[/XInputControllerWindows/rightStick,/Mouse/delta]
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4951206816429219197}
+        m_TargetAssemblyTypeName: RoombaControl, Assembly-CSharp
+        m_MethodName: OnFire
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 4efe275f-7711-419a-9dd3-76e60f9a10e7
     m_ActionName: Player/Fire[/XInputControllerWindows/buttonSouth,/Mouse/leftButton]
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4951206816429219197}
+        m_TargetAssemblyTypeName: RoombaControl, Assembly-CSharp
+        m_MethodName: OnTurning
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 0723cebb-10d7-497f-b227-bc440dc50159
     m_ActionName: Player/Horizontal[/XInputControllerWindows/leftStick/x,/Keyboard/a,/Keyboard/d]
   - m_PersistentCalls:
