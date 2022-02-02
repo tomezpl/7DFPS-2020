@@ -42,6 +42,11 @@ public partial class GameManager : NetworkBehaviour
     }
 
     /// <summary>
+    /// This player's GUID in the match - those are generated per player session and can be used to differentiate splitscreen players.
+    /// </summary>
+    public Guid PlayerGuid { get; set; }
+
+    /// <summary>
     /// This player's score, stored as a string for network transport.
     /// </summary>
     public NetworkVariable<FixedString32Bytes> SerializedScore = new NetworkVariable<FixedString32Bytes>(NetworkVariableReadPermission.Everyone, "");
@@ -93,6 +98,27 @@ public partial class GameManager : NetworkBehaviour
             if(gameManager.OwnerClientId == clientId)
             {
                 return gameManager;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Searches for a specified player's <see cref="GameManager"/> instance.
+    /// </summary>
+    /// <param name="playerGuid">The player to search for.</param>
+    /// <returns>Returns the <see cref="GameManager"/> object associated with <paramref name="playerGuid"/>, or null on failure.</returns>
+    public static GameManager FromGuid(Guid playerGuid)
+    {
+        if (playerGuid != Guid.Empty)
+        {
+            foreach (GameManager gameManager in FindObjectsOfType<GameManager>())
+            {
+                if (gameManager.PlayerGuid == playerGuid)
+                {
+                    return gameManager;
+                }
             }
         }
 
@@ -158,16 +184,19 @@ public partial class GameManager : NetworkBehaviour
         {
             return;
         }
+    }
 
+    public void OnRespawnPressed()
+    {
         // Check if the respawn flag is active.
         // This below statement will be true if the player has died at least once and is on the respawn screen.
         if (LobbyManager.Singleton.IsRespawn && LobbyManager.Singleton.DoesRequireSpawn)
         {
-            if (Input.GetKeyDown(KeyCode.F) && CanRequestSpawn)
+            if (CanRequestSpawn)
             {
                 // Invoke a server RPC to request a spawn. Prevent multiple spawn RPCs being called.
                 CanRequestSpawn = false;
-                RequestPlayerSpawnServerRpc();
+                RequestPlayerSpawnServerRpc(PlayerGuid);
             }
         }
     }
@@ -187,10 +216,10 @@ public partial class GameManager : NetworkBehaviour
     /// </summary>
     /// <param name="serverRpcParams"></param>
     [ServerRpc]
-    public void RequestPlayerSpawnServerRpc(ServerRpcParams serverRpcParams = default)
+    public void RequestPlayerSpawnServerRpc(Guid playerGuid, ServerRpcParams serverRpcParams = default)
     {
         (Vector3 pos, Quaternion orientation) spawnPoint = FindSafestSpawnPoint();
-        LobbyManager.Singleton.SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, serverRpcParams.Receive.SenderClientId);
+        LobbyManager.Singleton.SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, serverRpcParams.Receive.SenderClientId, FromGuid(playerGuid));
     }
 
     /// <summary>

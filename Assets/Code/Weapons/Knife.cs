@@ -70,7 +70,7 @@ public class Knife : Weapon
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetButtonDown("Fire1") && stabAnimTimer <= 0f && IsMine)
+        if(GetComponentInParent<RoombaControl>().Input.FiredJustNow && stabAnimTimer <= 0f && IsMine)
         {
             StartStab();
             // Invoke RPC on server which will trigger the animation for other clients too.

@@ -195,7 +195,7 @@ public class Cannon : Weapon
         AlignGunWithCam();
 
         // Get the fire input based on the firing mode.
-        bool acceptFireInput = CurrentFiringMode == FiringMode.FullAuto ? Input.GetButton("Fire1") : Input.GetButtonDown("Fire1");
+        bool acceptFireInput = CurrentFiringMode == FiringMode.FullAuto ? Owner.Input.IsFiring : Owner.Input.FiredJustNow;
 
         // Listen for fire inputs from the local player.
         if (Owner.PlayerControlled && acceptFireInput && !isFiring)

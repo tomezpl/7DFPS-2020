@@ -8,8 +8,29 @@ using UnityEngine;
 /// <summary>
 /// The main player script, handling movement and the player's overall physical presence in the scene.
 /// </summary>
-public class RoombaControl : NetworkBehaviour
+public partial class RoombaControl : NetworkBehaviour
 {
+    public static RoombaControl FromGuid(Guid playerGuid)
+    {
+        if (playerGuid != Guid.Empty)
+        {
+            foreach (RoombaControl roomba in FindObjectsOfType<RoombaControl>())
+            {
+                if (roomba.PlayerGuid == playerGuid)
+                {
+                    return roomba;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The player's GUID in the session. Used to differentiate between splitscreen players.
+    /// </summary>
+    public Guid PlayerGuid = Guid.Empty;
+
     /// <summary>
     /// The player's position synchronised with the server.
     /// </summary>
@@ -294,33 +315,33 @@ public class RoombaControl : NetworkBehaviour
     /// Look X axis getter.
     /// </summary>
     /// <returns></returns>
-    float GetLookX() => Input.GetAxis("Mouse X");
+    float GetLookX() => Input.Look.x;
 
     /// <summary>
     /// Look Y axis getter.
     /// </summary>
     /// <returns></returns>
-    float GetLookY() => Input.GetAxis("Mouse Y");
+    float GetLookY() => Input.Look.y;
 
     /// <summary>
     /// Walk input getter.
     /// </summary>
     /// <param name="raw">Should the raw axis value be returned? (no gravity, sensitivity etc.)</param>
     /// <returns></returns>
-    public float GetWalk(bool raw = false) => raw ? Input.GetAxisRaw("Forward") + Input.GetAxisRaw("Backward") : Input.GetAxis("Forward") + Input.GetAxis("Backward");
+    public float GetWalk(bool raw = false) => raw ? Input.ForwardMovementRaw : Input.ForwardMovement;
 
     /// <summary>
     /// Yaw rotation input getter.
     /// </summary>
     /// <param name="raw">Should the raw axis value be returned? (no gravity, sensitivity etc.)</param>
     /// <returns></returns>
-    float GetTurn(bool raw = false) => raw ? Input.GetAxisRaw("Horizontal") : Input.GetAxis("Horizontal");
+    float GetTurn(bool raw = false) => raw ? Input.TurningRaw : Input.Turning;
 
     /// <summary>
     /// Jump trigger input getter.
     /// </summary>
     /// <returns></returns>
-    bool GetJump() => Input.GetButtonDown("Jump");
+    bool GetJump() => Input.IsJumping;
 
     /// <summary>
     /// Handle camera transformations.
@@ -673,6 +694,13 @@ public class RoombaControl : NetworkBehaviour
         {
             SetWeapons();
         }
+
+        UpdateSplitScreenView();
+    }
+
+    public void UpdateSplitScreenView()
+    {
+        Cam.rect = GameManager.FromGuid(PlayerGuid).GetSplitScreenRect();
     }
 
     /// <summary>
@@ -839,7 +867,7 @@ public class RoombaControl : NetworkBehaviour
             }
 
             // Suicide key.
-            if (Input.GetKeyDown(KeyCode.F4))
+            if (Input.IsSuiciding)
             {
                 GetComponent<PlayerStats>().BeginDieServerRpc();
             }

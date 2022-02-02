@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// A manager script to handle connecting to a game and starting it.
@@ -39,6 +40,11 @@ public class LobbyManager : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// Number of players to spawn per connection.
+    /// </summary>
+    public int SplitScreenPlayerCount = 1;
 
     /// <summary>
     /// Prefab to spawn the player as.
@@ -254,9 +260,22 @@ public class LobbyManager : MonoBehaviour
     /// <param name="position"></param>
     /// <param name="orientation"></param>
     /// <param name="clientId"></param>
-    public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId)
+    public void SpawnPlayer(Vector3 position, Quaternion orientation, ulong clientId, GameManager gameManager)
     {
         GameObject instance = Instantiate(PlayerPrefab, position, orientation);
+
+        RoombaControl roombaControl = instance.GetComponent<RoombaControl>();
+        roombaControl.PlayerGuid = gameManager.PlayerGuid;
+
+        if (gameManager.SplitScreenOwner != null)
+        {
+            foreach (GameManager player in gameManager.SplitScreenOwner.OwnedSplitScreenClients)
+            {
+                RoombaControl.FromGuid(player.PlayerGuid)?.UpdateSplitScreenView();
+            }
+        }
+
+        RoombaControl.FromGuid(gameManager.SplitScreenOwner?.PlayerGuid ?? Guid.Empty)?.UpdateSplitScreenView();
 
         instance.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId);
     }
@@ -264,6 +283,11 @@ public class LobbyManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        foreach(InputDevice inputDevice in InputSystem.devices)
+        {
+            Debug.Log($"Found input device {inputDevice.name} with id {inputDevice.deviceId}");
+        }
+
         // Activate the lobby camera.
         Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
 
@@ -306,11 +330,18 @@ public class LobbyManager : MonoBehaviour
             Debug.Log($"Server: A client with id {clientId} just connected. Spawning a GameManager and player instance for them.");
 
             // Spawn a GameManager instance for the Client player.
-            SpawnGameManager(clientId);
+            GameManager gameManager = SpawnGameManager(clientId);
 
             // Spawn the initial PlayerPrefab instance for the Client player.
-            (Vector3 pos, Quaternion orientation) spawnPoint = GameManager.Singleton.FindSafestSpawnPoint();
-            SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId);
+            (Vector3 pos, Quaternion orientation) spawnPoint = gameManager.FindSafestSpawnPoint();
+            SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId, gameManager);
+
+            // Repeat this for second split-screen player.
+            // TODO
+            GameManager secondGameManager = SpawnGameManager(clientId, gameManager);
+            spawnPoint = secondGameManager.FindSafestSpawnPoint();
+            SpawnPlayer(spawnPoint.pos, spawnPoint.orientation, clientId, secondGameManager);
+
         }
         else
         {
@@ -381,14 +412,29 @@ public class LobbyManager : MonoBehaviour
     /// Spawn a <see cref="GameManager"/> object for a newly connected client. This is only spawned once per player connection.
     /// </summary>
     /// <param name="clientId"></param>
-    private void SpawnGameManager(ulong clientId)
+    private GameManager SpawnGameManager(ulong clientId, GameManager splitScreenOwner = null)
     {
         GameObject instantiatedGameManager = Instantiate(GameManagerPrefab);
+
+        GameManager gameManager = instantiatedGameManager.GetComponent<GameManager>();
+
+        gameManager.PlayerGuid = Guid.NewGuid();
+        
+        if(splitScreenOwner != null)
+        {
+            splitScreenOwner.IsSplitScreenOwner = true;
+            splitScreenOwner.OwnedSplitScreenClients.Add(gameManager);
+            gameManager.SplitScreenIndex = 1;
+        }
+
+        gameManager.SplitScreenOwner = splitScreenOwner ?? gameManager;
 
         instantiatedGameManager.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
 
         // Add to the gamemode if needed.
-        CurrentGameMode?.AddPlayer(instantiatedGameManager.GetComponent<GameManager>());
+        CurrentGameMode?.AddPlayer(gameManager);
+
+        return gameManager;
     }
 
     /// <summary>

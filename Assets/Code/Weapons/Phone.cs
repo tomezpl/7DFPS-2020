@@ -73,7 +73,7 @@ public class Phone : Weapon
     // Update is called once per frame
     void Update()
     {
-        if (!isExploding && (DateTime.Now > detonationTime || Input.GetButtonDown("Fire1")) && IsMine)
+        if (!isExploding && (DateTime.Now > detonationTime || GetComponentInParent<RoombaControl>().Input.FiredJustNow) && IsMine)
         {
             DetonateLithiumBombServerRpc();
         }

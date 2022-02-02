@@ -161,7 +161,7 @@ public class CannonAudioController : NetworkBehaviour
     {
         if(IsOwner)
         {
-            _isFiring = Input.GetButton("Fire1");
+            _isFiring = Cannon.Owner.Input.IsFiring;
 
             if(_isFiring != IsFiring.Value)
             {

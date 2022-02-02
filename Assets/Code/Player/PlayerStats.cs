@@ -6,6 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Collections;
+using System;
 
 public class PlayerStats : NetworkBehaviour
 {
@@ -89,8 +90,9 @@ public class PlayerStats : NetworkBehaviour
             health = newHealth;
         };
 
-        SetPlayerNameOverheadDisplay(GameManager.FromId(OwnerClientId).PlayerName.Value.ToString());
-        GameManager.FromId(OwnerClientId).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName.ToString());
+        Guid playerGuid = GetComponentInParent<RoombaControl>().PlayerGuid; 
+        SetPlayerNameOverheadDisplay(GameManager.FromGuid(playerGuid).PlayerName.Value.ToString());
+        GameManager.FromGuid(playerGuid).PlayerName.OnValueChanged = (_, newName) => SetPlayerNameOverheadDisplay(newName.ToString());
     }
 
     // Update is called once per frame
