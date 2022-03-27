@@ -139,6 +139,21 @@ public class PlayerStats : NetworkBehaviour
         {
             owner.IsExploding = true;
             owner.ExplosionFxTimer = owner.ExplosionFxTime;
+
+            // Create an inflating sphere to act as an explosion trigger.
+            GameObject explosionRadius = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            explosionRadius.transform.position = owner.transform.position;
+            explosionRadius.tag = "ExplosionRadius";
+
+            Destroy(explosionRadius.GetComponent<MeshRenderer>());
+            SphereCollider explosionCollider = explosionRadius.GetComponent<SphereCollider>();
+            explosionCollider.radius = 0f;
+            explosionCollider.isTrigger = true;
+
+            TemporalInflater inflater = explosionRadius.AddComponent<TemporalInflater>();
+            inflater.ApplyFunc = () => explosionRadius.GetComponent<SphereCollider>().radius = inflater.CurrentValue;
+            inflater.TargetValue = 3.5f;
+            inflater.EndTime = 1f;
         }
 
         // Make sure the health is kept below 0. Technically unnecessary, but I'm paranoid...

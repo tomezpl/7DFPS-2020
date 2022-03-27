@@ -926,12 +926,14 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     private void CheckAhead()
     {
-        //Debug.DrawLine(transform.position, transform.position + transform.forward * 1.1f);
+        Debug.DrawLine(transform.position, transform.position + transform.forward * 1.1f);
         RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, 1.1f, (1 << LayerMask.NameToLayer("Floor")));
         if (hits?.Length > 0)
         {
+            Debug.DrawLine(hits[0].point, hits[0].point + hits[0].normal, Color.cyan);
             Vector3 hitTangent = CalculateFloorMoveVector(hits[0]);
-            if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.3f)
+            Debug.Log($"Raycast dot: {Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up))}");
+            if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.7f)
             {
                 moveVector2 = hitTangent;
                 strafeVector2 = CalculateFloorStrafeVector(hits[0]);
