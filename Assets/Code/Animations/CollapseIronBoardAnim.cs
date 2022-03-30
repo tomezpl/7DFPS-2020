@@ -31,6 +31,7 @@ public class CollapseIronBoardAnim : NetworkBehaviour
     public void TriggerCollapseServerRpc(ServerRpcParams rpcParams = default)
     {
         PlayCollapseAnimClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsIds } });
+        HasCollapsedGlobal.Value = true;
     }
 
     [ClientRpc]
