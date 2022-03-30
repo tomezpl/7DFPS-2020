@@ -521,9 +521,11 @@ public class RoombaControl : NetworkBehaviour
         // Perform predictive pitch rotation to align with the raycast-hit surface if needed.
         // This prevents the roomba from flipping forwards while going down slopes and transitioning to a different surface.
         float angle = (moveVector == Vector3.zero || moveVector2 == Vector3.zero) ? 0f : Mathf.Acos(Vector3.Dot(moveVector2, moveVector));
+        angle *= Mathf.Sign(GetWalk(true));
+        Debug.DrawLine(transform.position, transform.position + transform.up * angle, Color.red);
         Rigidbody.AddTorque(transform.right * -angle);
 
-        //Debug.DrawLine(transform.position, transform.position + MoveVector * 5f, Color.blue);
+        Debug.DrawLine(transform.position, transform.position + MoveVector * 2f, Color.blue);
 
         // Move the roomba forwards or backwards along the floor tangent depending on the input.
         if (isColliding)
@@ -926,24 +928,7 @@ public class RoombaControl : NetworkBehaviour
     /// </summary>
     private void CheckAhead()
     {
-        Debug.DrawLine(transform.position, transform.position + transform.forward * 1.1f);
-        RaycastHit[] hits = Physics.RaycastAll(transform.position, transform.forward, 1.1f, (1 << LayerMask.NameToLayer("Floor")));
-        if (hits?.Length > 0)
-        {
-            Debug.DrawLine(hits[0].point, hits[0].point + hits[0].normal, Color.cyan);
-            Vector3 hitTangent = CalculateFloorMoveVector(hits[0]);
-            Debug.Log($"Raycast dot: {Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up))}");
-            if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.7f)
-            {
-                moveVector2 = hitTangent;
-                strafeVector2 = CalculateFloorStrafeVector(hits[0]);
-            }
-        }
-        else
-        {
-            moveVector2 = Vector3.zero;
-            strafeVector2 = Vector3.zero;
-        }
+        float rayLength = 1.1f;
 
         if (Physics.Raycast(new Ray(transform.position, transform.forward), out RaycastHit wallHit, 0.5f, ~(1 << LayerMask.NameToLayer("LocalPlayer"))))
         {
@@ -962,6 +947,28 @@ public class RoombaControl : NetworkBehaviour
         else
         {
             canMoveAhead = true;
+        }
+
+        Vector3 direction = transform.forward * Mathf.Sign(GetWalk(true));
+        Debug.DrawLine(transform.position, transform.position + direction * rayLength);
+        RaycastHit[] hits = Physics.RaycastAll(transform.position, direction, rayLength, (1 << LayerMask.NameToLayer("Floor")));
+        if (hits?.Length > 0)
+        {
+            Debug.DrawLine(hits[0].point, hits[0].point + hits[0].normal, Color.cyan);
+            Vector3 hitTangent = CalculateFloorMoveVector(hits[0]);
+            Debug.Log($"Raycast dot: {Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up))}");
+            if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.7f)
+            {
+                moveVector2 = hitTangent;
+                strafeVector2 = CalculateFloorStrafeVector(hits[0]);
+
+                canMoveAhead = true;
+            }
+        }
+        else
+        {
+            moveVector2 = Vector3.zero;
+            strafeVector2 = Vector3.zero;
         }
     }
 
