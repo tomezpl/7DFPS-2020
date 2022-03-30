@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class TemporalInflater : MonoBehaviour
 {
-    public Func<float> ApplyFunc;
+    public Action ApplyFunc;
 
     public float CurrentValue { get => Mathf.Lerp(0f, TargetValue, Mathf.InverseLerp(0f, EndTime, TimeElapsed)); }
 
@@ -15,12 +15,13 @@ public class TemporalInflater : MonoBehaviour
 
     public float TargetValue = 0f;
 
-    bool reached;
+    public bool Reached;
 
     // Start is called before the first frame update
     void Start()
     {
         TimeElapsed = 0f;
+        Reached = false;
     }
 
     // Update is called once per frame
@@ -32,9 +33,9 @@ public class TemporalInflater : MonoBehaviour
         {
             TimeElapsed += Time.deltaTime;
         }
-        else if(!reached)
+        else if(!Reached)
         {
-            reached = true;
+            Reached = true;
 
             Destroy(gameObject);
         }

@@ -141,17 +141,25 @@ public class PlayerStats : NetworkBehaviour
             owner.ExplosionFxTimer = owner.ExplosionFxTime;
 
             // Create an inflating sphere to act as an explosion trigger.
-            GameObject explosionRadius = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            GameObject explosionRadius = new GameObject("ExplosionRadius");
             explosionRadius.transform.position = owner.transform.position;
             explosionRadius.tag = "ExplosionRadius";
 
-            Destroy(explosionRadius.GetComponent<MeshRenderer>());
-            SphereCollider explosionCollider = explosionRadius.GetComponent<SphereCollider>();
-            explosionCollider.radius = 0f;
-            explosionCollider.isTrigger = true;
-
             TemporalInflater inflater = explosionRadius.AddComponent<TemporalInflater>();
-            inflater.ApplyFunc = () => explosionRadius.GetComponent<SphereCollider>().radius = inflater.CurrentValue;
+            inflater.ApplyFunc = () =>
+            {
+                if (!inflater.Reached)
+                {
+                    TriggerEvent[] nearbyEvents = FindObjectsOfType<TriggerEvent>();
+                    foreach(TriggerEvent nearbyEvent in nearbyEvents)
+                    {
+                        if(Vector3.Distance(nearbyEvent.transform.position, inflater.transform.position) <= inflater.CurrentValue)
+                        {
+                            nearbyEvent.TryTrigger(explosionRadius.transform);
+                        }
+                    }
+                }
+            };
             inflater.TargetValue = 3.5f;
             inflater.EndTime = 1f;
         }

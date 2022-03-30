@@ -20,16 +20,21 @@ public class TriggerEvent : MonoBehaviour
         
     }
 
-    private void OnTriggerEnter(Collider other)
+    public void TryTrigger(Component caller)
     {
-        Debug.Log($"{other.name} ({other.tag}) triggered me");
         foreach (string tag in AllowedTags)
         {
-            if (other.CompareTag(tag))
+            if (caller.CompareTag(tag))
             {
                 Event.Invoke();
                 break;
             }
         }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        Debug.Log($"{other.name} ({other.tag}) triggered me");
+        TryTrigger(other);
     }
 }

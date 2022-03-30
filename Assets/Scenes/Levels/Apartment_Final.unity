@@ -7440,6 +7440,36 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 3366445881
       objectReference: {fileID: 0}
+    - target: {fileID: 7682986890090480517, guid: d2ccf72bb04357e4b85cffbb56ed2bb4,
+        type: 3}
+      propertyPath: m_Size.x
+      value: 0.019999996
+      objectReference: {fileID: 0}
+    - target: {fileID: 7682986890090480517, guid: d2ccf72bb04357e4b85cffbb56ed2bb4,
+        type: 3}
+      propertyPath: m_Size.y
+      value: 0.05902107
+      objectReference: {fileID: 0}
+    - target: {fileID: 7682986890090480517, guid: d2ccf72bb04357e4b85cffbb56ed2bb4,
+        type: 3}
+      propertyPath: m_Size.z
+      value: 0.0005928501
+      objectReference: {fileID: 0}
+    - target: {fileID: 7682986890090480517, guid: d2ccf72bb04357e4b85cffbb56ed2bb4,
+        type: 3}
+      propertyPath: m_Center.x
+      value: -3.4097054e-19
+      objectReference: {fileID: 0}
+    - target: {fileID: 7682986890090480517, guid: d2ccf72bb04357e4b85cffbb56ed2bb4,
+        type: 3}
+      propertyPath: m_Center.y
+      value: 0.0035105394
+      objectReference: {fileID: 0}
+    - target: {fileID: 7682986890090480517, guid: d2ccf72bb04357e4b85cffbb56ed2bb4,
+        type: 3}
+      propertyPath: m_Center.z
+      value: -0.00020357489
+      objectReference: {fileID: 0}
     - target: {fileID: 7682986890090480518, guid: d2ccf72bb04357e4b85cffbb56ed2bb4,
         type: 3}
       propertyPath: m_Animation
