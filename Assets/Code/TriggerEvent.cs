@@ -20,6 +20,16 @@ public class TriggerEvent : MonoBehaviour
         
     }
 
+    public void TryTrigger(RoombaRumbleEvent eventType)
+    {
+        switch(eventType)
+        {
+            case RoombaRumbleEvent.HammerHitAnimable:
+                Event.Invoke();
+                break;
+        }
+    }
+
     public void TryTrigger(Component caller)
     {
         foreach (string tag in AllowedTags)

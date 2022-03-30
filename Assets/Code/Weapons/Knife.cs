@@ -191,5 +191,12 @@ public class Knife : Weapon
 
             Owner.GetComponent<RoombaControl>().DealDamageServerRpc(stabDamage, otherPlayer.OwnerClientId);
         }
+        else if(IsSwinging)
+        {
+            if(other.TryGetComponent(out TriggerEvent ev))
+            {
+                ev.TryTrigger(RoombaRumbleEvent.HammerHitAnimable);
+            }
+        }
     }
 }
