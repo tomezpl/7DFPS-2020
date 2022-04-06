@@ -256,7 +256,7 @@ public class RoombaAudioController : NetworkBehaviour
         collisionAudioSrc.spatialBlend = 1f;
         collisionAudioSrc.Play();
 
-        Destroy(collisionAudioSrc, collisionAudioSrc.clip.length);
+        Destroy(collisionAudioSrc.gameObject, collisionAudioSrc.clip.length);
     }
 
     [ClientRpc]
