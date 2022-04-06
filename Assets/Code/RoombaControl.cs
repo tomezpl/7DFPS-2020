@@ -523,7 +523,7 @@ public class RoombaControl : NetworkBehaviour
         float angle = (moveVector == Vector3.zero || moveVector2 == Vector3.zero) ? 0f : Mathf.Acos(Vector3.Dot(moveVector2, moveVector));
         angle *= Mathf.Sign(GetWalk(true));
         Debug.DrawLine(transform.position, transform.position + transform.up * angle, Color.red);
-        Rigidbody.AddTorque(transform.right * -angle);
+        Rigidbody.AddTorque(transform.right * -angle * Rigidbody.mass);
 
         Debug.DrawLine(transform.position, transform.position + MoveVector * 2f, Color.blue);
 
@@ -950,13 +950,18 @@ public class RoombaControl : NetworkBehaviour
         }
 
         Vector3 direction = transform.forward * Mathf.Sign(GetWalk(true));
+        if(direction.sqrMagnitude < Rigidbody.velocity.sqrMagnitude)
+        {
+            direction = Rigidbody.velocity.normalized;
+        }
+
         Debug.DrawLine(transform.position, transform.position + direction * rayLength);
         RaycastHit[] hits = Physics.RaycastAll(transform.position, direction, rayLength, (1 << LayerMask.NameToLayer("Floor")));
         if (hits?.Length > 0)
         {
             Debug.DrawLine(hits[0].point, hits[0].point + hits[0].normal, Color.cyan);
             Vector3 hitTangent = CalculateFloorMoveVector(hits[0]);
-            Debug.Log($"Raycast dot: {Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up))}");
+            //Debug.Log($"Raycast dot: {Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up))}");
             if (Mathf.Abs(Vector3.Dot(hitTangent.normalized, transform.up)) < 0.7f)
             {
                 moveVector2 = hitTangent;
