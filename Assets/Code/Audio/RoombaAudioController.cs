@@ -248,7 +248,9 @@ public class RoombaAudioController : NetworkBehaviour
         float absoluteCollisionDot = Mathf.Abs(Vector3.Dot(Roomba.transform.forward, collisionNormal));
         float collisionT = Mathf.InverseLerp(MinBumpDot, 1f, absoluteCollisionDot);
 
-        AudioSource collisionAudioSrc = Instantiate(new GameObject("RoombaBumpAudioSource"), collisionPoint, Quaternion.identity).AddComponent<AudioSource>();
+        AudioSource collisionAudioSrc = new GameObject("RoombaBumpAudioSource").AddComponent<AudioSource>();
+        collisionAudioSrc.transform.position = collisionPoint;
+
         collisionAudioSrc.clip = RoombaBumpAudioSrc.clip;
         collisionAudioSrc.volume = RoombaBumpAudioSrc.volume * collisionT;
         collisionAudioSrc.pitch = 2f - collisionT;
