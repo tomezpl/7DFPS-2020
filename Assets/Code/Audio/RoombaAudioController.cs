@@ -277,6 +277,9 @@ public class RoombaAudioController : NetworkBehaviour
     {
         ContactPoint contactPoint = collision.GetContact(0);
 
-        BumpNoise(contactPoint.normal, contactPoint.point);
+        if (!collision.gameObject.CompareTag("NoBumpSfx"))
+        {
+            BumpNoiseServerRpc(contactPoint.normal, contactPoint.point);
+        }
     }
 }

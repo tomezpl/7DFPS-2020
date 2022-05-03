@@ -407,6 +407,11 @@ MonoBehaviour:
   SquaredImpulseMagnitudeToBreak: 10
   IsBroken:
     m_InternalValue: 0
+  BreakSfxClips:
+  - {fileID: 8300000, guid: cc76d8c22d34bee4d811b999b76dc687, type: 3}
+  - {fileID: 8300000, guid: af906e4e9975d914b8dc0b1b833c0e8c, type: 3}
+  - {fileID: 8300000, guid: 16a8ed686abc49444b81ed6b4d73f1c6, type: 3}
+  BreakSfxVolume: 0.2
 --- !u!114 &9022239265781852045
 MonoBehaviour:
   m_ObjectHideFlags: 0

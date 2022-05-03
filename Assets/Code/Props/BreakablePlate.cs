@@ -13,6 +13,9 @@ public class BreakablePlate : CollectableMess
     public float SquaredImpulseMagnitudeToBreak = 10f;
     public NetworkVariable<bool> IsBroken = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, false);
 
+    public AudioClip[] BreakSfxClips = new AudioClip[3];
+    public float BreakSfxVolume = 0.4f;
+
     private bool isBroken = false;
     private bool wasBrokenLastFrame = false;
 
@@ -55,9 +58,23 @@ public class BreakablePlate : CollectableMess
         if(isBroken && !wasBrokenLastFrame)
         {
             ApplyFracturedVisuals();
+            PlayFracturedAudio();
         }
 
         wasBrokenLastFrame = isBroken;
+    }
+
+    private void PlayFracturedAudio()
+    {
+        AudioSource fractureAudioSrc = new GameObject("PlateFractureAudioSource").AddComponent<AudioSource>();
+        fractureAudioSrc.transform.position = transform.position;
+
+        fractureAudioSrc.clip = BreakSfxClips[Random.Range(0, BreakSfxClips.Length - 1)];
+        fractureAudioSrc.volume = BreakSfxVolume;
+        fractureAudioSrc.spatialBlend = 1f;
+        fractureAudioSrc.Play();
+
+        Destroy(fractureAudioSrc.gameObject, fractureAudioSrc.clip.length);
     }
 
     public void FixedUpdate()
