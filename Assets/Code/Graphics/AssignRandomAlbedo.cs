@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Assigns a random colour with 66%-75% intensity at <see cref="Start"/>.
+/// </summary>
 public class AssignRandomAlbedo : MonoBehaviour
 {
     public string ColorPropertyName;

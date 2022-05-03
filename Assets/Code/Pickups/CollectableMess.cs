@@ -62,8 +62,14 @@ public class CollectableMess : NetworkBehaviour
 
     Vector3 initScale = Vector3.one;
 
+    /// <summary>
+    /// Local copy of <see cref="AlreadyPickedUp"/>.
+    /// </summary>
     bool alreadyPickedUp = false;
 
+    /// <summary>
+    /// Local reference to <see cref="Collector"/>.
+    /// </summary>
     RoombaControl collectorRoomba = null;
 
     protected virtual void Start()

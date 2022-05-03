@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+/// <summary>
+/// Animation controller for the ironing board collapse animation.
+/// </summary>
 public class CollapseIronBoardAnim : NetworkBehaviour
 {
     private Animation Animation;

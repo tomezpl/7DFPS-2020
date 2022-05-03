@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TemporalInflater : MonoBehaviour
+/// <summary>
+/// Counts time and invokes <see cref="ApplyFunc"/> on every update, then destroys once target time has been reached.
+/// </summary>
+public class TickTimer : MonoBehaviour
 {
     public Action ApplyFunc;
 

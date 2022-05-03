@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
+/// <summary>
+/// Trigger controller that invokes <see cref="Event"/> if a Trigger contact is reported, and can be triggered from other scripts via <see cref="TryTrigger(RoombaRumbleEvent)"/>.
+/// </summary>
 public class TriggerEvent : MonoBehaviour
 {
     public UnityEvent Event;
@@ -44,7 +47,6 @@ public class TriggerEvent : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log($"{other.name} ({other.tag}) triggered me");
         TryTrigger(other);
     }
 }

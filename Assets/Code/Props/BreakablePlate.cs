@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+/// <summary>
+/// Collectable prop that applies a fractured mask upon strong enough impact.
+/// </summary>
 public class BreakablePlate : CollectableMess
 {
     public Texture FracturedAlphaTexture;

@@ -145,7 +145,7 @@ public class PlayerStats : NetworkBehaviour
             explosionRadius.transform.position = owner.transform.position;
             explosionRadius.tag = "ExplosionRadius";
 
-            TemporalInflater inflater = explosionRadius.AddComponent<TemporalInflater>();
+            TickTimer inflater = explosionRadius.AddComponent<TickTimer>();
             inflater.ApplyFunc = () =>
             {
                 if (!inflater.Reached)
