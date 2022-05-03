@@ -14,7 +14,7 @@ public class CollectableMess : NetworkBehaviour
     /// <summary>
     /// Should players be allowed to collect this object?
     /// </summary>
-    NetworkVariable<bool> CanBePickedUp = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, true);
+    protected NetworkVariable<bool> CanBePickedUp = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, true);
 
     /// <summary>
     /// <see cref="RoombaControl"/> that collected this object.
@@ -34,7 +34,7 @@ public class CollectableMess : NetworkBehaviour
     /// <summary>
     /// Was <see cref="CanBePickedUp"/> true last frame?
     /// </summary>
-    bool couldBePickedUpLastFrame = true;
+    protected bool couldBePickedUpLastFrame = true;
 
     float disappearTimer = 0f;
     bool startDisappearing = false;
@@ -62,7 +62,17 @@ public class CollectableMess : NetworkBehaviour
 
     Vector3 initScale = Vector3.one;
 
-    private void Start()
+    /// <summary>
+    /// Local copy of <see cref="AlreadyPickedUp"/>.
+    /// </summary>
+    bool alreadyPickedUp = false;
+
+    /// <summary>
+    /// Local reference to <see cref="Collector"/>.
+    /// </summary>
+    RoombaControl collectorRoomba = null;
+
+    protected virtual void Start()
     {
         initScale = transform.localScale;
     }
@@ -78,6 +88,20 @@ public class CollectableMess : NetworkBehaviour
 
             collector.GiveScoreCleanupsServerRpc(1);
         }
+
+        CollectClientRpc(new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsIds } });
+    }
+
+    [ClientRpc]
+    public void CollectClientRpc(ClientRpcParams rpcParams = default)
+    {
+        StartPickupEffects();
+    }
+
+    public void StartPickupEffects()
+    {
+        startDisappearing = true;
+        PlaySuckAudio();
     }
 
     /// <summary>
@@ -93,12 +117,11 @@ public class CollectableMess : NetworkBehaviour
         }
     }
 
-    public void Update()
+    public virtual void Update()
     {
-        if(!CanBePickedUp.Value && couldBePickedUpLastFrame)
+        if(!CanBePickedUp.Value && couldBePickedUpLastFrame && !startDisappearing)
         {
-            startDisappearing = true;
-            PlaySuckAudio();
+            StartPickupEffects();
         }
 
         if(disappearTimer >= disappearTime)
@@ -122,14 +145,14 @@ public class CollectableMess : NetworkBehaviour
     /// </summary>
     void SuckMessIntoCollector()
     {
-        if(AlreadyPickedUp.Value && Collector.Value.TryGet(out RoombaControl roomba))
+        if(startDisappearing || (alreadyPickedUp && collectorRoomba))
         {
             float progress = Mathf.InverseLerp(0f, disappearTime, disappearTimer);
-            transform.position = Vector3.Slerp(SuckOrigin.Value, roomba.transform.position, progress * progress);
-            if((transform.position - roomba.transform.position).sqrMagnitude >= MaxDistanceFromCollector*MaxDistanceFromCollector)
+            transform.position = Vector3.Slerp(SuckOrigin.Value, collectorRoomba.transform.position, progress * progress);
+            if((transform.position - collectorRoomba.transform.position).sqrMagnitude >= MaxDistanceFromCollector*MaxDistanceFromCollector)
             {
-                Vector3 dir = (roomba.transform.position - transform.position).normalized;
-                transform.position = roomba.transform.position - dir * MaxDistanceFromCollector;
+                Vector3 dir = (collectorRoomba.transform.position - transform.position).normalized;
+                transform.position = collectorRoomba.transform.position - dir * MaxDistanceFromCollector;
             }
             transform.localScale = Vector3.Slerp(initScale, FullSuck ? Vector3.zero : initScale / 2f, progress);
         }
@@ -141,6 +164,15 @@ public class CollectableMess : NetworkBehaviour
         Collector.Value = collector;
         AlreadyPickedUp.Value = true;
         SuckOrigin.Value = suckOrigin;
+
+        SetCollectorClientRpc(collector, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = NetworkManager.Singleton.ConnectedClientsIds } });
+    }
+
+    [ClientRpc]
+    public void SetCollectorClientRpc(NetworkBehaviourReference collector, ClientRpcParams rpcParams = default)
+    {
+        alreadyPickedUp = true;
+        collector.TryGet(out collectorRoomba);
     }
 
     public void OnTriggerEnter(Collider other)

@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Floor
   - SpawnPoint
+  - ExplosionRadius
+  - Bullet
+  - NoBumpSfx
   layers:
   - Default
   - TransparentFX
