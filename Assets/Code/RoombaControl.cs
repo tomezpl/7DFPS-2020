@@ -668,6 +668,8 @@ public class RoombaControl : NetworkBehaviour
             {
                 GameManager.Singleton.SpawnedPlayer = this;
             }
+
+            Camera.SetupCurrent(Cam);
         }
 
         // For testing/offline play purposes, call any startup methods that would normally be invoked on OnNetworkSpawn.

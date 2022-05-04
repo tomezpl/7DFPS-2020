@@ -108,7 +108,7 @@ public partial class GameManager : NetworkBehaviour
     {
         if (IsOwner)
         {
-            SyncPlayerNameServerRpc(LobbyManager.Singleton.PlayerName);
+            SyncPlayerNameServerRpc(DataStore.PlayerName);
             RequestGameModeExtensionsServerRpc();
         }
 

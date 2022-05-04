@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// A manager script to handle connecting to a game and starting it.
@@ -116,88 +117,6 @@ public class LobbyManager : MonoBehaviour
     public const string DefaultHostPort = "7777";
 
     /// <summary>
-    /// <para>IP address to connect to (user-entered or using the default).</para>
-    /// <para>Can include a custom port number separated by a colon.</para>
-    /// <para>Returns default if no IP was provided, or null if the provided IP was invalid.</para>
-    /// </summary>
-    public string IpAddress
-    {
-        get
-        {
-            if (!string.IsNullOrWhiteSpace(EnteredIpAddress))
-            {
-                // Validate IPv4 addresses.
-
-                // Check if the address contains exactly one port separator.
-                if (EnteredIpAddress.IndexOf(':') == Math.Abs(EnteredIpAddress.LastIndexOf(':')))
-                {
-                    try
-                    {
-                        return !string.IsNullOrWhiteSpace(EnteredIpAddress.Split(':')[0]) ? EnteredIpAddress : null;
-                    }
-                    catch (Exception)
-                    {
-                        return null;
-                    }
-                }
-                else
-                {
-                    // Is it a plain IP address?
-                    if (EnteredIpAddress.Count(c => c == '.') == 3 && !Regex.IsMatch(EnteredIpAddress, "/[A-za-z]+/g"))
-                    {
-                        return EnteredIpAddress;
-                    }
-                    else
-                    {
-                        return Regex.Matches(EnteredIpAddress, "/([A-Za-z0-9\\-]+\\.*)+:*/g").Count == 1 ? EnteredIpAddress : null;
-                    }
-                }
-            }
-            else
-            {
-                return DefaultHostAddress;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Server port included in the <see cref="EnteredIpAddress"/>.
-    /// </summary>
-    public string EnteredPort
-    {
-        get
-        {
-            string enteredIp = EnteredIpAddress;
-            if(enteredIp != null)
-            {
-                if(enteredIp.IndexOf(':') == Math.Abs(enteredIp.LastIndexOf(':')))
-                {
-                    try
-                    {
-                        return enteredIp.Split(':')[1];
-                    }
-                    catch(Exception)
-                    {
-                        return null;
-                    }
-                }
-                else if(enteredIp.IndexOf(':') == -1)
-                {
-                    return DefaultHostPort;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
-
-    /// <summary>
     /// Lobby menu Canvas object.
     /// </summary>
     GameObject lobbyMenu;
@@ -265,7 +184,7 @@ public class LobbyManager : MonoBehaviour
     void Start()
     {
         // Activate the lobby camera.
-        Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
+        //Camera.SetupCurrent(GameObject.Find("LobbyCamera").GetComponent<Camera>());
 
         // Initialise the lobby menu Canvas.
         lobbyMenu = GameObject.Find("LobbyMenu");
@@ -289,6 +208,11 @@ public class LobbyManager : MonoBehaviour
 
         // Display the preselected class image.
         UpdateClassImage(SelectedClass);
+
+        if (DataStore.MultiplayerInfo.IsHost)
+        {
+            StartedHost();
+        }
     }
 
     /// <summary>
@@ -333,6 +257,10 @@ public class LobbyManager : MonoBehaviour
             // Remove the player from the gamemode.
             CurrentGameMode?.RemovePlayer(clientId);
         }
+        else
+        {
+            SceneManager.LoadScene(SceneManager.GetSceneByName("MainMenu").buildIndex);
+        }
     }
 
     // Update is called once per frame
@@ -353,23 +281,14 @@ public class LobbyManager : MonoBehaviour
     /// <summary>
     /// Starts the game as a Host (Server + Client).
     /// </summary>
-    public void ClickedPlayHost()
+    public void StartedHost()
     {
         Debug.Log("Starting game as host");
 
-        // Read user-entered data from the lobby UI.
-        ReadInputFields();
-
         // Bind the user-provided port number to the network transport to host a game on a specified port.
-        if(EnteredHostPort != null)
-        {
-            UNetTransport transport = NetworkManager.Singleton.GetComponent<UNetTransport>();
-            if (int.TryParse(EnteredHostPort, out int listenPort))
-            {
-                transport.ConnectPort = listenPort;
-                transport.ServerListenPort = listenPort;
-            }
-        }
+        UNetTransport transport = NetworkManager.Singleton.GetComponent<UNetTransport>();
+        transport.ConnectPort = DataStore.MultiplayerInfo.PortNumber;
+        transport.ServerListenPort = DataStore.MultiplayerInfo.PortNumber;
 
         // Set the gamemode.
         SetGameMode<CleanupJobGameMode>();
@@ -418,33 +337,22 @@ public class LobbyManager : MonoBehaviour
     /// <summary>
     /// Starts the game by connecting as a Client to the specified Server.
     /// </summary>
-    public void ClickedPlayClient()
+    public void StartedClient()
     {
         Debug.Log("Connecting as client");
 
-        // Read user-entered data from the lobby UI.
-        ReadInputFields();
-
         // Bind network transport settings.
         UNetTransport transport = NetworkManager.Singleton.GetComponent<UNetTransport>();
+        
         // Bind port number.
-        if (EnteredPort != null)
-        {
-            if (int.TryParse(EnteredPort, out int listenPort))
-            {
-                transport.ConnectPort = listenPort;
-                transport.ServerListenPort = listenPort;
-            }
-        }
+        transport.ConnectPort = DataStore.MultiplayerInfo.PortNumber;
+        transport.ServerListenPort = DataStore.MultiplayerInfo.PortNumber;
+
         // Bind IP address.
-        string ipAddress = IpAddress;
+        string ipAddress = DataStore.MultiplayerInfo.IpAddress;
+        
         if (ipAddress != null)
         {
-            if(ipAddress.Contains(':'))
-            {
-                ipAddress = ipAddress.Split(':')[0];
-            }
-
             transport.ConnectAddress = ipAddress;
         }
 
