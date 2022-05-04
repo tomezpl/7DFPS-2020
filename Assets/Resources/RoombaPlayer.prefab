@@ -1205,7 +1205,7 @@ MonoBehaviour:
   IsCameraIdleTimeoutEnabled: 0
   CameraResetSmoothing: 1
   CameraResetTime: 3
-  MinCameraDistance: 0.7
+  MinCameraDistance: 1.38
   SpringarmCameraRaycastMargin: 0.2
   MaxCameraRaycastIterations: 10
   InitialCameraOffset: {x: 0, y: 0, z: 0}

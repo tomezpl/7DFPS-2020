@@ -469,6 +469,7 @@ public class RoombaControl : NetworkBehaviour
             {
                 Vector3 localCamPos = transform.worldToLocalMatrix.MultiplyPoint(camSurfaceTangentPos);
                 Cam.transform.localPosition = localCamPos.normalized * Mathf.Max(localCamPos.magnitude, MinCameraDistance / 1.25f);
+                Cam.transform.localPosition += Vector3.up * localCamPos.magnitude / 4f;
             }
         }
 
