@@ -9,14 +9,14 @@
         </ui:VisualElement>
         <ui:VisualElement name="LevelSelection" style="left: 2%; width: 570px; height: 460px; top: 55%; flex-shrink: 1; translate: 0 -50%; background-color: rgba(255, 255, 255, 0.06); margin-left: 1%; flex-direction: column;">
             <ui:VisualElement style="flex-direction: row;">
-                <ui:Label text="LEVEL SELECTION" display-tooltip-when-elided="true" name="Title" style="-unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); font-size: 50px; width: 327px; margin-top: -5px;" />
+                <ui:Label text="LEVEL SELECTION" display-tooltip-when-elided="true" name="Title" style="-unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); font-size: 50px; width: 327px; margin-top: -5px; color: rgba(255, 255, 255, 255);" />
                 <ui:Button text="X" display-tooltip-when-elided="true" name="CloseBtn" style="width: 41px; height: 41px; -unity-font-style: bold; font-size: 49px; margin-left: 0; margin-top: 0; margin-bottom: 0; margin-right: 0; right: -33%; top: 1%;" />
             </ui:VisualElement>
             <ui:DropdownField index="-1" choices="Apartment" name="LevelDropdown" />
             <ui:VisualElement name="MapPreview" style="height: 59%; margin-top: 1%; background-image: url(&apos;project://database/Assets/UI/Apartment_Preview.png?fileID=21300000&amp;guid=260b71526015c2b4eb8e1912b0d96555&amp;type=3#Apartment_Preview&apos;);" />
             <ui:VisualElement>
-                <ui:Label text="Apartment" display-tooltip-when-elided="true" name="MapTitle" style="-unity-font-style: italic; -unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); font-size: 39px; color: rgba(255, 255, 255, 255);" />
-                <ui:Label text="Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet." display-tooltip-when-elided="true" name="MapDesc" style="white-space: normal; color: rgba(224, 224, 224, 255);" />
+                <ui:Label text="Apartment" display-tooltip-when-elided="true" name="MapTitle" style="-unity-font-style: italic; -unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); font-size: 39px; color: rgb(255, 255, 255);" />
+                <ui:Label text="Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet." display-tooltip-when-elided="true" name="MapDesc" style="white-space: normal; color: rgb(224, 224, 224);" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
