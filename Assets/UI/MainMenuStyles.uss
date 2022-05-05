@@ -1,0 +1,11 @@
+#MapTitle {
+    text-transform: uppercase;
+}
+
+.joinBtn {
+    background-color: rgba(0, 215, 255, 255);
+}
+
+.hostBtn {
+    background-color: rgba(35, 212, 43, 255);
+}

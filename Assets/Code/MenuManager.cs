@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 public class MenuManager : MonoBehaviour
 {
@@ -14,63 +14,136 @@ public class MenuManager : MonoBehaviour
     public int MapIndex = 0;
 
     public string[] MapTitles = new string[1];
-    public int[] MapIndices = new int[1];
+    public int[] MapSceneIndices = new int[1];
     public string[] MapDescriptions = new string[1];
     public Sprite[] MapPreviews = new Sprite[1];
 
-    public Image MapPreview;
-    public TMPro.TMP_Text MapTitle;
-    public TMPro.TMP_Text MapDesc;
+    [SerializeField]
+    public UIDocument MainMenuUi;
+    public bool UiInitialised;
 
-    public GameObject MapSelectionScreen;
-    public TMPro.TMP_Dropdown MapDropdown;
+    private bool isInLevelSelection = false;
 
-    public GameObject MultiplayerScreen;
-
-    public GameObject MainScreen;
+    private void OnEnable()
+    {
+        TryInitialiseUi();
+    }
 
     // Start is called before the first frame update
     void Start()
     {
-        MapIndex = MapIndices[0];
-        MapDropdown.options = MapTitles.Select(title => new TMPro.TMP_Dropdown.OptionData(title)).ToList();
-        UpdateMapPreview();
+        MapIndex = MapSceneIndices[0];
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        TryInitialiseUi();
     }
 
-    public void ReadMapSelection()
+    void TryInitialiseUi()
     {
-        MapIndex = MapIndices[MapDropdown.value];
+        if (!UiInitialised)
+        {
+            if (TryGetComponent(out MainMenuUi) && MainMenuUi.rootVisualElement != null)
+            {
+                UiInitialised = true;
+                CloseBtnCallback(null);
+                InitialiseUiControls();
+                PreselectMap();
+            }
+        }
+    }
+
+    void PreselectMap()
+    {
+        MainMenuUi.rootVisualElement.Q<DropdownField>("LevelDropdown").value = MapTitles[MapIndex];
+    }
+
+    void InitialiseUiControls()
+    {
+        MainMenuUi.rootVisualElement.Q("CloseBtn").RegisterCallback<MouseCaptureEvent>(CloseBtnCallback);
+        MainMenuUi.rootVisualElement.Q("PlayBtn").RegisterCallback<MouseCaptureEvent>(PlayBtnCallback);
+        MainMenuUi.rootVisualElement.Q("AuxBtn").RegisterCallback<MouseCaptureEvent>(AuxBtnCallback);
+        MainMenuUi.rootVisualElement.Q<DropdownField>("LevelDropdown").RegisterValueChangedCallback(LevelChangedCallback);
+
+        MainMenuUi.rootVisualElement.Q<TextField>("ServerIp").value = $"{MultiplayerInfo.DefaultIpAddress}:{MultiplayerInfo.DefaultPort}";
+
+        MainMenuUi.rootVisualElement.Q<TextField>("PlayerName").value = "Player";
+    }
+
+    /// <summary>
+    /// Event handler for the "auxiliary" button - in the main screen it's the exit button, in the "play" screen it's the host game button.
+    /// </summary>
+    /// <param name="ev"></param>
+    public void AuxBtnCallback(MouseCaptureEvent ev)
+    {
+        if(isInLevelSelection)
+        {
+            LoadMapAsHost();
+        }
+        else
+        {
+            Application.Quit();
+        }
+    }
+
+    public void LevelChangedCallback(ChangeEvent<string> changeEv)
+    {
+        int newIndex = -1;
+        for(int i = 0; i < MapTitles.Length; i++)
+        {
+            if(MapTitles[i] == changeEv.newValue)
+            {
+                newIndex = i;
+            }
+        }
+
+        MapIndex = newIndex == -1 ? MapIndex : newIndex;
 
         UpdateMapPreview();
     }
 
+    public void CloseBtnCallback(MouseCaptureEvent ev)
+    {
+        MainMenuUi.rootVisualElement.Q("LevelSelection").style.display = DisplayStyle.None;
+        MainMenuUi.rootVisualElement.Q<TextField>("PlayerName").style.display = DisplayStyle.None;
+        MainMenuUi.rootVisualElement.Q<TextField>("ServerIp").style.display = DisplayStyle.None;
+
+        MainMenuUi.rootVisualElement.Q<Button>("PlayBtn").text = "PLAY";
+        MainMenuUi.rootVisualElement.Q<Button>("PlayBtn").RemoveFromClassList("joinBtn");
+        MainMenuUi.rootVisualElement.Q<Button>("AuxBtn").text = "EXIT";
+        MainMenuUi.rootVisualElement.Q<Button>("AuxBtn").RemoveFromClassList("hostBtn");
+
+        isInLevelSelection = false;
+    }
+
+    public void PlayBtnCallback(MouseCaptureEvent ev)
+    {
+        if (!isInLevelSelection)
+        {
+            MainMenuUi.rootVisualElement.Q("LevelSelection").style.display = DisplayStyle.Flex;
+            MainMenuUi.rootVisualElement.Q<TextField>("PlayerName").style.display = DisplayStyle.Flex;
+            MainMenuUi.rootVisualElement.Q<TextField>("ServerIp").style.display = DisplayStyle.Flex;
+
+            MainMenuUi.rootVisualElement.Q<Button>("PlayBtn").text = "JOIN";
+            MainMenuUi.rootVisualElement.Q<Button>("PlayBtn").AddToClassList("joinBtn");
+            MainMenuUi.rootVisualElement.Q<Button>("AuxBtn").text = "HOST";
+            MainMenuUi.rootVisualElement.Q<Button>("AuxBtn").AddToClassList("hostBtn");
+
+            isInLevelSelection = true;
+        }
+        else
+        {
+            LoadMapAsClient();
+        }
+    }
+
     public void UpdateMapPreview()
     {
-        MapPreview.sprite = MapPreviews[MapDropdown.value];
-        MapDesc.text = MapDescriptions[MapDropdown.value];
-        MapTitle.text = MapTitles[MapDropdown.value];
-    }
-
-    public void ShowMaps()
-    {
-        MapSelectionScreen.SetActive(true);
-        MultiplayerScreen.SetActive(true);
-
-        MainScreen.SetActive(false);
-    }
-
-    public void ShowMainScreen()
-    {
-        MapSelectionScreen.SetActive(false);
-        MultiplayerScreen.SetActive(false);
-
-        MainScreen.SetActive(true);
+        MainMenuUi.rootVisualElement.Q<Label>("MapTitle").text = MapTitles[MapIndex];
+        MainMenuUi.rootVisualElement.Q<Label>("MapDesc").text = MapDescriptions[MapIndex];
+        MainMenuUi.rootVisualElement.Q<VisualElement>("MapPreview").style.backgroundImage = new StyleBackground(MapPreviews[MapIndex]);
     }
 
     public void LoadMapAsHost()
@@ -89,6 +162,9 @@ public class MenuManager : MonoBehaviour
     {
         if (MapIndex != SceneManager.GetActiveScene().buildIndex)
         {
+            PlayerName = MainMenuUi.rootVisualElement.Q<TextField>("PlayerName").value;
+            Server = MainMenuUi.rootVisualElement.Q<TextField>("ServerIp").value;
+
             DataStore.SetMultiplayerSettings(PlayerName, Server, IsHost);
             SceneManager.LoadScene(MapIndex);
         }

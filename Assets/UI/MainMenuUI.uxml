@@ -1,6 +1,23 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement name="MainButtons" style="left: 2%; width: 400px; height: 600px; top: 50%; flex-shrink: 1; translate: 0 -50%;">
-        <ui:Button text="PLAY" display-tooltip-when-elided="true" name="PlayBtn" style="width: 75%; height: 10%; align-items: stretch; margin-left: auto; margin-right: auto; top: 15%; -unity-font: none; font-size: 54px; -unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); -unity-font-style: bold;" />
-        <ui:Button text="EXIT" display-tooltip-when-elided="true" name="ExitBtn" style="width: 75%; height: 10%; align-items: stretch; margin-left: auto; margin-right: auto; top: 70%; -unity-font: none; font-size: 54px; -unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); -unity-font-style: bold; margin-top: 0;" />
+    <Style src="project://database/Assets/UI/MainMenuStyles.uss?fileID=7433441132597879392&amp;guid=d2718e9aa50a0ca44b661360772a5bb0&amp;type=3#MainMenuStyles" />
+    <ui:VisualElement style="flex-direction: row;">
+        <ui:VisualElement name="MainButtons" style="left: 2%; width: 355px; height: 460px; top: 55%; flex-shrink: 1; translate: 0 -50%; background-color: rgba(255, 255, 255, 0.52);">
+            <ui:Button text="PLAY" display-tooltip-when-elided="true" name="PlayBtn" style="width: 75%; height: 10%; align-items: stretch; margin-left: auto; margin-right: auto; top: 15%; -unity-font: none; font-size: 54px; -unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); -unity-font-style: bold;" />
+            <ui:Button text="EXIT" display-tooltip-when-elided="true" name="AuxBtn" style="width: 75%; height: 10%; align-items: stretch; margin-left: auto; margin-right: auto; top: 70%; -unity-font: none; font-size: 54px; -unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); -unity-font-style: bold; margin-top: 0;" />
+            <ui:TextField picking-mode="Ignore" label="Server (IP:port)" value="filler text" text="127.0.0.1:7777" name="ServerIp" style="top: 90px;" />
+            <ui:TextField picking-mode="Ignore" label="Player name" value="filler text" text="Player" name="PlayerName" style="top: 96px;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="LevelSelection" style="left: 2%; width: 570px; height: 460px; top: 55%; flex-shrink: 1; translate: 0 -50%; background-color: rgba(255, 255, 255, 0.06); margin-left: 1%; flex-direction: column;">
+            <ui:VisualElement style="flex-direction: row;">
+                <ui:Label text="LEVEL SELECTION" display-tooltip-when-elided="true" name="Title" style="-unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); font-size: 50px; width: 327px; margin-top: -5px;" />
+                <ui:Button text="X" display-tooltip-when-elided="true" name="CloseBtn" style="width: 41px; height: 41px; -unity-font-style: bold; font-size: 49px; margin-left: 0; margin-top: 0; margin-bottom: 0; margin-right: 0; right: -33%; top: 1%;" />
+            </ui:VisualElement>
+            <ui:DropdownField index="-1" choices="Apartment" name="LevelDropdown" />
+            <ui:VisualElement name="MapPreview" style="height: 59%; margin-top: 1%; background-image: url(&apos;project://database/Assets/UI/Apartment_Preview.png?fileID=21300000&amp;guid=260b71526015c2b4eb8e1912b0d96555&amp;type=3#Apartment_Preview&apos;);" />
+            <ui:VisualElement>
+                <ui:Label text="Apartment" display-tooltip-when-elided="true" name="MapTitle" style="-unity-font-style: italic; -unity-font-definition: url(&apos;project://database/Assets/Fonts/GemunuLibre-Regular%20SDF%201.asset?fileID=11400000&amp;guid=c15a2f68a33daec4a835269ca6ae0bed&amp;type=2#GemunuLibre-Regular SDF 1&apos;); font-size: 39px; color: rgba(255, 255, 255, 255);" />
+                <ui:Label text="Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet.Lorem ipsum dolor sit amet." display-tooltip-when-elided="true" name="MapDesc" style="white-space: normal; color: rgba(224, 224, 224, 255);" />
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
