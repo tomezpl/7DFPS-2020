@@ -65,6 +65,8 @@ public static class DataStore
             PortNumber = serverPort,
             IsHost = isHost
         };
+
+        PlayerName = playerName;
     }
 
 }

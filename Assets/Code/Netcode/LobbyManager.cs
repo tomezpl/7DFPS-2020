@@ -168,6 +168,11 @@ public class LobbyManager : MonoBehaviour
     public MultiplayerGameMode CurrentGameMode = null;
 
     /// <summary>
+    /// UI label to display a status text (e.g. connecting etc)
+    /// </summary>
+    public Text StatusText;
+
+    /// <summary>
     /// Server/Host only: Spawns a player prefab for a client and assigns it ownership.
     /// </summary>
     /// <param name="position"></param>
@@ -213,6 +218,14 @@ public class LobbyManager : MonoBehaviour
         {
             StartedHost();
         }
+        else
+        {
+            if (StatusText)
+            {
+                StatusText.text = "Connecting...";
+            }
+            StartedClient();
+        }
     }
 
     /// <summary>
@@ -222,6 +235,11 @@ public class LobbyManager : MonoBehaviour
     /// <param name="clientId">The ID of the connecting client.</param>
     private void ClientConnected(ulong clientId)
     {
+        if (StatusText)
+        {
+            StatusText.text = "";
+        }
+
         // Reset the respawn flag in case the player was previously in a game.
         IsRespawn = false;
 
@@ -242,7 +260,7 @@ public class LobbyManager : MonoBehaviour
 
             // Set the spawn flag off as the server will be spawning us immediately.
             // This avoids UI being displayed after spawning.
-            DoesRequireSpawn = false;
+            DoesRequireSpawn = true;
         }
     }
 
@@ -252,6 +270,13 @@ public class LobbyManager : MonoBehaviour
     /// <param name="clientId">The ID of the disconnecting client.</param>
     private void ClientDisconnected(ulong clientId)
     {
+        if (StatusText)
+        {
+            StatusText.text = "Disconnected";
+            DontDestroyOnLoad(StatusText.transform.root.gameObject);
+            Destroy(StatusText.transform.root.gameObject, 5f);
+        }
+
         if (NetworkManager.Singleton.IsServer)
         {
             // Remove the player from the gamemode.
@@ -259,7 +284,9 @@ public class LobbyManager : MonoBehaviour
         }
         else
         {
-            SceneManager.LoadScene(SceneManager.GetSceneByName("MainMenu").buildIndex);
+            SceneManager.LoadScene("MainMenu");
+
+            Destroy(gameObject);
         }
     }
 
@@ -268,7 +295,7 @@ public class LobbyManager : MonoBehaviour
     {
         // Only show the lobby UI if the player is not connected to a game yet.
         IsLobbyUiShown = !NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer;
-        lobbyMenu.SetActive(IsLobbyUiShown);
+        //lobbyMenu.SetActive(IsLobbyUiShown);
 
         // Display the correct class selection buttons.
         leftArrowClassBtn.SetActive(showLeftArrowClassBtn && DoesRequireSpawn);
@@ -364,6 +391,9 @@ public class LobbyManager : MonoBehaviour
     /// </summary>
     public void ReadInputFields()
     {
+        // We don't need this anymore, replaced with a dedicated menu.
+        return;
+
         lobbyMenu.SetActive(true);
         IsLobbyUiShown = true;
 
